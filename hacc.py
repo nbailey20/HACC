@@ -61,7 +61,7 @@ def parse_args():
     action = parser.add_argument_group('Actions')
     action_types = action.add_mutually_exclusive_group()
     
-    # Add main actions
+    # Add main actions, set search as default action
     for a in [ALLOWED_FLAGS[x] for x in ALLOWED_FLAGS if x != 'subargs']:
         action_types.add_argument(
             a['s_flag'], 
