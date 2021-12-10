@@ -43,6 +43,13 @@ ALLOWED_FLAGS = {
     ]
 }
 
+ACTION_VALID_SUBARGS = {
+    'install': ['debug'],
+    'eradicate': ['debug'],
+    'add': ['debug', 'username', 'password', 'service'],
+    'delete': ['debug', 'service']
+}
+
 def parse_args():
     # Define all arguments for client
     parser = argparse.ArgumentParser(
@@ -60,11 +67,11 @@ def parse_args():
         action_types.add_argument(
             a['s_flag'], 
             '--' + a['action'], 
-            dest    = 'action', 
-            default = 'search',
-            action  = 'store_const', 
-            const   = a['action'], 
-            help    = a['help']
+            dest='action', 
+            default='search',
+            action='store_const', 
+            const= a['action'], 
+            help= a['help']
         )
     
     # Add default search action
@@ -83,25 +90,29 @@ def parse_args():
         )
     
     # Add verbosity flag
-    parser.add_argument('-v', '--verbose', dest = 'debug', action = 'store_true', help = 'Display verbose output')
+    parser.add_argument(
+        '-v', 
+        '--verbose', 
+        dest='debug', 
+        action='store_true', 
+        help='Display verbose output'
+    )
 
     args = parser.parse_args()
     return args
 
 
 def eval_args(args):
-    # Determine if provided arguments are valid for action
+    # Determine if provided subarguments are valid for action
     action = args.action
-    for arg in vars(args):
-        arg_val = getattr(args, arg)
-        if arg == 'action' or arg == 'debug' or not arg_val:
+    for subarg in vars(args):
+        arg_val = getattr(args, subarg)
+        # Looping over all args, so skip arguments that weren't provided or aren't subargs
+        if subarg == 'action' or subarg == 'debug' or not arg_val:
             continue
-        valid_arg = False
-        for va in ALLOWED_FLAGS['subargs']:
-            if arg == va['name'] or arg == 'service':
-                valid_arg = True
+        valid_arg = True if subarg in ACTION_VALID_SUBARGS[action] else False
         if not valid_arg:
-            print('hacc --' + action + ': unknown option --' + arg)
+            print('hacc --{0}: unknown option --{1}'.format(action, subarg))
             return False
     return True
 

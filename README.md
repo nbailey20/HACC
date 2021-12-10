@@ -57,3 +57,4 @@ Sample Usage:
 * Ability to generate hard-to-guess password for new credentials
 * Ability to update/rotate credential passwords
 * Fully wipe any sign of hacc AWS profile from credentials/config file once vault eradicated
+* Lock-down Vault with SCP so only HACC AWS user can read/write
