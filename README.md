@@ -2,6 +2,7 @@
 
 HACC is an open-source credential manager command-line tool that uses your personal AWS account to securely store your secrets, so you don't have to wonder what's happening behind the scenes.
 
+* Built with Python3
 * Credentials stored in AWS Parameter Store
 * Encrypted with AWS KMS Customer-Managed Key so only you can decrypt
 * Up to 40MB of encrypted data costs $1/month (only cost is the key)
