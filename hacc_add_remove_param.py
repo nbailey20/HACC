@@ -12,8 +12,8 @@ def get_kms_id(debug):
 
 
 def add(args):
-    hacc_session = boto3.session.Session(profile_name=hacc_vars.aws_hacc_uname)
     kms_id = get_kms_id(args.debug)
+    hacc_session = boto3.session.Session(profile_name=hacc_vars.aws_hacc_uname)
     ssm = hacc_session.client('ssm', region_name=hacc_vars.aws_hacc_region)
 
     creds_add = ssm.put_parameter(
