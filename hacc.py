@@ -11,13 +11,11 @@ ALLOWED_FLAGS = {
         's_flag':  '-i',
         'action':  'install',
         'help':    'Create new authentication credential vault',
-        'subargs': []
     },
     'eradicate': {
         's_flag':  '-e',
         'action':  'eradicate',
-        'help':    'Delete entire vault - cannot be undone',
-        'subargs': []
+        'help':    'Delete entire vault - cannot be undone'
     },
     'add': {
         's_flag':  '-a',
