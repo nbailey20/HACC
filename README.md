@@ -18,6 +18,7 @@ Current Version: v0.1
 
 
 ## hacc -h
+```
 HACC v0.1
 usage: hacc [-h] [-i | -e | -a | -d] [-u USERNAME] [-p PASSWORD] [-v] [service]
 
@@ -46,6 +47,7 @@ Sample Usage:
   hacc testService
   hacc -d testService
   hacc -e -v
+```
 
 ## Future Needs
 
