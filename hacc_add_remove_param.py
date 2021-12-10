@@ -1,9 +1,8 @@
 import hacc_vars
 import boto3
 
-def get_kms_id(debug):
-    kms = boto3.client('kms', region_name=hacc_vars.aws_hacc_region)
-    hacc_kms = kms.describe_key(
+def get_kms_id(debug, kms_client):
+    hacc_kms = kms_client.describe_key(
         KeyId='alias/{key}'.format(key=hacc_vars.aws_hacc_kms_alias)
     )
     if debug: print('Retrieving AWS KMS CMK details: ', hacc_kms['ResponseMetadata']['HTTPStatusCode'])
@@ -12,7 +11,9 @@ def get_kms_id(debug):
 
 
 def add(args):
-    kms_id = get_kms_id(args.debug)
+    kms = boto3.client('kms', region_name=hacc_vars.aws_hacc_region)
+    kms_id = get_kms_id(args.debug, kms)
+
     hacc_session = boto3.session.Session(profile_name=hacc_vars.aws_hacc_uname)
     ssm = hacc_session.client('ssm', region_name=hacc_vars.aws_hacc_region)
 
@@ -32,6 +33,7 @@ def add(args):
 
     print('Credential added.')
     return
+
 
 def delete(args):
     hacc_session = boto3.session.Session(profile_name=hacc_vars.aws_hacc_uname)

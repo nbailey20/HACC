@@ -1,17 +1,14 @@
 import hacc_vars
+from hacc_add_remove_param import get_kms_id
 import boto3, subprocess
 
 def eradicate(args):
     iam = boto3.client('iam')
     kms = boto3.client('kms', region_name=hacc_vars.aws_hacc_region)
 
-    hacc_kms = kms.describe_key(
-        KeyId='alias/{key}'.format(key=hacc_vars.aws_hacc_kms_alias)
-    )
-    if args.debug: print('Retrieving AWS KMS CMK details: ', hacc_kms['ResponseMetadata']['HTTPStatusCode'])
-
+    hacc_key_id = get_kms_id(args.debug, kms)
     kms_delete = kms.schedule_key_deletion(
-        KeyId=hacc_kms['KeyMetadata']['Arn'],
+        KeyId=hacc_key_id,
         PendingWindowInDays=7
     )
     if args.debug: print('Deleting AWS KMS CMK: ', kms_delete['ResponseMetadata']['HTTPStatusCode'])

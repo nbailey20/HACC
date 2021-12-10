@@ -1,7 +1,7 @@
 import argparse
 from argparse import RawTextHelpFormatter
 
-from hacc_query_params import search
+from hacc_search import search
 from hacc_add_remove_param import add, delete
 from hacc_install import install
 from hacc_uninstall import eradicate
