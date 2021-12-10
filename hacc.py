@@ -48,7 +48,7 @@ def parse_args():
     parser = argparse.ArgumentParser(
         prog='hacc',
         description='Homemade Authentication Credential Client - HACC',
-        epilog='Sample Usage:\n  hacc -i\n  hacc -a -u example@gmail.com -p 1234 testService\n  hacc testService',
+        epilog='Sample Usage:\n  hacc -iv\n  hacc -a -u example@gmail.com -p 1234 testService\n  hacc testService\n  hacc -d testService\n  hacc -e -v',
         formatter_class=RawTextHelpFormatter
     )
     # Set all actions to be mutually exclusive args

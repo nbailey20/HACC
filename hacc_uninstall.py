@@ -4,7 +4,6 @@ import boto3, subprocess
 def eradicate(args):
     iam = boto3.client('iam')
     kms = boto3.client('kms', region_name=hacc_vars.aws_hacc_region)
-    account = boto3.client('sts').get_caller_identity().get('Account')
 
     hacc_kms = kms.describe_key(
         KeyId='alias/{key}'.format(key=hacc_vars.aws_hacc_kms_alias)
@@ -22,11 +21,9 @@ def eradicate(args):
     )
     if args.debug: print('Deleting AWS KMS alias: ', alias_delete['ResponseMetadata']['HTTPStatusCode'])
 
-    policy_delete = iam.delete_policy(
-        PolicyArn='arn:aws:iam::{account}:policy/{policy}'.format(
-                    account=account, 
-                    policy=hacc_vars.aws_hacc_policy
-                )
+    policy_delete = iam.delete_user_policy(
+        UserName=hacc_vars.aws_hacc_uname,
+        PolicyName=hacc_vars.aws_hacc_policy
     )
     if args.debug: print('Deleting AWS IAM policy: ', policy_delete['ResponseMetadata']['HTTPStatusCode'])
 
