@@ -102,6 +102,9 @@ def parse_args():
 
 
 def eval_args(args):
+    # Example args:
+    # Namespace(action='delete', service=None, username='asdf', password='qwer', debug=True)
+
     # Determine if provided subarguments are valid for action
     action = args.action
     for subarg in vars(args):
