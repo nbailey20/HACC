@@ -7,11 +7,12 @@ HACC is an open-source credential manager command-line tool that uses your perso
 * Encrypted with AWS KMS Customer-Managed Key so only you can decrypt
 * Up to 40MB of encrypted data costs $1/month (only cost is the key)
 
-Current Version: v0.1
+Current Version: v0.2
 
 ## Current Features
 
-* Ability to add new credential to vault with username/password via -u, -p subargs to specified service
+* Ability to add new credential to vault with username/password for a service
+* Arguments can be provided with flags or interactively
 * Ability to delete service and associated credential from vault
 * Ability to return credential for service by 'haccing' it
 * Uses current AWS CLI credentials to create new least-privilege vault user and KMS CMK, saved credentials as new HACC profile
@@ -20,7 +21,7 @@ Current Version: v0.1
 
 ## hacc -h
 ```
-HACC v0.1
+HACC v0.2
 usage: hacc [-h] [-i | -e | -a | -d] [-u USERNAME] [-p PASSWORD] [-v] [service]
 
 Homemade Authentication Credential Client - HACC
@@ -52,8 +53,8 @@ Sample Usage:
 
 ## Future Needs
 
-* Error handling
-* Interactive prompts if subargs not provided, list existing services
+* Check existing params before adding/deleting
+* List existing services when searching
 * Store multiple credentials per service
 * Ability to generate hard-to-guess password for new credentials
 * Ability to update/rotate credential passwords

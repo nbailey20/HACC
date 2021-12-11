@@ -55,19 +55,20 @@ def aws_call(client, api, debug, **kwargs):
         method_to_call = getattr(client, api)
         if debug: print('INFO: About to call API {}'.format(api))
     except:
-        if debug: print('ERROR: API {} not known'.format(api))
+        print('ERROR: API {} not known, exiting'.format(api))
 
     try:
         result = method_to_call(**kwargs)
         if debug: print('INFO: API execution successful')
         return result
     except Exception as e:
-        if debug: print('ERROR: API call failed, exiting.: {}'.format(e))
+        print('ERROR: API call failed, exiting: {}'.format(e))
         exit(1)
     
 
 def install(args):
     # Setup IAM user and KMS CMK for Vault
+    print('Installing new vault...')
     account = boto3.client('sts').get_caller_identity().get('Account')
     kms = boto3.client('kms', region_name=hacc_vars.aws_hacc_region)
     iam = boto3.client('iam')
