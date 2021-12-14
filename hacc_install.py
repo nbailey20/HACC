@@ -10,10 +10,14 @@ VAULT_IAM_PERMS = """
             "Action": [
                 "ssm:DescribeParameters",
                 "ssm:GetParameter*",
+                "ssm:GetParametersByPath",
                 "ssm:DeleteParameter*",
                 "ssm:PutParameter"
             ],
-            "Resource": "%s"
+            "Resource": [
+                "%s",
+                "%s"
+            ]
         },
         {
             "Effect": "Allow",
@@ -102,13 +106,13 @@ def install(args):
         debug
     )
 
-    vault_path_arn = 'arn:aws:ssm:{region}:{account}:parameter/{path}/*'.format(
+    vault_path_arn = 'arn:aws:ssm:{region}:{account}:parameter/{path}'.format(
                         region=hacc_vars.aws_hacc_region, 
                         account=account,
                         path=hacc_vars.aws_hacc_param_path
                     )
     vault_key_arn = hacc_kms['KeyMetadata']['Arn']
-    perms = json.loads(VAULT_IAM_PERMS % (vault_path_arn, vault_key_arn))
+    perms = json.loads(VAULT_IAM_PERMS % (vault_path_arn, vault_path_arn+'/*', vault_key_arn))
     aws_call(
         iam, 'put_user_policy', debug, 
         UserName=hacc_vars.aws_hacc_uname,

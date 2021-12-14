@@ -46,7 +46,7 @@ ACTION_VALID_SUBARGS = {
     'eradicate': ['debug'],
     'add': ['debug', 'username', 'password', 'service'],
     'delete': ['debug', 'service'],
-    'search': ['debug', 'service']
+    'search': ['debug', 'service', 'username']
 }
 
 def parse_args():
