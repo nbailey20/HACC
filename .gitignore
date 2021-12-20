@@ -1,3 +1,6 @@
 *.pyc
 __pycache__
 hacc_vars.py
+build
+dist
+hacc.spec

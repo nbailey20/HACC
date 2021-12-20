@@ -59,3 +59,6 @@ Sample Usage:
 * Ability to update/rotate credential passwords
 * Fully wipe any sign of hacc AWS profile from credentials/config file once vault eradicated
 * Support for services with more than 4KB of credentials
+* Error handling for install/eradicate and idempotency
+* 'configure' (in addition to install) keyword to grant additional devices access to Vault
+* Make SCP optional for single-account deployments not part of an org
