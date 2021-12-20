@@ -24,7 +24,7 @@ Current Version: v0.3
 
 ## hacc -h
 ```
-HACC v0.2
+HACC v0.3
 usage: hacc [-h] [-i | -e | -a | -d] [-u USERNAME] [-p PASSWORD] [-v] [service]
 
 Homemade Authentication Credential Client - HACC
