@@ -9,7 +9,7 @@ VAULT_IAM_PERMS = """
             "Effect": "Allow",
             "Action": [
                 "ssm:DescribeParameters",
-                "ssm:GetParameter*",
+                "ssm:GetParameter",
                 "ssm:GetParametersByPath",
                 "ssm:DeleteParameter*",
                 "ssm:PutParameter"
@@ -23,9 +23,51 @@ VAULT_IAM_PERMS = """
             "Effect": "Allow",
             "Action": [
                 "kms:Encrypt",
-                "kms:Decrypt"
+                "kms:Decrypt",
+                "kms:DescribeKey"
             ],
             "Resource": "%s"
+        }
+    ]
+}
+"""
+
+VAULT_SCP = """
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Deny",
+            "Action": [
+                "ssm:DescribeParameters",
+                "ssm:GetParameter*",
+                "ssm:GetParametersByPath",
+                "ssm:DeleteParameter*",
+                "ssm:PutParameter"
+            ],
+            "Resource": [
+                "%s",
+                "%s"
+            ],
+            "Condition": {
+                "StringNotLike": {
+                    "aws:PrincipalARN": "%s"
+                }
+            }
+        },
+        {
+            "Effect": "Deny",
+            "Action": [
+                "kms:Encrypt",
+                "kms:Decrypt",
+                "kms:DescribeKey"
+            ],
+            "Resource": "%s",
+            "Condition": {
+                "StringNotLike": {
+                    "aws:PrincipalARN": "%s"
+                }
+            }
         }
     ]
 }
@@ -69,13 +111,34 @@ def aws_call(client, api, debug, **kwargs):
         print('ERROR: API call failed, exiting: {}'.format(e))
         exit(1)
     
-
+# Setup IAM user KMS CMK for Vault in member account
+# Setup SCP for member account in mgmt account to lock down
 def install(args):
-    # Setup IAM user and KMS CMK for Vault
     print('Installing new vault...')
-    account = boto3.client('sts').get_caller_identity().get('Account')
-    kms = boto3.client('kms', region_name=hacc_vars.aws_hacc_region)
-    iam = boto3.client('iam')
+
+    # Assume role in member account with mgmt account creds
+    sts = boto3.client('sts')
+    assumed_role_object=sts.assume_role(
+        RoleArn=hacc_vars.aws_member_role,
+        RoleSessionName="HaccInstallSession"
+    )
+    role_creds = assumed_role_object['Credentials']
+
+    # arn:aws:iam::account:role/name
+    account = hacc_vars.aws_member_role.split(':')[4]
+
+    kms = boto3.client('kms', region_name=hacc_vars.aws_hacc_region,
+                        aws_access_key_id=role_creds['AccessKeyId'],
+                        aws_secret_access_key=role_creds['SecretAccessKey'],
+                        aws_session_token=role_creds['SessionToken']
+                        )
+    iam = boto3.client('iam',
+                        aws_access_key_id=role_creds['AccessKeyId'],
+                        aws_secret_access_key=role_creds['SecretAccessKey'],
+                        aws_session_token=role_creds['SessionToken']
+                        )
+    # SCP is setup in mgmt account, don't use member role
+    orgs = boto3.client('organizations')
     debug = args.debug
 
     hacc_kms = aws_call(
@@ -112,13 +175,36 @@ def install(args):
                         path=hacc_vars.aws_hacc_param_path
                     )
     vault_key_arn = hacc_kms['KeyMetadata']['Arn']
-    perms = json.loads(VAULT_IAM_PERMS % (vault_path_arn, vault_path_arn+'/*', vault_key_arn))
+
+    user_perms = json.loads(VAULT_IAM_PERMS % (vault_path_arn, vault_path_arn+'/*', vault_key_arn))
     aws_call(
         iam, 'put_user_policy', debug, 
         UserName=hacc_vars.aws_hacc_uname,
-        PolicyName=hacc_vars.aws_hacc_policy,
-        PolicyDocument=json.dumps(perms)
+        PolicyName=hacc_vars.aws_hacc_iam_policy,
+        PolicyDocument=json.dumps(user_perms)
     )
+
+    iam_user_arn = 'arn:aws:iam::*:user/{}'.format(hacc_vars.aws_hacc_uname)
+    scp = json.loads(VAULT_SCP % (vault_path_arn, 
+                                vault_path_arn+'/*',
+                                iam_user_arn,
+                                vault_key_arn,
+                                iam_user_arn)
+                    )
+    hacc_scp = aws_call(
+                orgs, 'create_policy', debug,
+                Content=json.dumps(scp),
+                Name=hacc_vars.aws_hacc_scp,
+                Description='SCP for HACC',
+                Type='SERVICE_CONTROL_POLICY'
+            )
+
+    aws_call(
+        orgs, 'attach_policy', debug,
+        PolicyId=hacc_scp['Policy']['PolicySummary']['Id'],
+        TargetId=account
+    )
+    
 
     print('Vault setup complete.')
     return

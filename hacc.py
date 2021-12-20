@@ -44,8 +44,8 @@ ALLOWED_FLAGS = {
 ACTION_VALID_SUBARGS = {
     'install': ['debug'],
     'eradicate': ['debug'],
-    'add': ['debug', 'username', 'password', 'service'],
-    'delete': ['debug', 'service'],
+    'add': ['debug', 'service', 'username', 'password'],
+    'delete': ['debug', 'service', 'username'],
     'search': ['debug', 'service', 'username']
 }
 

@@ -1,5 +1,6 @@
 import hacc_vars
 import boto3
+import re
 
 
 def get_all_services(ssm_client, debug):
@@ -50,6 +51,16 @@ def get_service_creds(name, ssm_client, debug):
     except Exception as e:
         print('Unexpected error retrieving credential, exiting: ', e)
         exit(99)
+
+
+def user_exists_for_service(svc_creds, user, debug):
+    creds_list = svc_creds.split(',')
+    for cred in creds_list:
+        name,_ = cred.split(':')
+        if name == user:
+            if debug: print('INFO: found existing username {}'.format(name))
+            return True
+    return False
     
 
 def search(args):
@@ -57,7 +68,18 @@ def search(args):
     ssm = hacc_session.client('ssm', region_name=hacc_vars.aws_hacc_region)
 
     if not args.service:
-        args.service = input('Enter service to retrieve credential: ')
+        all_svcs = get_all_services(ssm, args.debug)
+        # If no services in vault, can't look anything up
+        if not all_svcs:
+            print('No credentials in vault, add credential before searching.')
+            return
+        # Print available services if at least one exists
+        print()
+        print('Available services:')
+        for svc in all_svcs:
+            print(svc)
+        print()
+        args.service = input('Enter service name from above list to retrieve credential: ')
 
     name = get_service_name(args.service, ssm, args.debug)
     if not name:
