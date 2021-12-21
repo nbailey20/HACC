@@ -1,4 +1,4 @@
 #!/bin/sh
 
-echo "HACC v0.2"
+echo "HACC v0.3"
 python3 hacc.py $@

@@ -1,20 +1,27 @@
 import hacc_vars
 import boto3
-import re
+from sys import exit
 
 
 def get_all_services(ssm_client, debug):
-    vault_params = ssm_client.get_parameters_by_path(
+    curr_params = ssm_client.get_parameters_by_path(
         Path='/'+hacc_vars.aws_hacc_param_path,
         WithDecryption=False
     )
+    all_params = curr_params['Parameters']
     if debug: print('INFO: retrieved known services')
-    # TODO: check for NextToken='string' in response, only returns <= 10 parameters per call
-    while 'NextToken' in vault_params:
-        print('more params to get!')
+    # check for NextToken='string' in response, only returns <= 10 parameters per call
+    while 'NextToken' in curr_params:
+        more_params = ssm_client.get_parameters_by_path(
+            Path='/'+hacc_vars.aws_hacc_param_path,
+            WithDecryption=False,
+            NextToken=curr_params['NextToken']
+        )
+        all_params += more_params['Parameters']
+        curr_params = more_params
     
     ## Example service Name: /hacc-vault/test
-    svcs_list = list(set([x['Name'].split('/')[-1] for x in vault_params['Parameters']]))
+    svcs_list = list(set([x['Name'].split('/')[-1] for x in all_params]))
     if debug: print('Services found: ', svcs_list)
     return svcs_list
 
