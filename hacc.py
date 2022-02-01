@@ -6,6 +6,7 @@ from hacc_add_remove_param import add, delete
 from hacc_install import install
 from hacc_uninstall import eradicate
 
+
 ALLOWED_FLAGS = {
     'install': {
         's_flag':  '-i',
@@ -32,11 +33,19 @@ ALLOWED_FLAGS = {
             's_flag': '-u',
             'name':   'username',
             'help':   'Username to perform action on',
+            'type':   'string'
         },
         {
             's_flag': '-p',
             'name':   'password',
-            'help':   'Password for new credentials, used with add action'
+            'help':   'Password for new credentials, used with add action',
+            'type':   'string'
+        },
+        {
+            's_flag': '-g',
+            'name':   'generate',
+            'help':   'Generate random password for operation',
+            'type':   'bool'
         }
     ]
 }
@@ -44,9 +53,13 @@ ALLOWED_FLAGS = {
 ACTION_VALID_SUBARGS = {
     'install': ['debug'],
     'eradicate': ['debug'],
-    'add': ['debug', 'service', 'username', 'password'],
+    'add': ['debug', 'service', 'username', 'password', 'generate'],
     'delete': ['debug', 'service', 'username'],
-    'search': ['debug', 'service', 'username']
+    'search': ['debug', 'service', 'username'],
+}
+
+INCOMPATABLE_SUBARGS = {
+    'add': [['password', 'generate']]
 }
 
 def parse_args():
@@ -81,12 +94,21 @@ def parse_args():
 
     # Add optional subargs
     for a in ALLOWED_FLAGS['subargs']:
-        parser.add_argument(
-            a['s_flag'], 
-            '--' + a['name'], 
-            dest=a['name'], 
-            help=a['help']
-        )
+        if a['type'] == 'string':
+            parser.add_argument(
+                a['s_flag'], 
+                '--' + a['name'], 
+                dest=a['name'], 
+                help=a['help']
+            )
+        elif a['type'] == 'bool':
+            parser.add_argument(
+                a['s_flag'], 
+                '--' + a['name'], 
+                dest=a['name'],
+                action='store_true',
+                help=a['help']
+            )
     
     # Add verbosity flag
     parser.add_argument(
@@ -101,21 +123,49 @@ def parse_args():
     return args
 
 
-def eval_args(args):
+def valid_subargs(args):
     # Example args:
-    # Namespace(action='delete', service=None, username='asdf', password='qwer', debug=True)
+    # Namespace(action='delete', service=None, username='asdf', password='qwer', generate=False, debug=True)
 
-    # Determine if provided subarguments are valid for action
-    action = args.action
-    for subarg in vars(args):
+    for subarg in [sa for sa in vars(args) if sa != 'action' and sa != 'debug']:
         arg_val = getattr(args, subarg)
-        # Looping over all args, so skip arguments that weren't provided or aren't subargs
-        if subarg == 'action' or subarg == 'debug' or not arg_val:
+        if not arg_val:
             continue
-        valid_arg = True if subarg in ACTION_VALID_SUBARGS[action] else False
+
+        valid_arg = True if subarg in ACTION_VALID_SUBARGS[args.action] else False
         if not valid_arg:
-            print('hacc --{0}: unknown option --{1}'.format(action, subarg))
+            print('hacc --{0}: unknown option --{1}'.format(args.action, subarg))
             return False
+
+    return True
+
+
+
+def compatable_subargs(args):
+    ## check if action has incompatable flags
+    if args.action not in INCOMPATABLE_SUBARGS:
+        return True
+
+    ## Check each incompatable rule for given action
+    for inc_rule in INCOMPATABLE_SUBARGS[args.action]:
+        inc_args = []
+        for subarg in inc_rule:
+            if getattr(args, subarg):
+                inc_args.append(subarg)
+        
+        if len(inc_args) > 1:
+            print(f'Incompatable arguments: {"/".join(inc_args)}, aborting.')
+            return False
+    return True
+
+
+## Evaluate if parsed arguments are valid and compatable
+def eval_args(args):
+    if not valid_subargs(args):
+        return False
+
+    if not compatable_subargs(args):
+        return False
     return True
 
 
