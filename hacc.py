@@ -46,6 +46,12 @@ ALLOWED_FLAGS = {
             'name':   'generate',
             'help':   'Generate random password for operation',
             'type':   'bool'
+        },
+        {
+            's_flag': '-b',
+            'name':   'backup',
+            'help':   'Backup entire Vault and write to file name: hacc -b out_file',
+            'type':   'string'
         }
     ]
 }
@@ -55,7 +61,7 @@ ACTION_VALID_SUBARGS = {
     'eradicate': ['debug'],
     'add': ['debug', 'service', 'username', 'password', 'generate'],
     'delete': ['debug', 'service', 'username'],
-    'search': ['debug', 'service', 'username'],
+    'search': ['debug', 'service', 'username', 'backup'],
 }
 
 INCOMPATABLE_SUBARGS = {
@@ -125,7 +131,7 @@ def parse_args():
 
 def valid_subargs(args):
     # Example args:
-    # Namespace(action='delete', service=None, username='asdf', password='qwer', generate=False, debug=True)
+    # Namespace(action='delete', service=None, username='asdf', password='qwer', debug=True)
 
     for subarg in [sa for sa in vars(args) if sa != 'action' and sa != 'debug']:
         arg_val = getattr(args, subarg)

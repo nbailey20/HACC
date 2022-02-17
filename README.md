@@ -7,7 +7,7 @@ HACC is an open-source credential manager command-line tool that uses your perso
 * Encrypted with AWS KMS Customer-Managed Key so only you can decrypt
 * Up to 40MB of encrypted data costs $1/month (only cost is the key)
 
-Current Version: v0.3
+Current Version: v0.4
 
 ## Current Features
 
@@ -21,12 +21,13 @@ Current Version: v0.3
 * Eradicate action to remove IAM, KMS resources - does not yet remove any parameters but schedules master key deletion - credentials manually recoverable for up to 7 days
 * Checks for existing services and usernames before adding/deleting credentials
 * Completely locks down operations on credential parameters to hacc-user so nobody else can read/delete by unintentionally - via SCP applied to member account
+* Backup entire vault to file 
 
 
 ## hacc -h
 ```
 HACC v0.4
-usage: hacc [-h] [-i | -e | -a | -d] [-u USERNAME] [-p PASSWORD] [-g] [-v] [service]
+usage: hacc [-h] [-i | -e | -a | -d] [-u USERNAME] [-p PASSWORD] [-g] [-b BACKUP] [-v] [service]
 
 Homemade Authentication Credential Client - HACC
 
@@ -40,6 +41,8 @@ optional arguments:
   -p PASSWORD, --password PASSWORD
                         Password for new credentials, used with add action
   -g, --generate        Generate random password for operation
+  -b BACKUP, --backup BACKUP
+                        Backup entire Vault and write to file name: hacc -b out_file
   -v, --verbose         Display verbose output
 
 Actions:
@@ -50,21 +53,19 @@ Actions:
 
 Sample Usage:
   hacc -iv
-  hacc -a -u example@gmail.com -g testService
-  hacc -a
+  hacc -a -u example@gmail.com -p 1234 testService
   hacc testService
-  hacc testService -u example@gmail.com
-  hacc -d testService -u example@gmail.com
   hacc -d testService
   hacc -e -v
 ```
 
 ## Future Needs
 * Clean up code with classes, logging instead of prints
-* Add 'list' keyword with pagination, print default HACC ascii if nothing provided
+* Add 'list' keyword with pagination, print default HACC ascii if nothing provided - TBD
 * Ability to rotate credential passwords
 * Fully wipe any sign of hacc AWS profile from credentials/config file once vault eradicated
 * Support for services with more than 4KB of credentials via multiple parameters per service
 * Error handling for install/eradicate and idempotency
 * 'configure' (in addition to install) keyword to grant additional devices access to Vault
 * Make SCP optional for single-account deployments not part of an org
+* Ability to provide backup file for new vault install or add to existing vault, "--file" subarg
