@@ -1,5 +1,6 @@
 import hacc_vars
 import boto3, subprocess, json
+from hacc_core import aws_call
 
 VAULT_IAM_PERMS = """
 {
@@ -73,8 +74,9 @@ VAULT_SCP = """
 }
 """
 
+## Adds a new profile to AWS credentials/config file
 def create_hacc_profile(access_key_id, secret_access_key, debug):
-    # Adds a new profile to AWS credentials/config file
+
     aws_config_region = subprocess.run(['aws', 'configure', 'set', 
         'region', hacc_vars.aws_hacc_region, 
         '--profile', hacc_vars.aws_hacc_uname]
@@ -94,23 +96,8 @@ def create_hacc_profile(access_key_id, secret_access_key, debug):
     if debug: print('INFO: Successfully wrote vault AWS secret key to profile')
     return
 
-
-def aws_call(client, api, debug, **kwargs):
-    # Execute generic AWS API call with error handling
-    try:
-        method_to_call = getattr(client, api)
-        if debug: print('INFO: About to call API {}'.format(api))
-    except:
-        print('ERROR: API {} not known, exiting'.format(api))
-
-    try:
-        result = method_to_call(**kwargs)
-        if debug: print('INFO: API execution successful')
-        return result
-    except Exception as e:
-        print('ERROR: API call failed, exiting: {}'.format(e))
-        exit(1)
     
+
 # Setup IAM user KMS CMK for Vault in member account
 # Setup SCP for member account in mgmt account to lock down
 def install(args):

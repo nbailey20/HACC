@@ -6,27 +6,34 @@ from hacc_add_remove_param import add, delete
 from hacc_install import install
 from hacc_uninstall import eradicate
 
+import logging
+
 
 ALLOWED_FLAGS = {
     'install': {
         's_flag':  '-i',
         'action':  'install',
-        'help':    'Create new authentication credential vault',
+        'help':    'Create new authentication credential Vault',
     },
     'eradicate': {
         's_flag':  '-e',
         'action':  'eradicate',
-        'help':    'Delete entire vault - cannot be undone'
+        'help':    'Delete entire Vault - cannot be undone'
     },
     'add': {
         's_flag':  '-a',
         'action':  'add',
-        'help':    'Add new set of credentials to vault',
+        'help':    'Add new set of credentials to Vault',
     },
     'delete': {
         's_flag':  '-d',
         'action':  'delete',
-        'help':    'Delete credentials in vault',
+        'help':    'Delete credentials in Vault',
+    },
+    'backup': {
+        's_flag':  '-b',
+        'action':  'backup',
+        'help':    'Backup entire Vault'
     },
     'subargs': [
         {
@@ -44,29 +51,40 @@ ALLOWED_FLAGS = {
         {
             's_flag': '-g',
             'name':   'generate',
-            'help':   'Generate random password for operation',
+            'help':   'Generate random password for add operation',
             'type':   'bool'
         },
         {
-            's_flag': '-b',
-            'name':   'backup',
-            'help':   'Backup entire Vault and write to file name: hacc -b out_file',
+            's_flag': '-o',
+            'name':   'outfile',
+            'help':   'File name to use for backup operation',
             'type':   'string'
         }
     ]
 }
 
-ACTION_VALID_SUBARGS = {
+ACTION_ALLOWED_SUBARGS = {
     'install': ['debug'],
     'eradicate': ['debug'],
     'add': ['debug', 'service', 'username', 'password', 'generate'],
     'delete': ['debug', 'service', 'username'],
-    'search': ['debug', 'service', 'username', 'backup'],
+    'search': ['debug', 'service', 'username'],
+    'backup': ['outfile']
 }
 
-INCOMPATABLE_SUBARGS = {
+ACTION_INCOMPATABLE_SUBARGS = {
     'add': [['password', 'generate']]
 }
+
+ACTION_REQUIRED_SUBARGS = {
+    'install': [],
+    'eradicate': [],
+    'add': ['service', 'username', 'password'],
+    'delete': ['service', 'username'],
+    'search': ['service', 'username'],
+    'backup': ['outfile']
+}
+
 
 def parse_args():
     # Define all arguments for client
@@ -129,7 +147,7 @@ def parse_args():
     return args
 
 
-def valid_subargs(args):
+def allowed_subargs(args):
     # Example args:
     # Namespace(action='delete', service=None, username='asdf', password='qwer', debug=True)
 
@@ -138,7 +156,7 @@ def valid_subargs(args):
         if not arg_val:
             continue
 
-        valid_arg = True if subarg in ACTION_VALID_SUBARGS[args.action] else False
+        valid_arg = True if subarg in ACTION_ALLOWED_SUBARGS[args.action] else False
         if not valid_arg:
             print('hacc --{0}: unknown option --{1}'.format(args.action, subarg))
             return False
@@ -149,11 +167,11 @@ def valid_subargs(args):
 
 def compatable_subargs(args):
     ## check if action has incompatable flags
-    if args.action not in INCOMPATABLE_SUBARGS:
+    if args.action not in ACTION_INCOMPATABLE_SUBARGS:
         return True
 
     ## Check each incompatable rule for given action
-    for inc_rule in INCOMPATABLE_SUBARGS[args.action]:
+    for inc_rule in ACTION_INCOMPATABLE_SUBARGS[args.action]:
         inc_args = []
         for subarg in inc_rule:
             if getattr(args, subarg):
@@ -165,24 +183,63 @@ def compatable_subargs(args):
     return True
 
 
-## Evaluate if parsed arguments are valid and compatable
+
+## Evaluate all arguments are to ensure they allowed and compatable for given action
 def eval_args(args):
-    if not valid_subargs(args):
+    if not allowed_subargs(args):
         return False
 
     if not compatable_subargs(args):
         return False
+    
     return True
+
+
+## If not all required args provided, interactively ask user
+## Return validated arguments object for action logic
+## Return False if unable to gather required input
+def collect_missing_args(args):
+    action = args.action
+
+    for subarg in ACTION_REQUIRED_SUBARGS[action]:
+        if not getattr(args, subarg):
+
+            ## TODO
+            ## if subarg == password, ask to generate one
+            ## if subarg == service, display available services
+            ## if subarg == user, display possible users with numbering
+
+            subarg_val = input(f'Enter {subarg} to {action}: ')
+            if not subarg_val:
+                print(f'Value for {subarg} not provided, exiting.')
+                return False
+            
+            if args.debug: print(f'INFO: interactively gathered required argument {subarg}')
+            setattr(args, subarg, subarg_val)
+
+    if args.debug: print('INFO: all required arguments provided')
+    return args
+
 
 
 def main():
     args = parse_args()
-    if args.debug: print('Args provided: ', args)
+
+    logging.basicConfig()
+    if args.debug:
+        logging.getLogger().setLevel(logging.DEBUG)
+    else:
+        logging.getLogger().setLevel(logging.INFO)
+
+    logger=logging.getLogger(__name__)
+    logger.debug(f'Args provided: {args}')
 
     if not eval_args(args):
         return 
+
+    required_args = collect_missing_args(args)
     
-    globals()[args.action](args)
+    globals()[required_args.action](required_args)
 
 
 if __name__ == '__main__':

@@ -1,6 +1,5 @@
 import hacc_vars
-from hacc_add_remove_param import get_kms_id
-from hacc_install import aws_call
+from hacc_core import get_kms_arn, aws_call
 import boto3, subprocess, time
 
 def eradicate(args):
@@ -61,7 +60,7 @@ def eradicate(args):
                                 aws_session_token=role_creds['SessionToken']
                         )
 
-    hacc_key_id = get_kms_id(args.debug, kms)
+    hacc_key_id = get_kms_arn(kms)
     aws_call(
         kms, 'schedule_key_deletion', debug, 
         KeyId=hacc_key_id,
