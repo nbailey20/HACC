@@ -7,7 +7,7 @@ HACC is an open-source credential manager command-line tool that uses your perso
 * Encrypted with AWS KMS Customer-Managed Key so only you can decrypt
 * Up to 40MB of encrypted data costs $1/month (only cost is the key)
 
-Current Version: v0.4
+Current Version: v0.5
 
 ## Current Features
 
@@ -26,8 +26,8 @@ Current Version: v0.4
 
 ## hacc -h
 ```
-HACC v0.4
-usage: hacc [-h] [-i | -e | -a | -d] [-u USERNAME] [-p PASSWORD] [-g] [-b BACKUP] [-v] [service]
+HACC v0.5
+usage: hacc [-h] [-i | -e | -a | -d | -b] [-u USERNAME] [-p PASSWORD] [-g] [-o OUTFILE] [-v] [service]
 
 Homemade Authentication Credential Client - HACC
 
@@ -40,16 +40,17 @@ optional arguments:
                         Username to perform action on
   -p PASSWORD, --password PASSWORD
                         Password for new credentials, used with add action
-  -g, --generate        Generate random password for operation
-  -b BACKUP, --backup BACKUP
-                        Backup entire Vault and write to file name: hacc -b out_file
+  -g, --generate        Generate random password for add operation
+  -o OUTFILE, --outfile OUTFILE
+                        File name to use for backup operation
   -v, --verbose         Display verbose output
 
 Actions:
-  -i, --install         Create new authentication credential vault
-  -e, --eradicate       Delete entire vault - cannot be undone
-  -a, --add             Add new set of credentials to vault
-  -d, --delete          Delete credentials in vault
+  -i, --install         Create new authentication credential Vault
+  -e, --eradicate       Delete entire Vault - cannot be undone
+  -a, --add             Add new set of credentials to Vault
+  -d, --delete          Delete credentials in Vault
+  -b, --backup          Backup entire Vault
 
 Sample Usage:
   hacc -iv
@@ -60,7 +61,6 @@ Sample Usage:
 ```
 
 ## Future Needs
-* Clean up code with classes, logging instead of prints
 * Add 'list' keyword with pagination, print default HACC ascii if nothing provided - TBD
 * Ability to rotate credential passwords
 * Fully wipe any sign of hacc AWS profile from credentials/config file once vault eradicated
