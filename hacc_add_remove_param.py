@@ -2,7 +2,7 @@ import hacc_vars
 from hacc_install import aws_call
 from hacc_search import get_service_name, get_service_creds, user_exists_for_service
 import boto3
-import re
+from hacc_generate import generate
 
 def get_kms_id(debug, kms_client):
     hacc_kms = aws_call(
@@ -33,14 +33,35 @@ def add(args):
     kms = hacc_session.client('kms', region_name=hacc_vars.aws_hacc_region)
     kms_id = get_kms_id(args.debug, kms)
 
+    # if args.password and args.generate:
+    #     print('Can either generate a new password or provide one, aborting.')
+    #     return
+
     if not args.username:
         args.username = input('Enter new username: ')
+        if not args.username:
+            print('No username provided, aborting.')
+            return
+
+    if args.generate:
+        good_pass = False
+        while not good_pass:
+            args.password = generate(args.debug)
+            print(f'Generated password: {args.password}')
+            gp = input('Is this acceptable (y/n)? ')
+            good_pass = True if gp.lower() == 'y' else False
 
     if not args.password:
         args.password = input('Enter new password: ')
+        if not args.password:
+            print('No password provided, aborting.')
+            return
 
     if not args.service:
         args.service = input('Enter service that uses the credential: ')
+        if not args.service:
+            print('No service provided, aborting.')
+            return
 
     svc = get_service_name(args.service, ssm, args.debug)
     svc_creds = ''

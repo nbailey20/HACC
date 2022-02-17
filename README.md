@@ -7,25 +7,27 @@ HACC is an open-source credential manager command-line tool that uses your perso
 * Encrypted with AWS KMS Customer-Managed Key so only you can decrypt
 * Up to 40MB of encrypted data costs $1/month (only cost is the key)
 
-Current Version: v0.3
+Current Version: v0.4
 
 ## Current Features
 
-* Ability to add new credential to vault with username/password for a service
-* Can store multiple credentials per service
-* Arguments can be provided with flags or interactively
-* Ability to delete service and associated credentials from vault
-* Ability to return specific or all credentials for service by 'haccing' it
-* Uses current AWS CLI credentials to create new least-privilege vault user and KMS CMK, saved credentials as new HACC profile
+* Add new credential to vault with username/password for a service
+* Store multiple credentials per service
+* Provided arguments with flags or interactively
+* Generate hard-to-guess password for new credentials
+* Delete service and associated credentials from vault
+* Return specific or all credentials for service by 'haccing' it
+* Use existing AWS CLI credentials to create new least-privilege vault user and KMS CMK, saved credentials as new HACC profile
 * Eradicate action to remove IAM, KMS resources - does not yet remove any parameters but schedules master key deletion - credentials manually recoverable for up to 7 days
 * Checks for existing services and usernames before adding/deleting credentials
 * Completely locks down operations on credential parameters to hacc-user so nobody else can read/delete by unintentionally - via SCP applied to member account
+* Backup entire vault to file 
 
 
 ## hacc -h
 ```
-HACC v0.3
-usage: hacc [-h] [-i | -e | -a | -d] [-u USERNAME] [-p PASSWORD] [-v] [service]
+HACC v0.4
+usage: hacc [-h] [-i | -e | -a | -d] [-u USERNAME] [-p PASSWORD] [-g] [-b BACKUP] [-v] [service]
 
 Homemade Authentication Credential Client - HACC
 
@@ -38,6 +40,9 @@ optional arguments:
                         Username to perform action on
   -p PASSWORD, --password PASSWORD
                         Password for new credentials, used with add action
+  -g, --generate        Generate random password for operation
+  -b BACKUP, --backup BACKUP
+                        Backup entire Vault and write to file name: hacc -b out_file
   -v, --verbose         Display verbose output
 
 Actions:
@@ -47,7 +52,7 @@ Actions:
   -d, --delete          Delete credentials in vault
 
 Sample Usage:
-  hacc -i
+  hacc -iv
   hacc -a -u example@gmail.com -p 1234 testService
   hacc testService
   hacc -d testService
@@ -55,10 +60,12 @@ Sample Usage:
 ```
 
 ## Future Needs
-* Ability to generate hard-to-guess password for new credentials
-* Ability to update/rotate credential passwords
+* Clean up code with classes, logging instead of prints
+* Add 'list' keyword with pagination, print default HACC ascii if nothing provided - TBD
+* Ability to rotate credential passwords
 * Fully wipe any sign of hacc AWS profile from credentials/config file once vault eradicated
-* Support for services with more than 4KB of credentials
+* Support for services with more than 4KB of credentials via multiple parameters per service
 * Error handling for install/eradicate and idempotency
 * 'configure' (in addition to install) keyword to grant additional devices access to Vault
 * Make SCP optional for single-account deployments not part of an org
+* Ability to provide backup file for new vault install or add to existing vault, "--file" subarg

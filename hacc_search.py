@@ -1,6 +1,7 @@
 import hacc_vars
 import boto3
 from sys import exit
+import json
 
 
 def get_all_services(ssm_client, debug):
@@ -68,11 +69,37 @@ def user_exists_for_service(svc_creds, user, debug):
             if debug: print('INFO: found existing username {}'.format(name))
             return True
     return False
-    
+
+
+def backup_vault(out_file, ssm, debug):
+    all_svcs = get_all_services(ssm, debug)
+    # If no services in vault, can't look anything up
+    if not all_svcs:
+        print('No credentials in vault, nothing to backup.')
+        return
+
+    backup_content = []
+    for svc in all_svcs:
+        if debug: print(f'INFO: Backing up service {svc}')
+        creds_list = get_service_creds(svc, ssm, debug).split(',')
+        backup_content.append({'service': svc, 'creds': creds_list})
+
+    f = open(out_file, 'w')
+    f.write(json.dumps(backup_content))
+    f.close()
+    print(f'Successfully created Vault backup file: {out_file}')
+    return
+
+
+
 
 def search(args):
     hacc_session = boto3.session.Session(profile_name=hacc_vars.aws_hacc_uname)
     ssm = hacc_session.client('ssm', region_name=hacc_vars.aws_hacc_region)
+
+    if args.backup:
+        backup_vault(args.backup, ssm, args.debug)
+        return
 
     if not args.service:
         all_svcs = get_all_services(ssm, args.debug)
