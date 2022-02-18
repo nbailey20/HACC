@@ -1,12 +1,27 @@
 import argparse
-from argparse import RawTextHelpFormatter
-
+import hacc_interactive
 from hacc_search import search
-from hacc_add_remove_param import add, delete
+from hacc_add import add
+from hacc_delete import delete
 from hacc_install import install
 from hacc_uninstall import eradicate
-
+from hacc_backup import backup
 import logging
+
+
+ ## Configure logger
+logging.basicConfig()
+
+## suppress lots of noisy logs
+logging.getLogger('boto3').setLevel(logging.CRITICAL) 
+logging.getLogger('botocore').setLevel(logging.CRITICAL)
+logging.getLogger('nose').setLevel(logging.CRITICAL)
+logging.getLogger('urllib3').setLevel(logging.CRITICAL)
+
+logger=logging.getLogger()
+logger.handlers[0].setFormatter(logging.Formatter(
+    'DEBUG: %(message)s'
+))
 
 
 ALLOWED_FLAGS = {
@@ -69,7 +84,7 @@ ACTION_ALLOWED_SUBARGS = {
     'add': ['debug', 'service', 'username', 'password', 'generate'],
     'delete': ['debug', 'service', 'username'],
     'search': ['debug', 'service', 'username'],
-    'backup': ['outfile']
+    'backup': ['debug', 'outfile']
 }
 
 ACTION_INCOMPATABLE_SUBARGS = {
@@ -92,7 +107,7 @@ def parse_args():
         prog='hacc',
         description='Homemade Authentication Credential Client - HACC',
         epilog='Sample Usage:\n  hacc -iv\n  hacc -a -u example@gmail.com -p 1234 testService\n  hacc testService\n  hacc -d testService\n  hacc -e -v',
-        formatter_class=RawTextHelpFormatter
+        formatter_class=argparse.RawTextHelpFormatter
     )
     # Set all actions to be mutually exclusive args
     action = parser.add_argument_group('Actions')
@@ -203,21 +218,22 @@ def collect_missing_args(args):
 
     for subarg in ACTION_REQUIRED_SUBARGS[action]:
         if not getattr(args, subarg):
-
-            ## TODO
-            ## if subarg == password, ask to generate one
-            ## if subarg == service, display available services
-            ## if subarg == user, display possible users with numbering
-
-            subarg_val = input(f'Enter {subarg} to {action}: ')
-            if not subarg_val:
-                print(f'Value for {subarg} not provided, exiting.')
-                return False
             
-            if args.debug: print(f'INFO: interactively gathered required argument {subarg}')
+            if subarg == 'service':
+                subarg_val = hacc_interactive.get_service()
+            ## if subarg == user, display possible users with numbering
+            ## if subarg == password, ask to generate one
+
+            else:
+                subarg_val = input(f'Enter {subarg} to {action}: ')
+                if not subarg_val:
+                    print(f'Value for {subarg} not provided, exiting.')
+                    return False
+            
+            logger.debug(f'Interactively gathered required argument {subarg}')
             setattr(args, subarg, subarg_val)
 
-    if args.debug: print('INFO: all required arguments provided')
+    logger.debug('All required arguments provided')
     return args
 
 
@@ -225,14 +241,13 @@ def collect_missing_args(args):
 def main():
     args = parse_args()
 
-    logging.basicConfig()
     if args.debug:
-        logging.getLogger().setLevel(logging.DEBUG)
+        logger.setLevel(logging.DEBUG)
     else:
-        logging.getLogger().setLevel(logging.INFO)
+        logger.setLevel(logging.INFO)
 
-    logger=logging.getLogger(__name__)
     logger.debug(f'Args provided: {args}')
+
 
     if not eval_args(args):
         return 

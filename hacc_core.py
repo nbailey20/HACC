@@ -2,20 +2,20 @@ import hacc_vars
 import boto3
 import logging, sys
 
-logger=logging.getLogger(__name__)
+logger=logging.getLogger()
 
 
 ## Execute generic AWS API call with basic error handling
 def aws_call(client, api_name, **kwargs):
     try:
         method_to_call = getattr(client, api_name)
-        logger.debug(f'About to call API {api_name}')
     except:
         print(f'ERROR: API {api_name} not known, exiting')
 
     try:
         result = method_to_call(**kwargs)
-        logger.debug('API execution successful')
+        ## add leading spaces for cleaner debug output
+        logger.debug(f'    {api_name} API execution successful') 
         return result
     except Exception as e:
         print(f'ERROR: API call failed, exiting: {e}')
@@ -27,27 +27,17 @@ def aws_call(client, api_name, **kwargs):
 def get_all_services(ssm_client):
     all_svc_list = []
 
+    logger.debug('Retrieving service names from Vault')
+
     curr_params = aws_call(
         ssm_client, 'get_parameters_by_path', 
         Path = '/'+hacc_vars.aws_hacc_param_path,
         WithDecryption = False
     )
     all_svc_list += curr_params['Parameters']
-
-    # curr_params = ssm_client.get_parameters_by_path(
-    #     Path='/'+hacc_vars.aws_hacc_param_path,
-    #     WithDecryption=False
-    # )
-
     
     # check for NextToken='string' in response, only returns <= 10 parameters per call
     while 'NextToken' in curr_params:
-        logger.debug('Gathering more service names from Vault')
-        # more_params = ssm_client.get_parameters_by_path(
-        #     Path = '/'+hacc_vars.aws_hacc_param_path,
-        #     WithDecryption = False,
-        #     NextToken=curr_params['NextToken']
-        # )
 
         more_params = aws_call(
             ssm_client, 'get_parameters_by_path', 
@@ -57,10 +47,11 @@ def get_all_services(ssm_client):
         )
         all_svc_list += more_params['Parameters']
         curr_params = more_params
+
+    logger.debug('Gathered all service names from Vault')
     
     ## Example service Name: /hacc-vault/test
     formatted_svcs_list = list(set([x['Name'].split('/')[-1] for x in all_svc_list]))
-    logger.debug(f'Services found: {formatted_svcs_list}')
     return formatted_svcs_list
 
 
@@ -78,13 +69,35 @@ def service_exists(service, ssm_client):
 def get_kms_arn(kms_client):
     kms_alias = hacc_vars.aws_hacc_kms_alias
 
+    logger.debug(f'Retrieving Vault encryption key')
+
     hacc_kms_arn = aws_call(
         kms_client, 'describe_key', 
         KeyId=f'alias/{kms_alias}'
     )['KeyMetadata']['Arn']
 
-    logger.debug('Retrieved KMS ARN {hacc_kms_arn}')
     return hacc_kms_arn
+
+
+## ApiClient Object:
+## Attributes:
+##      ssm, boto3 client obj
+##      kms, boto3 client obj
+##      iam, boto3 client obj
+class ApiClient:
+
+    def __init__(self, ssm=False, kms=False, iam=False):
+        hacc_session = boto3.session.Session(profile_name=hacc_vars.aws_hacc_uname)
+
+        if ssm:
+            self.ssm = hacc_session.client('ssm', region_name=hacc_vars.aws_hacc_region)
+
+        if kms:
+            self.kms = hacc_session.client('kms', region_name=hacc_vars.aws_hacc_region)
+
+        if iam:
+            self.iam = hacc_session.client('iam', region_name=hacc_vars.aws_hacc_region)
+
 
 
 
@@ -92,7 +105,7 @@ def get_kms_arn(kms_client):
 ## HaccService Object:
 ## Attributes:
 ##      service_name, string
-##      ssm_client, boto3 client obj
+##      ssm_client, boto3 obj
 ##      kms_id, string
 ##      credentials, dict of user:passwd
 ## 
@@ -175,7 +188,7 @@ class HaccService:
     ## Returns password for given username, False if it doesn't existS
     def get_credential(self, user):
         if user in self.credentials:
-            logger.debug('Found credential for user {user}')
+            logger.debug(f'Found credential for user "{user}"')
             return self.credentials[user]
         logger.debug(f'No credential for user {user}')
         return False
@@ -202,33 +215,45 @@ class HaccService:
 
 
     ## Upon object init, pull existing service data if it exists
-    def __init__(self, service_name):
+    def __init__(self, service_name, ssm_client=None, kms_id=None):
 
-        hacc_session = boto3.session.Session(profile_name=hacc_vars.aws_hacc_uname)
-        ssm_client = hacc_session.client('ssm', region_name=hacc_vars.aws_hacc_region)
-        kms_client = hacc_session.client('kms', region_name=hacc_vars.aws_hacc_region)
+        ## Minimize the number of boto3 sessions/clients created
+        if not ssm_client and not kms_id:
+            api_obj = ApiClient(ssm=True, kms=True)
+            self.ssm_client = api_obj.ssm
+            self.kms_id = get_kms_arn(api_obj.kms)
+        elif not ssm_client:
+            api_obj = ApiClient(ssm=True)
+            self.ssm_client = api_obj.ssm
+            self.kms_id = kms_id
+        elif not kms_id:
+            api_obj = ApiClient(kms=True)
+            self.ssm_client = ssm_client
+            self.kms_id = get_kms_arn(api_obj.kms)
+        else:
+            self.ssm_client = ssm_client
+            self.kms_id = kms_id
 
         self.service_name = service_name
-        self.ssm_client = ssm_client
-        self.kms_id = get_kms_arn(kms_client)
 
-        if service_exists(service_name, ssm_client):
+        if service_exists(service_name, self.ssm_client):
+            logger.debug(f'Found existing service "{service_name}" in Vault, pulling data')
             self.pull_from_vault()
-            logger.debug('Found existing service in Vault, pulling data')
-
+            
         else:
             self.credentials = {}
             logger.debug('Did not find existing service in Vault, creating new')
 
     
     ## Prints username, and optionally password for service
-    def print_credential(self, user, password=False):
+    def print_credential(self, user, print_password=False):
+        if print_password:
+            password = self.get_credential(user)
         print()
         print('#############################')
         print(f'Service {self.service_name}')
         print(f'Username: {user}')
-        if password:
-            password = self.get_credential(user)
+        if print_password:
             print(f'Password: {password}')
         print('#############################')
         print()

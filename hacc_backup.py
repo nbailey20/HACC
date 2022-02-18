@@ -1,17 +1,15 @@
-import hacc_vars
-from hacc_core import get_all_services, HaccService
-import boto3
+from hacc_core import get_all_services, get_kms_arn, HaccService, ApiClient
 import json
 import logging
 
-logger=logging.getLogger(__name__)
+logger=logging.getLogger()
 
 
 ## Creates new backup file with entire Vault contents
 def backup(args):
-    hacc_session = boto3.session.Session(profile_name=hacc_vars.aws_hacc_uname)
-    ssm_client = hacc_session.client('ssm', region_name=hacc_vars.aws_hacc_region)
-
+    api_obj = ApiClient(ssm=True, kms=True)
+    ssm_client = api_obj.ssm
+    kms_id = get_kms_arn(api_obj.kms)
 
     all_svcs = get_all_services(ssm_client)
     # If no services in vault, can't look anything up
@@ -22,7 +20,7 @@ def backup(args):
     backup_content = []
     for svc in all_svcs:
         logger.debug(f'Backing up service {svc}')
-        svc_obj = HaccService(svc)
+        svc_obj = HaccService(svc, ssm_client=ssm_client, kms_id=kms_id)
         backup_content.append({'service': svc, 'creds': svc_obj.credentials})
 
     f = open(args.outfile, 'w')
