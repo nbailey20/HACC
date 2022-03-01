@@ -1,6 +1,7 @@
 import urllib.request
 import json, random
 
+
 MIN_WORD_SIZE = 7
 MAX_WORD_SIZE = 10
 NUM_CHAR_SWAPS = 3
@@ -44,7 +45,7 @@ def sub_chars(password, char_map, num_subs):
 
 ## Quick function to generate XKCD-style password,
 ##  4 random words joined with some char subs
-def generate(debug):
+def generate_password():
     random_words = json.loads(urllib.request.urlopen(f'https://random-word-api.herokuapp.com/word?number={RANDOM_WORDS_REQUESTED}').read())
     pass_words = []
 
@@ -72,5 +73,4 @@ def generate(debug):
     ## If not enough special subs available, oh well
     password = sub_chars(sub_obj['password'], SPECIAL_CHAR_MAP, num_special_swaps)['password']
 
-    if debug: print(f'Generated password: {password}')
     return password

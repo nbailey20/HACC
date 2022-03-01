@@ -65,6 +65,16 @@ def service_exists(service, ssm_client):
 
 
 
+## Return True if user exists for service, False otherwise
+def user_exists_for_service(user, service, ssm_client):
+    service_obj = HaccService(service, ssm_client=ssm_client)
+
+    if user in service_obj.get_users():
+        return True
+    return False
+
+
+
 ## Returns KMS ARN used to encrypt Vault credentials
 def get_kms_arn(kms_client):
     kms_alias = hacc_vars.aws_hacc_kms_alias
@@ -182,7 +192,7 @@ class HaccService:
 
     ## Returns list of all usernames associated with service
     def get_users(self):
-        return self.credentials.keys()
+        return list(self.credentials)
 
     
     ## Returns password for given username, False if it doesn't existS
