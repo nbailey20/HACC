@@ -263,8 +263,8 @@ def get_service_user_from_input(service, user_input, ssm_client):
     if len(possible_users) == 0:
         return False
 
-    ## Found unique match for prefix, we're done!
-    elif len(possible_users) == 1:
+    ## Found unique match for prefix, make sure user has some confirmation before performing action!
+    elif len(possible_users) == 1 and user_input:
         return possible_users[0]
 
     
