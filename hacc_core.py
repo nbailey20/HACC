@@ -267,3 +267,53 @@ class HaccService:
             print(f'Password: {password}')
         print('#############################')
         print()
+
+
+
+
+
+
+## VaultInstallation Object:
+## Attributes:
+##      mgmt_org, boto3 org object in mgmt account (if SCP)
+##      kms, boto3 kms object
+##      iam, boto3 iam object
+##      
+## 
+## Methods:
+##      
+##      
+##      
+##      
+##      
+##      
+##      print_credential
+class VaultInstallation:
+
+    def __init__(self):
+
+        # SCP is setup in mgmt account, don't use member role
+        self.mgmt_org = boto3.client('organizations')
+
+        # Assume member role for all other Vault resources
+        sts = boto3.client('sts')
+        assumed_role_object=sts.assume_role(
+            RoleArn=hacc_vars.aws_member_role,
+            RoleSessionName="HaccInstallSession"
+        )
+        role_creds = assumed_role_object['Credentials']
+
+        # arn:aws:iam::account:role/name
+        account = hacc_vars.aws_member_role.split(':')[4]
+
+        self.kms = boto3.client('kms', region_name=hacc_vars.aws_hacc_region,
+                            aws_access_key_id=role_creds['AccessKeyId'],
+                            aws_secret_access_key=role_creds['SecretAccessKey'],
+                            aws_session_token=role_creds['SessionToken']
+                            )
+        self.iam = boto3.client('iam',
+                            aws_access_key_id=role_creds['AccessKeyId'],
+                            aws_secret_access_key=role_creds['SecretAccessKey'],
+                            aws_session_token=role_creds['SessionToken']
+                            )
+        

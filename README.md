@@ -70,3 +70,5 @@ Sample Usage:
 * 'configure' (in addition to install) keyword to grant additional devices access to Vault
 * Make SCP optional for single-account deployments not part of an org
 * Ability to provide backup file for new vault install or add to existing vault, "--file" subarg
+* Generate better passwords
+* Confirm user doesn't already exist for add action before asking for password if not provided
