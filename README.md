@@ -14,6 +14,7 @@ Current Version: v0.5
 * Add new credential to vault with username/password for a service
 * Store multiple credentials per service
 * Provided arguments with flags or interactively
+* Pagination for interactive input, search services/usernames by name prefix or line number
 * Generate hard-to-guess password for new credentials
 * Delete service and associated credentials from vault
 * Return specific or all credentials for service by 'haccing' it
@@ -21,7 +22,8 @@ Current Version: v0.5
 * Eradicate action to remove IAM, KMS resources - does not yet remove any parameters but schedules master key deletion - credentials manually recoverable for up to 7 days
 * Checks for existing services and usernames before adding/deleting credentials
 * Completely locks down operations on credential parameters to hacc-user so nobody else can read/delete by unintentionally - via SCP applied to member account
-* Backup entire vault to file 
+* Backup entire vault to file
+* Cleanly exit at any point with ctrl-c
 
 
 ## hacc -h
@@ -61,7 +63,6 @@ Sample Usage:
 ```
 
 ## Future Needs
-* Add 'list' keyword with pagination, print default HACC ascii if nothing provided - TBD
 * Ability to rotate credential passwords
 * Fully wipe any sign of hacc AWS profile from credentials/config file once vault eradicated
 * Support for services with more than 4KB of credentials via multiple parameters per service

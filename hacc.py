@@ -26,26 +26,31 @@ logger.handlers[0].setFormatter(logging.Formatter(
 
 
 def main():
-    args = parse_args()
+    try:
+        args = parse_args()
 
-    if not eval_args(args):
-        return 
+        if not eval_args(args):
+            return 
 
-    if args.debug:
-        logger.setLevel(logging.DEBUG)
-    else:
-        logger.setLevel(logging.INFO)
+        if args.debug:
+            logger.setLevel(logging.DEBUG)
+        else:
+            logger.setLevel(logging.INFO)
 
-    logger.debug(f'Initial args provided: {args}')
+        logger.debug(f'Initial args provided: {args}')
 
-    valid_args = validate_args_for_action(args)
-    if not valid_args:
-        return False
+        valid_args = validate_args_for_action(args)
+        if not valid_args:
+            return False
 
-    logger.debug(f'Validated input args: {valid_args}')
+        logger.debug(f'Validated input args: {valid_args}')
 
-    ## Call appropriate function for action
-    globals()[valid_args.action](valid_args)
+        ## Call appropriate function for action
+        globals()[valid_args.action](valid_args)
+    
+    ## cleanly exit without errors
+    except KeyboardInterrupt:
+        print('\n\nReceived ctrl-c, exiting.')
 
 
 if __name__ == '__main__':
