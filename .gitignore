@@ -4,4 +4,4 @@ hacc_vars.py
 build
 dist
 hacc.spec
-*backup*
+*backup_*
