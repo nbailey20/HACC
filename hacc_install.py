@@ -1,6 +1,6 @@
 import hacc_vars
 import boto3, subprocess, json
-from hacc_core import aws_call
+from hacc_core import aws_call, VaultInstallation
 
 VAULT_IAM_PERMS = """
 {
@@ -103,42 +103,46 @@ def create_hacc_profile(access_key_id, secret_access_key, debug):
 def install(args):
     print('Installing new vault...')
 
-    # Assume role in member account with mgmt account creds
-    sts = boto3.client('sts')
-    assumed_role_object=sts.assume_role(
-        RoleArn=hacc_vars.aws_member_role,
-        RoleSessionName="HaccInstallSession"
-    )
-    role_creds = assumed_role_object['Credentials']
+    vault = VaultInstallation()
 
-    # arn:aws:iam::account:role/name
-    account = hacc_vars.aws_member_role.split(':')[4]
+    vault.create_cmk_with_alias()
 
-    kms = boto3.client('kms', region_name=hacc_vars.aws_hacc_region,
-                        aws_access_key_id=role_creds['AccessKeyId'],
-                        aws_secret_access_key=role_creds['SecretAccessKey'],
-                        aws_session_token=role_creds['SessionToken']
-                        )
-    iam = boto3.client('iam',
-                        aws_access_key_id=role_creds['AccessKeyId'],
-                        aws_secret_access_key=role_creds['SecretAccessKey'],
-                        aws_session_token=role_creds['SessionToken']
-                        )
-    # SCP is setup in mgmt account, don't use member role
-    orgs = boto3.client('organizations')
-    debug = args.debug
+    # # Assume role in member account with mgmt account creds
+    # sts = boto3.client('sts')
+    # assumed_role_object=sts.assume_role(
+    #     RoleArn=hacc_vars.aws_member_role,
+    #     RoleSessionName="HaccInstallSession"
+    # )
+    # role_creds = assumed_role_object['Credentials']
 
-    hacc_kms = aws_call(
-                kms, 'create_key', debug, 
-                KeyUsage='ENCRYPT_DECRYPT', 
-                KeySpec='SYMMETRIC_DEFAULT'
-                )
+    # # arn:aws:iam::account:role/name
+    # account = hacc_vars.aws_member_role.split(':')[4]
 
-    aws_call(
-        kms, 'create_alias', debug, 
-        AliasName='alias/{key}'.format(key=hacc_vars.aws_hacc_kms_alias), 
-        TargetKeyId=hacc_kms['KeyMetadata']['Arn']
-    )
+    # kms = boto3.client('kms', region_name=hacc_vars.aws_hacc_region,
+    #                     aws_access_key_id=role_creds['AccessKeyId'],
+    #                     aws_secret_access_key=role_creds['SecretAccessKey'],
+    #                     aws_session_token=role_creds['SessionToken']
+    #                     )
+    # iam = boto3.client('iam',
+    #                     aws_access_key_id=role_creds['AccessKeyId'],
+    #                     aws_secret_access_key=role_creds['SecretAccessKey'],
+    #                     aws_session_token=role_creds['SessionToken']
+    #                     )
+    # # SCP is setup in mgmt account, don't use member role
+    # orgs = boto3.client('organizations')
+    # debug = args.debug
+
+    # hacc_kms = aws_call(
+    #             kms, 'create_key', debug, 
+    #             KeyUsage='ENCRYPT_DECRYPT', 
+    #             KeySpec='SYMMETRIC_DEFAULT'
+    #             )
+
+    # aws_call(
+    #     kms, 'create_alias', debug, 
+    #     AliasName='alias/{key}'.format(key=hacc_vars.aws_hacc_kms_alias), 
+    #     TargetKeyId=hacc_kms['KeyMetadata']['Arn']
+    # )
 
     aws_call(
         iam, 'create_user', debug, 

@@ -72,3 +72,4 @@ Sample Usage:
 * Ability to provide backup file for new vault install or add to existing vault, "--file" subarg
 * Generate better passwords
 * Confirm user doesn't already exist for add action before asking for password if not provided
+* Check that all required config variables for action are in hacc_vars file at start

@@ -23,9 +23,12 @@ logger.handlers[0].setFormatter(logging.Formatter(
 ))
 
 
+HACC_VERSION = 'v0.6'
 
 
 def main():
+    print(f'HACC {HACC_VERSION}')
+
     try:
         args = parse_args()
 

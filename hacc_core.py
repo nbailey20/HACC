@@ -6,20 +6,23 @@ logger=logging.getLogger()
 
 
 ## Execute generic AWS API call with basic error handling
+## Returns result of api call, or False if call failed
 def aws_call(client, api_name, **kwargs):
     try:
         method_to_call = getattr(client, api_name)
     except:
         print(f'ERROR: API {api_name} not known, exiting')
+        return False
 
     try:
         result = method_to_call(**kwargs)
         ## add leading spaces for cleaner debug output
         logger.debug(f'    {api_name} API execution successful') 
         return result
+
     except Exception as e:
         print(f'ERROR: API call failed, exiting: {e}')
-        exit(1)
+        return False
 
 
 
@@ -89,7 +92,10 @@ def get_kms_arn(kms_client):
     return hacc_kms_arn
 
 
+
+
 ## ApiClient Object:
+##      Creates boto3 clients for interaction with Vault
 ## Attributes:
 ##      ssm, boto3 client obj
 ##      kms, boto3 client obj
@@ -105,14 +111,12 @@ class ApiClient:
         if kms:
             self.kms = hacc_session.client('kms', region_name=hacc_vars.aws_hacc_region)
 
-        if iam:
-            self.iam = hacc_session.client('iam', region_name=hacc_vars.aws_hacc_region)
-
-
 
 
 
 ## HaccService Object:
+##      Used for interaction with service credentials in Vault
+##
 ## Attributes:
 ##      service_name, string
 ##      ssm_client, boto3 obj
@@ -244,6 +248,7 @@ class HaccService:
             self.ssm_client = ssm_client
             self.kms_id = kms_id
 
+
         self.service_name = service_name
 
         if service_exists(service_name, self.ssm_client):
@@ -274,6 +279,8 @@ class HaccService:
 
 
 ## VaultInstallation Object:
+##      idempotently install or eradicate Vault AWS components
+##
 ## Attributes:
 ##      mgmt_org, boto3 org object in mgmt account (if SCP)
 ##      kms, boto3 kms object
@@ -281,21 +288,97 @@ class HaccService:
 ##      
 ## 
 ## Methods:
+##      create_cmk_with_alias
+##      delete_cmk
 ##      
 ##      
 ##      
 ##      
 ##      
-##      
-##      print_credential
 class VaultInstallation:
+
+    ## Accepts alias or key id to delete
+    ## Returns True if delete successful or key doesn't exist
+    ## Returns False if failed to delete key/alias
+    def delete_cmk(self, cmk):
+        hacc_key_id = cmk
+
+        if cmk.startswith('alias/'):
+            ## Get key ID to delete after alias
+            hacc_key_id = get_kms_arn(self.kms)
+
+            alias_delete_res = aws_call(
+                                self.kms, 'delete_alias', 
+                                AliasName = f'alias/{cmk}'
+                            )
+            if not alias_delete_res:
+                logger.debug('Failed to delete alias for Vault KMS key')
+                return False
+            logger.debug('Successfully deleted alias for Vault KMS key')
+
+
+        key_delete_res = aws_call(
+                            self.kms, 'schedule_key_deletion', 
+                            KeyId = hacc_key_id,
+                            PendingWindowInDays = 7
+                        )
+        if not key_delete_res:
+            logger.debug('Failed to delete KMS key')
+            return False
+
+        logger.debug('Successfully deleted Vault KMS key')
+        return True
+
+
+    ## Creates or confirms KMS exists for Vault 
+    ## Returns True if key is present
+    ## Returns False if key/alias failed to create
+    def create_cmk_with_alias(self):
+
+        ## Check if key already exists
+        arn = get_kms_arn(self.kms)
+        if arn:
+            logger.debug('Found existing KMS key and alias for Vault')
+            return True
+
+        ## Otherwise create new key and alias
+        hacc_kms = aws_call(
+                    self.kms, 'create_key', 
+                    KeyUsage = 'ENCRYPT_DECRYPT', 
+                    KeySpec = 'SYMMETRIC_DEFAULT'
+                )
+        if not hacc_kms:
+            logger.debug('Failed to create new symmetric KMS key')
+            return False
+        logger.debug('Successfully created new symmetric KMS key for Vault')
+
+        key_name = hacc_vars.aws_hacc_kms_alias
+        key_id = hacc_kms['KeyMetadata']['Arn']
+
+        hacc_alias = aws_call(
+            self.kms, 'create_alias', 
+            AliasName = f'alias/{key_name}',
+            TargetKeyId = key_id
+        )
+
+        ## If alias creates properly we're done
+        if hacc_alias:
+            logger.debug('Successfully created alias for KMS key')
+            return True
+
+        ## If alias fails but key exists, clean up first
+        logger.debug('Failed to create alias for KMS key')
+        logger.debug('Cleaning up KMS key with no alias')
+        self.delete_cmk(key_id)
+        return False
+            
 
     def __init__(self):
 
-        # SCP is setup in mgmt account, don't use member role
+        ## SCP is setup in mgmt account, don't use member role
         self.mgmt_org = boto3.client('organizations')
 
-        # Assume member role for all other Vault resources
+        ## Assume member role for all other Vault resources
         sts = boto3.client('sts')
         assumed_role_object=sts.assume_role(
             RoleArn=hacc_vars.aws_member_role,
@@ -303,7 +386,7 @@ class VaultInstallation:
         )
         role_creds = assumed_role_object['Credentials']
 
-        # arn:aws:iam::account:role/name
+        ## arn:aws:iam::account:role/name
         account = hacc_vars.aws_member_role.split(':')[4]
 
         self.kms = boto3.client('kms', region_name=hacc_vars.aws_hacc_region,
@@ -316,4 +399,7 @@ class VaultInstallation:
                             aws_secret_access_key=role_creds['SecretAccessKey'],
                             aws_session_token=role_creds['SessionToken']
                             )
+
+    
+
         
