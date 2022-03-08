@@ -1,7 +1,8 @@
 import argparse
 import re
-from hacc_core import ApiClient, HaccService, get_all_services, service_exists, user_exists_for_service
-from hacc_interactive import get_input_with_choices, get_input_string_for_subarg, get_password_for_credential
+from classes.vault import Vault
+from classes.hacc_service import HaccService
+from input.hacc_interactive import get_input_with_choices, get_input_string_for_subarg, get_password_for_credential
 import logging
 
 logger=logging.getLogger()
@@ -53,25 +54,36 @@ ALLOWED_FLAGS = {
             'type':   'bool'
         },
         {
-            's_flag': '-o',
-            'name':   'outfile',
-            'help':   'File name to use for backup operation',
+            's_flag': '-f',
+            'name':   'file',
+            'help':   'File name for importing credentials and backing up Vault',
             'type':   'string'
+        },
+        {
+            's_flag': '-w',
+            'name':   'wipe',
+            'help':   'Wipe all existing credentials during Vault eradication',
+            'type':   'bool'
         }
     ]
 }
 
 ACTION_ALLOWED_SUBARGS = {
-    'install': ['debug'],
-    'eradicate': ['debug'],
-    'add': ['debug', 'service', 'username', 'password', 'generate'],
+    'install': ['debug', 'file'],
+    'eradicate': ['debug', 'wipe'],
+    'add': ['debug', 'service', 'username', 'password', 'generate', 'file'],
     'delete': ['debug', 'service', 'username'],
     'search': ['debug', 'service', 'username'],
-    'backup': ['debug', 'outfile']
+    'backup': ['debug', 'file']
 }
 
 ACTION_INCOMPATABLE_SUBARGS = {
-    'add': [['password', 'generate']]
+    'add': [
+        ['password', 'generate'], 
+        ['username', 'file'],
+        ['password', 'file'],
+        ['service', 'file']
+    ]
 }
 
 ACTION_REQUIRED_SUBARGS = {
@@ -80,7 +92,7 @@ ACTION_REQUIRED_SUBARGS = {
     'add': ['service', 'username', 'password'],
     'delete': ['service', 'username'],
     'search': ['service', 'username'],
-    'backup': ['outfile']
+    'backup': ['file']
 }
 
 
@@ -212,14 +224,14 @@ def get_possible_input_matches(input, choices):
 ## Takes provided input service name
 ## Input can either match service name exactly, or be a prefix
 ## Returns complete service name, False if no matches in Vault
-def get_service_name_from_input(svc_input, ssm_client):
+def get_service_name_from_input(svc_input, vault):
 
     ## Check if exact service name provided
-    if service_exists(svc_input, ssm_client):
+    if vault.service_exists(svc_input):
         return svc_input
 
     ## Check if service name prefix provided
-    possible_svcs = get_possible_input_matches(svc_input, get_all_services(ssm_client))
+    possible_svcs = get_possible_input_matches(svc_input, vault.get_all_services())
 
     ## No possible matches
     if len(possible_svcs) == 0:
@@ -242,18 +254,18 @@ def get_service_name_from_input(svc_input, ssm_client):
             choice_num = None
 
         ## recurse on new input
-        return get_service_name_from_input(new_input, ssm_client)
+        return get_service_name_from_input(new_input, vault)
 
 
 
 ## Takes provided input username for service
 ## Input can either match username exactly, or be a prefix
 ## Returns complete username, False if no matches in Vault
-def get_service_user_from_input(service, user_input, ssm_client):
-    svc_obj = HaccService(service, ssm_client=ssm_client)
+def get_service_user_from_input(service, user_input, vault):
+    svc_obj = HaccService(service, vault=vault)
 
     ## Check if exact username provided
-    if user_exists_for_service(user_input, service, ssm_client):
+    if svc_obj.user_exists(user_input):
         return user_input
 
     ## Check if username prefix provided
@@ -280,7 +292,7 @@ def get_service_user_from_input(service, user_input, ssm_client):
             choice_num = None
 
         ## recurse on new input
-        return get_service_user_from_input(service, new_input, ssm_client)
+        return get_service_user_from_input(service, new_input, vault)
 
 
 
@@ -306,19 +318,26 @@ def validate_args_for_action(args):
 
     ## Validate service and username input where possible
     if action == 'search' or action == 'delete':
-        api_obj = ApiClient(ssm=True)
+        vault = Vault()
 
-        args.service = get_service_name_from_input(args.service, api_obj.ssm)
+        args.service = get_service_name_from_input(args.service, vault)
         if not args.service:
             print('Could not validate service name, exiting.')
             return False
 
-        args.username = get_service_user_from_input(args.service, args.username, api_obj.ssm)
+        args.username = get_service_user_from_input(args.service, args.username, vault)
         if not args.username:
             print(f'Could not validate username for service {args.service}, exiting.')
             return False
 
         logger.debug('Successfully validated service and username input')
+
+    ## If importing credentials from a file, provide temp args
+    ##      to meet arg requirements for add action
+    if action == 'add' and args.file:
+        args.username = 'file'
+        args.password = 'file'
+        args.service = 'file'
 
 
     ## Gather any other missing args that can't be validated, if needed

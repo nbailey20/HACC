@@ -1,5 +1,4 @@
 import hacc_vars
-from hacc_core import get_kms_arn, aws_call
 import boto3, subprocess, time
 
 def eradicate(args):

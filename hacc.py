@@ -1,12 +1,13 @@
-from hacc_input import parse_args, eval_args, validate_args_for_action
+from input.hacc_input import parse_args, eval_args, validate_args_for_action
+
 from hacc_search import search
 from hacc_add import add
 from hacc_delete import delete
 from hacc_install import install
-from hacc_uninstall import eradicate
+from hacc_eradicate import eradicate
 from hacc_backup import backup
-import logging
 
+import logging
 
  ## Configure logger
 logging.basicConfig()

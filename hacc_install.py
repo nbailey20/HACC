@@ -1,100 +1,5 @@
 import hacc_vars
-import boto3, subprocess, json
-from hacc_core import aws_call, VaultInstallation
-
-VAULT_IAM_PERMS = """
-{
-    "Version": "2012-10-17",
-    "Statement": [
-        {
-            "Effect": "Allow",
-            "Action": [
-                "ssm:DescribeParameters",
-                "ssm:GetParameter",
-                "ssm:GetParametersByPath",
-                "ssm:DeleteParameter*",
-                "ssm:PutParameter"
-            ],
-            "Resource": [
-                "%s",
-                "%s"
-            ]
-        },
-        {
-            "Effect": "Allow",
-            "Action": [
-                "kms:Encrypt",
-                "kms:Decrypt",
-                "kms:DescribeKey"
-            ],
-            "Resource": "%s"
-        }
-    ]
-}
-"""
-
-VAULT_SCP = """
-{
-    "Version": "2012-10-17",
-    "Statement": [
-        {
-            "Effect": "Deny",
-            "Action": [
-                "ssm:DescribeParameters",
-                "ssm:GetParameter*",
-                "ssm:GetParametersByPath",
-                "ssm:DeleteParameter*",
-                "ssm:PutParameter"
-            ],
-            "Resource": [
-                "%s",
-                "%s"
-            ],
-            "Condition": {
-                "StringNotLike": {
-                    "aws:PrincipalARN": "%s"
-                }
-            }
-        },
-        {
-            "Effect": "Deny",
-            "Action": [
-                "kms:Encrypt",
-                "kms:Decrypt",
-                "kms:DescribeKey"
-            ],
-            "Resource": "%s",
-            "Condition": {
-                "StringNotLike": {
-                    "aws:PrincipalARN": "%s"
-                }
-            }
-        }
-    ]
-}
-"""
-
-## Adds a new profile to AWS credentials/config file
-def create_hacc_profile(access_key_id, secret_access_key, debug):
-
-    aws_config_region = subprocess.run(['aws', 'configure', 'set', 
-        'region', hacc_vars.aws_hacc_region, 
-        '--profile', hacc_vars.aws_hacc_uname]
-    )
-    if debug: print('INFO: Successfully wrote vault AWS region to profile')
-
-    aws_config_access = subprocess.run(['aws', 'configure', 'set', 
-        'aws_access_key_id', access_key_id, 
-        '--profile', hacc_vars.aws_hacc_uname]
-    )
-    if debug: print('INFO: Successfully wrote vault AWS access key to profile')
-
-    aws_config_secret = subprocess.run(['aws', 'configure', 'set', 
-        'aws_secret_access_key', secret_access_key, 
-        '--profile', hacc_vars.aws_hacc_uname]
-    )
-    if debug: print('INFO: Successfully wrote vault AWS secret key to profile')
-    return
+from classes.vault_installation import VaultInstallation
 
     
 
@@ -144,58 +49,65 @@ def install(args):
     #     TargetKeyId=hacc_kms['KeyMetadata']['Arn']
     # )
 
-    aws_call(
-        iam, 'create_user', debug, 
-        UserName=hacc_vars.aws_hacc_uname
-    )
+    vault.create_user_with_policy()
 
-    hacc_creds = aws_call(
-                    iam, 'create_access_key', debug, 
-                    UserName=hacc_vars.aws_hacc_uname
-                )
+    # aws_call(
+    #     iam, 'create_user', debug, 
+    #     UserName=hacc_vars.aws_hacc_uname
+    # )
 
-    create_hacc_profile(
-        hacc_creds['AccessKey']['AccessKeyId'], 
-        hacc_creds['AccessKey']['SecretAccessKey'], 
-        debug
-    )
+    # hacc_creds = aws_call(
+    #                 iam, 'create_access_key', debug, 
+    #                 UserName=hacc_vars.aws_hacc_uname
+    #             )
 
-    vault_path_arn = 'arn:aws:ssm:{region}:{account}:parameter/{path}'.format(
-                        region=hacc_vars.aws_hacc_region, 
-                        account=account,
-                        path=hacc_vars.aws_hacc_param_path
-                    )
-    vault_key_arn = hacc_kms['KeyMetadata']['Arn']
+    # create_hacc_profile(
+    #     hacc_creds['AccessKey']['AccessKeyId'], 
+    #     hacc_creds['AccessKey']['SecretAccessKey'], 
+    #     debug
+    # )
 
-    user_perms = json.loads(VAULT_IAM_PERMS % (vault_path_arn, vault_path_arn+'/*', vault_key_arn))
-    aws_call(
-        iam, 'put_user_policy', debug, 
-        UserName=hacc_vars.aws_hacc_uname,
-        PolicyName=hacc_vars.aws_hacc_iam_policy,
-        PolicyDocument=json.dumps(user_perms)
-    )
+    # vault_path_arn = 'arn:aws:ssm:{region}:{account}:parameter/{path}'.format(
+    #                     region=hacc_vars.aws_hacc_region, 
+    #                     account=account,
+    #                     path=hacc_vars.aws_hacc_param_path
+    #                 )
+    # vault_key_arn = hacc_kms['KeyMetadata']['Arn']
 
-    iam_user_arn = 'arn:aws:iam::*:user/{}'.format(hacc_vars.aws_hacc_uname)
-    scp = json.loads(VAULT_SCP % (vault_path_arn, 
-                                vault_path_arn+'/*',
-                                iam_user_arn,
-                                vault_key_arn,
-                                iam_user_arn)
-                    )
-    hacc_scp = aws_call(
-                orgs, 'create_policy', debug,
-                Content=json.dumps(scp),
-                Name=hacc_vars.aws_hacc_scp,
-                Description='SCP for HACC',
-                Type='SERVICE_CONTROL_POLICY'
-            )
+    # user_perms = json.loads(VAULT_IAM_PERMS % (vault_path_arn, vault_path_arn+'/*', vault_key_arn))
+    # aws_call(
+    #     iam, 'put_user_policy', debug, 
+    #     UserName=hacc_vars.aws_hacc_uname,
+    #     PolicyName=hacc_vars.aws_hacc_iam_policy,
+    #     PolicyDocument=json.dumps(user_perms)
+    # )
 
-    aws_call(
-        orgs, 'attach_policy', debug,
-        PolicyId=hacc_scp['Policy']['PolicySummary']['Id'],
-        TargetId=account
-    )
+    if not hacc_vars.create_scp:
+        print('Single-account Vault setup complete.')
+        return
+
+    ## TODO: create SCP 
+    # iam_user_arn = 'arn:aws:iam::*:user/{}'.format(hacc_vars.aws_hacc_uname)
+    # scp = json.loads(VAULT_SCP % (vault_path_arn, 
+    #                             vault_path_arn+'/*',
+    #                             iam_user_arn,
+    #                             vault_key_arn,
+    #                             iam_user_arn)
+    #                 )
+    # hacc_scp = aws_call(
+    #             orgs, 'create_policy', debug,
+    #             Content=json.dumps(scp),
+    #             Name=hacc_vars.aws_hacc_scp,
+    #             Description='SCP for HACC',
+    #             Type='SERVICE_CONTROL_POLICY'
+    #         )
+
+    # aws_call(
+    #     orgs, 'attach_policy', debug,
+    #     PolicyId=hacc_scp['Policy']['PolicySummary']['Id'],
+    #     TargetId=account
+    # )
     
 
-    print('Vault setup complete.')
+    print('Organizational Vault setup complete with SCP.')
     return
