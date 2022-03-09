@@ -14,17 +14,16 @@ def add_credential_for_service(vault_obj, service_name, user, passwd):
         return
 
     service_obj.push_to_vault()
-    print('Successfully added credential to Vault.')
+    print(f'Successfully added new username {user} for service {service_name}.')
     return
 
 
 
 def add(args):
-    print('Adding new credential...')
-
     vault = Vault()
 
     if args.file:
+        print('Importing credentials from backup file...')
         creds_list = vault.parse_import_file(args.file)
 
         if not creds_list:
@@ -35,6 +34,8 @@ def add(args):
             add_credential_for_service(vault, cred['service'], cred['username'], cred['password'])
 
     else:
+        print('Adding new credential...')
+
         service_name = args.service
         user = args.username
         password = args.password

@@ -15,8 +15,8 @@ def delete(args):
         return
 
     local_service.push_to_vault()
-    print('Successfully deleted credential from Vault.')
-    
+    print(f'Successfully deleted username {user} from service {service_name}.')
+
     if not bool(local_service.credentials):
         print(f'No more credentials for service {service_name}.')
     return

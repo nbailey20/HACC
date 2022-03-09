@@ -12,12 +12,12 @@ logger=logging.getLogger()
 ##      ssm, boto3 client obj
 ##      kms, boto3 client obj
 ##      iam, boto3 client obj
+##      sts, boto3 client obj
+##      org, boto3 client obj
+##
 class AwsClient:
 
-    def __init__(self, 
-                    client_type = 'data',
-                    create_scp = True
-                ):
+    def __init__(self, client_type='data', create_scp=True):
 
         ## If API client is for data operations, only need SSM and KMS clients
         if client_type == 'data':

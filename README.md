@@ -7,7 +7,7 @@ HACC is an open-source credential manager command-line tool that uses your perso
 * Encrypted with AWS KMS Customer-Managed Key so only you can decrypt
 * Up to 40MB of encrypted data costs $1/month (only cost is the key)
 
-Current Version: v0.5
+Current Version: v0.6
 
 ## Current Features
 
@@ -23,13 +23,14 @@ Current Version: v0.5
 * Checks for existing services and usernames before adding/deleting credentials
 * Completely locks down operations on credential parameters to hacc-user so nobody else can read/delete by unintentionally - via SCP applied to member account
 * Backup entire vault to file
+* Ability to provide backup file for new vault install or add to existing vault, "--file" subarg
 * Cleanly exit at any point with ctrl-c
 
 
 ## hacc -h
 ```
-HACC v0.5
-usage: hacc [-h] [-i | -e | -a | -d | -b] [-u USERNAME] [-p PASSWORD] [-g] [-o OUTFILE] [-v] [service]
+HACC v0.6
+usage: hacc [-h] [-i | -e | -a | -d | -b] [-u USERNAME] [-p PASSWORD] [-g] [-f FILE] [-w] [-v] [service]
 
 Homemade Authentication Credential Client - HACC
 
@@ -43,8 +44,8 @@ optional arguments:
   -p PASSWORD, --password PASSWORD
                         Password for new credentials, used with add action
   -g, --generate        Generate random password for add operation
-  -o OUTFILE, --outfile OUTFILE
-                        File name to use for backup operation
+  -f FILE, --file FILE  File name for importing credentials and backing up Vault
+  -w, --wipe            Wipe all existing credentials during Vault eradication
   -v, --verbose         Display verbose output
 
 Actions:
@@ -69,7 +70,6 @@ Sample Usage:
 * Error handling for install/eradicate and idempotency
 * 'configure' (in addition to install) keyword to grant additional devices access to Vault
 * Make SCP optional for single-account deployments not part of an org
-* Ability to provide backup file for new vault install or add to existing vault, "--file" subarg
 * Generate better passwords
 * Confirm user doesn't already exist for add action before asking for password if not provided
 * Check that all required config variables for action are in hacc_vars file at start

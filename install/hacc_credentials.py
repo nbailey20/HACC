@@ -1,4 +1,4 @@
-import subprocess
+import subprocess, os
 import hacc_vars
 
 
@@ -14,36 +14,116 @@ def hacc_profile_exists():
     if vault_user_region.returncode != 0:
         return False
     return True
+    
 
 
 ## Adds a new profile to AWS credentials/config file
 ## Returns True if profile successfully saved, False otherwise
 def create_hacc_profile(access_key_id, secret_access_key):
 
-    try:
-        aws_config_region = subprocess.run(['aws', 'configure', 'set', 
-            'region', hacc_vars.aws_hacc_region, 
-            '--profile', hacc_vars.aws_hacc_uname]
-        )
-        
-        aws_config_access = subprocess.run(['aws', 'configure', 'set', 
-            'aws_access_key_id', access_key_id, 
-            '--profile', hacc_vars.aws_hacc_uname]
-        )
+    aws_config_region = subprocess.run(['aws', 'configure', 'set', 
+        'region', hacc_vars.aws_hacc_region, 
+        '--profile', hacc_vars.aws_hacc_uname]
+    )
 
-        aws_config_secret = subprocess.run(['aws', 'configure', 'set', 
-            'aws_secret_access_key', secret_access_key, 
-            '--profile', hacc_vars.aws_hacc_uname]
-        )
-
-        return True
-    
-    except:
+    if aws_config_region.returncode != 0:
         return False
+
+    
+    aws_config_access = subprocess.run(['aws', 'configure', 'set', 
+        'aws_access_key_id', access_key_id, 
+        '--profile', hacc_vars.aws_hacc_uname]
+    )
+
+    if aws_config_access.returncode != 0:
+        return False
+
+    aws_config_secret = subprocess.run(['aws', 'configure', 'set', 
+        'aws_secret_access_key', secret_access_key, 
+        '--profile', hacc_vars.aws_hacc_uname]
+    )
+
+    if aws_config_secret.returncode != 0:
+        return False
+
+    return True
 
 
 
 ## Removes an existing profile from AWS credentials/config file
 ## Returns True if profile successfully removed, False otherwise
+## No way to completely remove AWS profile using aws configure, clean up manually
 def delete_hacc_profile():
+    creds_file_location = '~/.aws/credentials'
+    config_file_location = '~/.aws/config'
+
+    ## Check if credentials or config files located in non-default location
+    if 'AWS_SHARED_CREDENTIALS_FILE' in os.environ:
+        creds_file_location = os.environ['AWS_SHARED_CREDENTIALS_FILE']
+
+    if 'AWS_CONFIG_FILE' in os.environ:
+        config_file_location = os.environ['AWS_CONFIG_FILE']
+
+    try:
+        f = open(creds_file_location, 'r')
+        creds_file_contents = f.readlines()
+        f.close()
+
+        f = open(config_file_location, 'r')
+        config_file_contents = f.readlines()
+        f.close()
+    except:
+        return False
+
+
+    ## Find hacc profile lines in credentials file and remove
+    start_profile = f'[{hacc_vars.aws_hacc_uname}]'
+    deleting = False
+    idx = 0
+    while idx < len(creds_file_contents):
+        if creds_file_contents[idx].rstrip() == start_profile:
+            deleting = True
+            creds_file_contents.pop(idx)
+
+        ## reached start of next profile, done deleting
+        if creds_file_contents[idx].startswith('[') and deleting:
+            break
+
+        if deleting:
+            creds_file_contents.pop(idx)
+        else:
+            idx += 1
+
+    
+    ## Find hacc profile lines in config file and remove
+    start_profile = f'[profile {hacc_vars.aws_hacc_uname}]'
+    deleting = False
+    idx = 0
+    while idx < len(config_file_contents):
+        if config_file_contents[idx].rstrip() == start_profile:
+            deleting = True
+            config_file_contents.pop(idx)
+
+        ## reached start of next profile, done deleting
+        if config_file_contents[idx].startswith('[') and deleting:
+            break
+
+        if deleting:
+            config_file_contents.pop(idx)
+        else:
+            idx += 1
+
+
+    ## Write updated content back to files
+    try:
+        f = open(creds_file_location, 'w')
+        f.write(''.join(creds_file_contents))
+        f.close()
+
+        f = open(config_file_location, 'w')
+        f.write(''.join(config_file_contents))
+        f.close()
+    except:
+        return False
+
     return True

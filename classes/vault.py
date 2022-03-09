@@ -22,11 +22,10 @@ logger=logging.getLogger()
 ##      parse_import_file
 ##          
 class Vault:
-    ## Return all service names stored in Vault
-    def get_all_services(self):
-        ssm = self.aws_client.ssm
-        all_svc_list = []
 
+    ## Return all service names stored in Vault
+    ## Returns False if failure
+    def get_all_services(self):
         logger.debug('Retrieving service names from Vault')
 
         curr_params = self.aws_client.call(
@@ -34,7 +33,12 @@ class Vault:
                         Path = '/'+hacc_vars.aws_hacc_param_path,
                         WithDecryption = False
                     )
-        all_svc_list += curr_params['Parameters']
+        
+        if not curr_params:
+            logger.debug('Failed to pull Vault services')
+            return False
+
+        all_svc_list = curr_params['Parameters']
         
         # check for NextToken='string' in response, only returns <= 10 parameters per call
         while 'NextToken' in curr_params:
@@ -58,7 +62,6 @@ class Vault:
 
     ## Return True if service exists in Vault, False otherwise
     def service_exists(self, service):
-        ssm = self.aws_client.ssm
         all_svcs = self.get_all_services()
         if service in all_svcs:
             return True
@@ -67,9 +70,8 @@ class Vault:
 
 
     ## Returns KMS ARN used to encrypt Vault credentials
-    ## Returns None if no KMS key exists
+    ## Returns False if failure to get key
     def get_kms_arn(self):
-        kms = self.aws_client.kms
         kms_alias = hacc_vars.aws_hacc_kms_alias
 
         logger.debug(f'Retrieving Vault encryption key')
@@ -81,7 +83,7 @@ class Vault:
                             )['KeyMetadata']['Arn']
             return hacc_kms_arn
         except:
-            return None
+            return False
 
 
     ## Returns a list of credentials read from a Vault backup output file
