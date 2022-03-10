@@ -57,7 +57,11 @@ VAULT_SCP = """
             "Action": [
                 "kms:Encrypt",
                 "kms:Decrypt",
-                "kms:DescribeKey"
+                "kms:ScheduleKeyDeletion",
+                "kms:DisableKey",
+                "kms:DeleteAlias",
+                "kms:GenerateDataKey*",
+                "kms:CreateGrant"
             ],
             "Resource": "%s",
             "Condition": {

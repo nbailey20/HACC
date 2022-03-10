@@ -37,8 +37,8 @@ class AwsClient:
                                                 RoleSessionName="HaccInstallSession"
                                             )
                 role_creds = assumed_role_object['Credentials']
-                aws_access_key_id = role_creds['AccessKeyId'],
-                aws_secret_access_key = role_creds['SecretAccessKey'],
+                aws_access_key_id = role_creds['AccessKeyId']
+                aws_secret_access_key = role_creds['SecretAccessKey']
                 aws_session_token = role_creds['SessionToken']
 
                 self.iam = boto3.client('iam',
@@ -47,6 +47,11 @@ class AwsClient:
                                         aws_session_token = aws_session_token
                                     )
                 self.kms = boto3.client('kms', region_name = hacc_vars.aws_hacc_region,
+                                            aws_access_key_id = aws_access_key_id,
+                                            aws_secret_access_key = aws_secret_access_key,
+                                            aws_session_token = aws_session_token
+                                        )
+                self.sts = boto3.client('sts', region_name = hacc_vars.aws_hacc_region,
                                             aws_access_key_id = aws_access_key_id,
                                             aws_secret_access_key = aws_secret_access_key,
                                             aws_session_token = aws_session_token
@@ -64,7 +69,9 @@ class AwsClient:
     ## Execute generic AWS API call with basic error handling
     ## Returns result of api call, or False if call failed
     def call(self, client_type, api_name, **kwargs):
-        client = self.ssm
+        client = None
+        if client_type == 'ssm':
+            client = self.ssm
         if client_type == 'kms':
             client = self.kms
         if client_type == 'sts':
@@ -77,7 +84,7 @@ class AwsClient:
         try:
             method_to_call = getattr(client, api_name)
         except:
-            print(f'ERROR: API {api_name} not known for {client_type} client, exiting')
+            print(f'API {api_name} not known for {client_type} client, exiting')
             return False
 
         try:
@@ -87,5 +94,5 @@ class AwsClient:
             return result
 
         except Exception as e:
-            print(f'ERROR: API call failed, exiting: {e}')
+            print(f'API call failed, exiting: {e}')
             return False

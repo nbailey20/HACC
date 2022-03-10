@@ -22,6 +22,7 @@ def add_credential_for_service(vault_obj, service_name, user, passwd):
 def add(args):
     vault = Vault()
 
+    ## Import credentials from provided filename
     if args.file:
         print('Importing credentials from backup file...')
         creds_list = vault.parse_import_file(args.file)
@@ -33,6 +34,8 @@ def add(args):
         for cred in creds_list:
             add_credential_for_service(vault, cred['service'], cred['username'], cred['password'])
 
+
+    ## Add single credential via CLI arguments
     else:
         print('Adding new credential...')
 

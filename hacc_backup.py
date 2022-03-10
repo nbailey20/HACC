@@ -2,9 +2,6 @@
 from classes.hacc_service import HaccService
 from classes.vault import Vault
 import json
-import logging
-
-logger=logging.getLogger()
 
 
 ## Creates new backup file with entire Vault contents

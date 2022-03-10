@@ -29,13 +29,15 @@ HACC_VERSION = 'v0.6'
 
 def main():
     print(f'HACC {HACC_VERSION}')
+    print()
 
     try:
+        ## Parse and evaluate provided args
         args = parse_args()
-
         if not eval_args(args):
             return 
 
+        ## Setting logging level
         if args.debug:
             logger.setLevel(logging.DEBUG)
         else:
@@ -43,10 +45,10 @@ def main():
 
         logger.debug(f'Initial args provided: {args}')
 
+        ## Validate args before passing to action
         valid_args = validate_args_for_action(args)
         if not valid_args:
             return False
-
         logger.debug(f'Validated input args: {valid_args}')
 
         ## Call appropriate function for action

@@ -315,11 +315,19 @@ def missing_args_for_action(args):
 ## Returns False if args cannot be gathered or input not valid
 def validate_args_for_action(args):
     action = args.action
+    
+
+    # ## Handle empty Vault scenario
+    # if len(vault.get_all_services()) == 0:
+    #     if action == 'search' or action == 'delete' or action == 'backup':
+    #         print('Vault is curently empty, add a service credential with `hacc add`')
+    #         return False
+
 
     ## Validate service and username input where possible
     if action == 'search' or action == 'delete':
         vault = Vault()
-
+        
         args.service = get_service_name_from_input(args.service, vault)
         if not args.service:
             print('Could not validate service name, exiting.')

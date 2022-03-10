@@ -1,111 +1,78 @@
 import hacc_vars
 from classes.vault_installation import VaultInstallation
-import boto3, subprocess, time
+from classes.vault import Vault
+from hacc_delete import delete
+import time
+
+
 
 def eradicate(args):
-    print('WARNING, this operation schedules master key deletion for all credentials.')
-    print('If you continue, you have up to 7 days to manually disable deletion or credentials can never be decrypted')
-    proceed = True if input('Are you sure you want to proceed (y/n)? ') == 'y' else False
-    if not proceed:
-        print('Aborting.')
-        return
 
-    ## TODO: check for args.wipe and delete all creds if so
+    vault = Vault()
+    if len(vault.get_all_services()) != 0:
+
+        ## Print scary message to prevent accidental deletion
+        if args.wipe:
+            print('This operation will delete ALL Vault credentials.')
+            print('If you continue the credentials will be gone forever!')
+        else:
+            print('This operation schedules master key deletion for all credentials.')
+            print('If you continue, you have up to 7 days to manually disable deletion or credentials can never be decrypted!')
         
+        proceed = True if input('Are you sure you want to proceed (y/n)? ') == 'y' else False
+        if not proceed:
+            print('Aborting.')
+            return
+
+        ## Wipe all credentials before Vault deletion
+        if args.wipe:
+            delete(args)
+            time.sleep(5)
+            if len(vault.get_all_services()) != 0:
+                print('Failed to delete all credentials from Vault, aborting eradication due to wipe argument')
+                return
+
+
+    ## Vault already empty, less scary of a warning :)
+    else:
+        proceed = True if input('Are you sure you want to remove empty Vault (y/n)? ') == 'y' else False
+        if not proceed:
+            print('Aborting.')
+            return
+
+
+    ## Delete Vault
+    print()
     print('Eradicating Vault...')
+    total_resources_to_destroy = 3 if hacc_vars.create_scp else 2
 
     eradicate = VaultInstallation()
 
     if hacc_vars.create_scp:
         eradicate.delete_scp()
 
+    if eradicate.scp:
+        print('Cannot continue eradicating vault until SCP is removed')
+        print('Retry to attempt to resume eradication')
+        return
+
     eradicate.delete_cmk()
-
     eradicate.delete_user()
-    # # arn:aws:iam::account:role/name
-    # account = hacc_vars.aws_member_role.split(':')[4]                
-    # orgs = boto3.client('organizations')
-    # debug = args.debug
 
-    # # Find and remove SCP before deleting vault resources
-    # scp_list = aws_call(
-    #     orgs, 'list_policies_for_target', debug,
-    #     TargetId=account,
-    #     Filter='SERVICE_CONTROL_POLICY'
-    # )['Policies']
 
-    # hacc_scp_id = [x['Id'] for x in scp_list if x['Name'] == hacc_vars.aws_hacc_scp][0]
-    # if debug: print('INFO: found SCP for Vault with id {}'.format(hacc_scp_id))
+    ## Determine how many resources were destroyed during the eradication
+    num_resources_destroyed = len([x for x in [eradicate.cmk, eradicate.user, eradicate.scp] if x == None])
+    if not hacc_vars.create_scp:
+        num_resources_destroyed -= 1
+        
+    print()
+    print(f'{num_resources_destroyed}/{total_resources_to_destroy} Vault components destroyed')
 
-    # aws_call(
-    #     orgs, 'detach_policy', debug,
-    #     PolicyId=hacc_scp_id,
-    #     TargetId=account
-    # )
+    if num_resources_destroyed != total_resources_to_destroy:
+        print('Vault eradication finished but not all resources successfully destroyed')
+        print('  Retry to attempt to complete eradication')
+        return
 
-    # aws_call(
-    #     orgs, 'delete_policy', debug,
-    #     PolicyId=hacc_scp_id
-    # )
-
-    # # Give SCP deletion time to take effect ('immediate' per AWS docs is not good enough :)
-    # if debug: print('INFO: Waiting 10 seconds for SCP to fully delete')
-    # time.sleep(10)
-
-    # # Assume role in member account with mgmt account creds
-    # sts = boto3.client('sts')
-    # assumed_role_object=sts.assume_role(
-    #     RoleArn=hacc_vars.aws_member_role,
-    #     RoleSessionName="HaccEradicateSession"
-    # )
-    # role_creds = assumed_role_object['Credentials']
-
-    # iam = boto3.client('iam',
-    #                     aws_access_key_id=role_creds['AccessKeyId'],
-    #                     aws_secret_access_key=role_creds['SecretAccessKey'],
-    #                     aws_session_token=role_creds['SessionToken']
-    #                     )
-    # kms = boto3.client('kms', region_name=hacc_vars.aws_hacc_region,
-    #                             aws_access_key_id=role_creds['AccessKeyId'],
-    #                             aws_secret_access_key=role_creds['SecretAccessKey'],
-    #                             aws_session_token=role_creds['SessionToken']
-    #                     )
-
-    # hacc_key_id = get_kms_arn(kms)
-    # aws_call(
-    #     kms, 'schedule_key_deletion', debug, 
-    #     KeyId=hacc_key_id,
-    #     PendingWindowInDays=7
-    # )
-
-    # aws_call(
-    #     kms, 'delete_alias', debug, 
-    #     AliasName='alias/{key}'.format(key=hacc_vars.aws_hacc_kms_alias)
-    # )
-
-    aws_call(
-        iam, 'delete_user_policy', debug, 
-        UserName=hacc_vars.aws_hacc_uname,
-        PolicyName=hacc_vars.aws_hacc_iam_policy
-    )
-
-    aws_access_key = subprocess.run(['aws', 'configure', 'get', 
-        'aws_access_key_id', '--profile', hacc_vars.aws_hacc_uname],
-        capture_output=True, text=True
-    )
-    aws_access_key = aws_access_key.stdout.strip()
-    if args.debug: print('INFO: Retrieved saved AWS user access key')
-    aws_call(
-        iam, 'delete_access_key', debug, 
-        UserName=hacc_vars.aws_hacc_uname,
-        AccessKeyId=aws_access_key
-    )
-
-    aws_call(
-        iam, 'delete_user', debug, 
-        UserName=hacc_vars.aws_hacc_uname,
-    )
-
-    ## Remove profile from ~/.aws/config and credentials! read/regex/write Python
-    print('Vault has been eradicated.')
+    print()
+    print('Successfully completed Vault eradication.')
     return

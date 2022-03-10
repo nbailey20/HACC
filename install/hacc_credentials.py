@@ -14,7 +14,23 @@ def hacc_profile_exists():
     if vault_user_region.returncode != 0:
         return False
     return True
-    
+
+
+
+## Returns AWS access key ID for Vault user from credentials file
+## Returns False if no access key found
+def get_hacc_access_key():
+    aws_access_key_obj = subprocess.run(['aws', 'configure', 'get', 
+                                    'aws_access_key_id', '--profile', 
+                                    hacc_vars.aws_hacc_uname],
+                                    capture_output=True, text=True
+                                )
+    aws_access_key = aws_access_key_obj.stdout.strip()
+
+    ## Return code 255 if credential not found
+    if aws_access_key_obj.returncode != 0:
+        return False
+    return aws_access_key
 
 
 ## Adds a new profile to AWS credentials/config file
