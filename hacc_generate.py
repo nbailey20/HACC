@@ -1,7 +1,7 @@
 import secrets ## random library unsuitable to cryptographic purposes
 
-NUM_CHAR_SWAPS = 3
-NUM_WORDS_IN_PASS = 4
+MAX_CHAR_SWAPS = 5 ## Max number of character substitions to make in password
+NUM_WORDS_IN_PASS = 4 ## XKCD-style passwords
 WORDLIST_FILE = 'wordlist.txt'
 
 DIGIT_CHAR_MAP = {
@@ -32,13 +32,19 @@ def sub_chars(password, char_map, num_subs):
     num_pass_chars = len(pass_chars)
 
     subs_made = 0
-    while subs_made < num_subs:
+    max_attempts = 10000
+    num_attempts = 0
+    ## if we can't find a char to sub after 10000 attempts, give up
+    while subs_made < num_subs and num_attempts < max_attempts:
+        
         ## choose random char in password
         random_int = secrets.randbelow(num_pass_chars)
         random_char = pass_chars[random_int]
         if random_char in char_map:
             pass_chars[random_int] = char_map[random_char]
             subs_made += 1
+
+        num_attempts += 1
 
     new_pass = ''.join(pass_chars)
     return {
@@ -72,9 +78,10 @@ def generate_password():
     
     password = ''.join(pass_words)
 
-    ## Sub some letters with special chars / digits
-    num_digit_swaps = secrets.randbelow(NUM_CHAR_SWAPS+1)
-    num_special_swaps = NUM_CHAR_SWAPS - num_digit_swaps
+    ## Sub random number of letters with special chars / digits
+    num_char_swaps = secrets.randbelow(MAX_CHAR_SWAPS+1)
+    num_digit_swaps = secrets.randbelow(num_char_swaps+1)
+    num_special_swaps = num_char_swaps - num_digit_swaps
 
     sub_obj = sub_chars(password, DIGIT_CHAR_MAP, num_digit_swaps)
     ## If not enough digit subs available, try to make extra special subs
