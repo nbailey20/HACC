@@ -65,6 +65,7 @@ def get_password_for_credential(user_requested_generate):
             print(f'Generated password: {proposed_password}')
             if input('Use this password (y/n)? ').lower() == 'y':
                 credential_password = proposed_password
+                print()
                 break
             print()
 

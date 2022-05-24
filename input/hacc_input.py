@@ -29,6 +29,11 @@ ALLOWED_FLAGS = {
         'action':  'delete',
         'help':    'Delete credentials in Vault',
     },
+    'rotate': {
+        's_flag':  '-r',
+        'action':  'rotate',
+        'help':    'Rotate existing password in Vault',
+    },
     'backup': {
         's_flag':  '-b',
         'action':  'backup',
@@ -73,6 +78,7 @@ ACTION_ALLOWED_SUBARGS = {
     'eradicate': ['debug', 'wipe'],
     'add': ['debug', 'service', 'username', 'password', 'generate', 'file'],
     'delete': ['debug', 'service', 'username'],
+    'rotate': ['debug', 'service', 'username', 'password', 'generate'],
     'search': ['debug', 'service', 'username'],
     'backup': ['debug', 'file']
 }
@@ -83,6 +89,9 @@ ACTION_INCOMPATABLE_SUBARGS = {
         ['username', 'file'],
         ['password', 'file'],
         ['service', 'file']
+    ],
+    'rotate': [
+        ['password', 'generate']
     ]
 }
 
@@ -91,6 +100,7 @@ ACTION_REQUIRED_SUBARGS = {
     'eradicate': [],
     'add': ['service', 'username', 'password'],
     'delete': ['service', 'username'],
+    'rotate': ['service', 'username', 'password'],
     'search': ['service', 'username'],
     'backup': ['file']
 }

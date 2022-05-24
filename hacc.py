@@ -3,6 +3,7 @@ from input.hacc_input import parse_args, eval_args, validate_args_for_action
 from hacc_search import search
 from hacc_add import add
 from hacc_delete import delete
+from hacc_rotate import rotate
 from hacc_install import install
 from hacc_eradicate import eradicate
 from hacc_backup import backup
