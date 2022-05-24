@@ -6,7 +6,7 @@ def rotate(args):
     delete(args)
 
     print()
-    print('Sleeping for 3 seconds before updating password...')
+    print('Sleeping for 3 seconds to fully delete before updating...')
     time.sleep(3)
     print()
 
