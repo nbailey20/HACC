@@ -70,8 +70,20 @@ def create_hacc_profile(access_key_id, secret_access_key):
 ## Returns True if profile successfully removed, False otherwise
 ## No way to completely remove AWS profile using aws configure, clean up manually
 def delete_hacc_profile():
-    creds_file_location = '~/.aws/credentials'
-    config_file_location = '~/.aws/config'
+    creds_file_location = ''
+    config_file_location = ''
+
+    ## check for windows system
+    if 'USERPROFILE' in os.environ:
+        creds_file_location = os.environ['USERPROFILE'] + '\.aws\credentials'
+        config_file_location = os.environ['USERPROFILE'] + '\.aws\config'
+    ## check for linux/mac
+    elif 'HOME' in os.environ:
+        creds_file_location = os.environ['HOME'] + '/.aws/credentials'
+        config_file_location = os.environ['HOME'] + '/.aws/config'
+    else:
+        return False
+
 
     ## Check if credentials or config files located in non-default location
     if 'AWS_SHARED_CREDENTIALS_FILE' in os.environ:

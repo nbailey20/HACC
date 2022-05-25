@@ -1,3 +1,4 @@
+from hacc_core import startup
 from input.hacc_input import parse_args, eval_args, validate_args_for_action
 
 from hacc_search import search
@@ -33,8 +34,12 @@ def main():
     print()
 
     try:
-        ## Parse and evaluate provided args
+        ## Parse args, ensure required config vars for action are set
         args = parse_args()
+        if not startup(args.action):
+            return
+
+        ## Ensure args are valid for action
         if not eval_args(args):
             return 
 
@@ -46,7 +51,7 @@ def main():
 
         logger.debug(f'Initial args provided: {args}')
 
-        ## Validate args before passing to action
+        ## Validate input/gather any remaining args before passing to action
         valid_args = validate_args_for_action(args)
         if not valid_args:
             return False

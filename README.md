@@ -19,7 +19,8 @@ Current Version: v0.6
 * Delete service and associated credentials from vault
 * Return specific or all credentials for service by 'haccing' it
 * Use existing AWS CLI credentials to create new least-privilege vault user and KMS CMK, saved credentials as new HACC profile
-* Eradicate action to remove IAM, KMS resources and optionally credentials
+* Eradicate action to remove IAM, KMS resources and optionally all Vault credentials
+* Fully wipe any sign of hacc AWS profile from local credentials/config files once Vault eradicated
 * Checks for existing services and usernames before adding/deleting credentials
 * AWS Organization mode locks down operations on credential parameters to hacc-user so nobody else can read/delete by unintentionally - via optional SCP applied to member account containing Vault (requires adequate role in org to apply SCPs)
 * Backup entire vault to file
@@ -68,9 +69,13 @@ Sample Usage:
 ```
 
 ## Future Needs
-* Fully wipe any sign of hacc AWS profile from credentials/config file once vault eradicated
 * Support for services with more than 4KB of credentials via multiple parameters per service
-* Error handling for install/eradicate and idempotency
+* Error handling for install/eradicate and idempotency, other actions if Vault not setup
 * 'configure' (as opposed to install) keyword to grant additional devices access to existing Vault
+    * encrypt hacc_vars file to be provided to additional user as config file
 * Confirm user doesn't already exist for add action before asking for password if not provided
-* Check that all required config variables for action are in hacc_vars file at start
+* Test that all required config variables for action are valid
+* Set max password generation length for dumb sites --max-len
+* --no-specials and --no-numbers for password generation
+* Backup option --no-creds for usernames/services only
+* -y option to automate interactive questions
