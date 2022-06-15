@@ -21,7 +21,7 @@ def eradicate(args):
         
         proceed = True if input('Are you sure you want to proceed (y/n)? ') == 'y' else False
         if not proceed:
-            print('Aborting.')
+            print('Aborting, close one ;)')
             return
 
         ## Wipe all credentials before Vault deletion
@@ -29,7 +29,7 @@ def eradicate(args):
             delete(args)
             time.sleep(5)
             if len(vault.get_all_services()) != 0:
-                print('Failed to delete all credentials from Vault, aborting eradication due to wipe argument')
+                print('Failed to delete all credentials from Vault, aborting eradication due to user providing wipe argument')
                 return
 
 
@@ -51,13 +51,12 @@ def eradicate(args):
     if hacc_vars.create_scp:
         eradicate.delete_scp()
 
-    if eradicate.scp:
-        print('Cannot continue eradicating vault until SCP is removed')
-        print('Retry to attempt to resume eradication')
-        return
-
-    eradicate.delete_cmk()
     eradicate.delete_user()
+
+    if eradicate.scp:
+        print('Cannot delete Vault master key until SCP is removed')
+    else:
+        eradicate.delete_cmk()
 
 
     ## Determine how many resources were destroyed during the eradication

@@ -55,7 +55,7 @@ class VaultInstallation:
 
     ## Accepts key id to delete, or uses expected alias by default
     ## Returns True if delete successful or key doesn't exist
-    ## Unsets cmk attribute
+    ## Unsets cmk attribute of parent class
     ## Returns False if failed to delete key/alias
     def delete_cmk(self):
         print('Checking for existing KMS key')

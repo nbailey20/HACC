@@ -1,5 +1,6 @@
 import hacc_vars
 import boto3
+from botocore.exceptions import ClientError
 import logging
 
 logger=logging.getLogger()
@@ -93,6 +94,11 @@ class AwsClient:
             logger.debug(f'    {api_name} API execution successful') 
             return result
 
+        except ClientError as e:
+            if e.response['ResponseMetadata']['HTTPStatusCode'] == 403:
+                print('HACC is not authorized to perform {client_type} {api_name}, exiting')
+                return False
+
         except Exception as e:
-            print(f'API call failed, exiting: {e}')
+            print(f'API error, exiting: {e}')
             return False

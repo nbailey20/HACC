@@ -1,4 +1,3 @@
-#from hacc_core import HaccService
 from classes.hacc_service import HaccService
 import logging
 

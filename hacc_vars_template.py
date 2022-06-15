@@ -18,12 +18,12 @@ aws_hacc_param_path = 'hacc-vault'
 
 
 # Boolean to indicate whether optional SCP should be created to further lock down Vault account
-create_scp = True
+create_scp = False
 
 # Organizational SCP name that locks down Vault so only client can access
-## Mandatory if create_scp == True
-aws_hacc_scp = 'hacc-scp'
+## Mandatory if create_scp == True, UNCOMMENT LINE BELOW
+# aws_hacc_scp = 'hacc-scp'
 
 # Cross account role for member (vault) account accessible via mgmt account creds
-## Mandatory if create_scp == True
-aws_member_role = ''
+## Mandatory if create_scp == True, UNCOMMENT LINE BELOW
+# aws_member_role = ''

@@ -13,7 +13,7 @@ def install(args):
     install = VaultInstallation()
 
     if install.cmk or install.user:
-        print('  Resuming previous installation')
+        print('  Previous installation detected, resuming')
 
     if not install.cmk:
         install.create_cmk_with_alias()
@@ -22,11 +22,11 @@ def install(args):
         install.create_user_with_policy()
 
     if hacc_vars.create_scp:
-        ## Make sure all Vault resources created before applying SCP
-        if not install.cmk or not install.user:
-            print('Vault resources must be fully setup before SCP can be created.')
-            print('Retry to attempt to resume installation')
-            return
+        # ## Make sure all Vault resources created before applying SCP
+        # if not install.cmk or not install.user:
+        #     print('Vault resources must be fully setup before SCP can be created.')
+        #     print('Retry to attempt to resume installation')
+        #     return
         
         if not install.scp:
             install.create_scp()
@@ -38,11 +38,11 @@ def install(args):
     ## Determine how many resources were created during the install
     num_resources_created = len([x for x in [install.cmk, install.user, install.scp] if x != None])
     print()
-    print(f'{num_resources_created}/{total_resources_to_create} Vault components exist')
+    print(f'{num_resources_created}/{total_resources_to_create} Vault components ready')
 
     if num_resources_created != total_resources_to_create:
         print('Vault installation finished but not all resources successfully created')
-        print('  Enter command again to attempt to complete installation')
+        print('  Retry to attempt to resume installation')
         return
 
     print('Vault installation completed successfully.')
@@ -50,7 +50,7 @@ def install(args):
 
     ## If import file provided, add credentials to new Vault
     if args.file:
-        print('Pausing for 15 seconds to allow credentials to become active...')
+        print('Pausing for 15 seconds for Vault components to become active before importing credentials...')
         time.sleep(15)
         add(args)
         print()
