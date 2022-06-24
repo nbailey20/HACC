@@ -69,6 +69,11 @@ Sample Usage:
   hacc -e -v
 ```
 
+## Creating executable file from Python source
+```pyinstaller hacc.py```
+* Will create dist\hacc folder, add this directory to PATH env variable
+* Note: if rebuilding, first delete build and dist folders or errors may occur, and restart terminal after running command
+
 ## Future Needs
 * Support for services with more than 4KB of credentials via multiple parameters per service
 * 'configure' (as opposed to install) keyword to grant additional devices access to existing Vault
