@@ -1,12 +1,15 @@
-from hacc_input import parse_args, eval_args, validate_args_for_action
+from hacc_core import startup
+from input.hacc_input import parse_args, eval_args, validate_args_for_action
+
 from hacc_search import search
 from hacc_add import add
 from hacc_delete import delete
+from hacc_rotate import rotate
 from hacc_install import install
-from hacc_uninstall import eradicate
+from hacc_eradicate import eradicate
 from hacc_backup import backup
-import logging
 
+import logging
 
  ## Configure logger
 logging.basicConfig()
@@ -23,15 +26,25 @@ logger.handlers[0].setFormatter(logging.Formatter(
 ))
 
 
+HACC_VERSION = 'v0.6'
 
 
 def main():
-    try:
-        args = parse_args()
+    print(f'HACC {HACC_VERSION}')
+    print()
 
+    try:
+        ## Parse args, ensure required config vars for action are set
+        ##  and Vault setup properly for given action
+        args = parse_args()
+        if not startup(args):
+            return
+
+        ## Ensure args are valid for action
         if not eval_args(args):
             return 
 
+        ## Setting logging level
         if args.debug:
             logger.setLevel(logging.DEBUG)
         else:
@@ -39,10 +52,10 @@ def main():
 
         logger.debug(f'Initial args provided: {args}')
 
+        ## Validate input/gather any remaining args before passing to action
         valid_args = validate_args_for_action(args)
         if not valid_args:
             return False
-
         logger.debug(f'Validated input args: {valid_args}')
 
         ## Call appropriate function for action

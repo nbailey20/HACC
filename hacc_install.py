@@ -1,197 +1,59 @@
 import hacc_vars
-import boto3, subprocess, json
-from hacc_core import aws_call
-
-VAULT_IAM_PERMS = """
-{
-    "Version": "2012-10-17",
-    "Statement": [
-        {
-            "Effect": "Allow",
-            "Action": [
-                "ssm:DescribeParameters",
-                "ssm:GetParameter",
-                "ssm:GetParametersByPath",
-                "ssm:DeleteParameter*",
-                "ssm:PutParameter"
-            ],
-            "Resource": [
-                "%s",
-                "%s"
-            ]
-        },
-        {
-            "Effect": "Allow",
-            "Action": [
-                "kms:Encrypt",
-                "kms:Decrypt",
-                "kms:DescribeKey"
-            ],
-            "Resource": "%s"
-        }
-    ]
-}
-"""
-
-VAULT_SCP = """
-{
-    "Version": "2012-10-17",
-    "Statement": [
-        {
-            "Effect": "Deny",
-            "Action": [
-                "ssm:DescribeParameters",
-                "ssm:GetParameter*",
-                "ssm:GetParametersByPath",
-                "ssm:DeleteParameter*",
-                "ssm:PutParameter"
-            ],
-            "Resource": [
-                "%s",
-                "%s"
-            ],
-            "Condition": {
-                "StringNotLike": {
-                    "aws:PrincipalARN": "%s"
-                }
-            }
-        },
-        {
-            "Effect": "Deny",
-            "Action": [
-                "kms:Encrypt",
-                "kms:Decrypt",
-                "kms:DescribeKey"
-            ],
-            "Resource": "%s",
-            "Condition": {
-                "StringNotLike": {
-                    "aws:PrincipalARN": "%s"
-                }
-            }
-        }
-    ]
-}
-"""
-
-## Adds a new profile to AWS credentials/config file
-def create_hacc_profile(access_key_id, secret_access_key, debug):
-
-    aws_config_region = subprocess.run(['aws', 'configure', 'set', 
-        'region', hacc_vars.aws_hacc_region, 
-        '--profile', hacc_vars.aws_hacc_uname]
-    )
-    if debug: print('INFO: Successfully wrote vault AWS region to profile')
-
-    aws_config_access = subprocess.run(['aws', 'configure', 'set', 
-        'aws_access_key_id', access_key_id, 
-        '--profile', hacc_vars.aws_hacc_uname]
-    )
-    if debug: print('INFO: Successfully wrote vault AWS access key to profile')
-
-    aws_config_secret = subprocess.run(['aws', 'configure', 'set', 
-        'aws_secret_access_key', secret_access_key, 
-        '--profile', hacc_vars.aws_hacc_uname]
-    )
-    if debug: print('INFO: Successfully wrote vault AWS secret key to profile')
-    return
+from classes.vault_installer import VaultInstaller
+from hacc_add import add
+import time
 
     
-
-# Setup IAM user KMS CMK for Vault in member account
-# Setup SCP for member account in mgmt account to lock down
+## Setup IAM user, KMS CMK for Vault
+## Optionally setup SCP for organizational account to lock down Vault access
 def install(args):
-    print('Installing new vault...')
+    print('Installing Vault...')
+    total_resources_to_create = 3 if hacc_vars.create_scp else 2
 
-    # Assume role in member account with mgmt account creds
-    sts = boto3.client('sts')
-    assumed_role_object=sts.assume_role(
-        RoleArn=hacc_vars.aws_member_role,
-        RoleSessionName="HaccInstallSession"
-    )
-    role_creds = assumed_role_object['Credentials']
+    installer = VaultInstaller()
 
-    # arn:aws:iam::account:role/name
-    account = hacc_vars.aws_member_role.split(':')[4]
+    if installer.cmk or installer.user or installer.scp:
+        print('  Previous installation detected, resuming')
 
-    kms = boto3.client('kms', region_name=hacc_vars.aws_hacc_region,
-                        aws_access_key_id=role_creds['AccessKeyId'],
-                        aws_secret_access_key=role_creds['SecretAccessKey'],
-                        aws_session_token=role_creds['SessionToken']
-                        )
-    iam = boto3.client('iam',
-                        aws_access_key_id=role_creds['AccessKeyId'],
-                        aws_secret_access_key=role_creds['SecretAccessKey'],
-                        aws_session_token=role_creds['SessionToken']
-                        )
-    # SCP is setup in mgmt account, don't use member role
-    orgs = boto3.client('organizations')
-    debug = args.debug
+    if not installer.cmk:
+        installer.create_cmk_with_alias()
 
-    hacc_kms = aws_call(
-                kms, 'create_key', debug, 
-                KeyUsage='ENCRYPT_DECRYPT', 
-                KeySpec='SYMMETRIC_DEFAULT'
-                )
+    if not installer.user:
+        installer.create_user_with_policy()
 
-    aws_call(
-        kms, 'create_alias', debug, 
-        AliasName='alias/{key}'.format(key=hacc_vars.aws_hacc_kms_alias), 
-        TargetKeyId=hacc_kms['KeyMetadata']['Arn']
-    )
+    if hacc_vars.create_scp:
+        # ## Make sure all Vault resources created before applying SCP
+        # if not install.cmk or not install.user:
+        #     print('Vault resources must be fully setup before SCP can be created.')
+        #     print('Retry to attempt to resume installation')
+        #     return
+        
+        if not installer.scp:
+            installer.create_scp()
 
-    aws_call(
-        iam, 'create_user', debug, 
-        UserName=hacc_vars.aws_hacc_uname
-    )
+    else:
+        print('SCP disabled for Vault installation, skipping')
 
-    hacc_creds = aws_call(
-                    iam, 'create_access_key', debug, 
-                    UserName=hacc_vars.aws_hacc_uname
-                )
 
-    create_hacc_profile(
-        hacc_creds['AccessKey']['AccessKeyId'], 
-        hacc_creds['AccessKey']['SecretAccessKey'], 
-        debug
-    )
+    ## Determine how many resources were created during the install
+    num_resources_created = len([x for x in [installer.cmk, installer.user, installer.scp] if x != None])
+    print()
+    print(f'{num_resources_created}/{total_resources_to_create} Vault components ready')
 
-    vault_path_arn = 'arn:aws:ssm:{region}:{account}:parameter/{path}'.format(
-                        region=hacc_vars.aws_hacc_region, 
-                        account=account,
-                        path=hacc_vars.aws_hacc_param_path
-                    )
-    vault_key_arn = hacc_kms['KeyMetadata']['Arn']
+    if num_resources_created != total_resources_to_create:
+        print('Vault installation finished but not all resources successfully created')
+        print('  Retry to attempt to resume installation')
+        return
 
-    user_perms = json.loads(VAULT_IAM_PERMS % (vault_path_arn, vault_path_arn+'/*', vault_key_arn))
-    aws_call(
-        iam, 'put_user_policy', debug, 
-        UserName=hacc_vars.aws_hacc_uname,
-        PolicyName=hacc_vars.aws_hacc_iam_policy,
-        PolicyDocument=json.dumps(user_perms)
-    )
+    print('Vault installation completed successfully.')
+    print()
 
-    iam_user_arn = 'arn:aws:iam::*:user/{}'.format(hacc_vars.aws_hacc_uname)
-    scp = json.loads(VAULT_SCP % (vault_path_arn, 
-                                vault_path_arn+'/*',
-                                iam_user_arn,
-                                vault_key_arn,
-                                iam_user_arn)
-                    )
-    hacc_scp = aws_call(
-                orgs, 'create_policy', debug,
-                Content=json.dumps(scp),
-                Name=hacc_vars.aws_hacc_scp,
-                Description='SCP for HACC',
-                Type='SERVICE_CONTROL_POLICY'
-            )
+    ## If import file provided, add credentials to new Vault
+    if args.file:
+        print('Pausing for 15 seconds for Vault components to become active before importing credentials...')
+        time.sleep(15)
+        add(args)
+        print()
+        print('Vault install completed and credentials imported.')
 
-    aws_call(
-        orgs, 'attach_policy', debug,
-        PolicyId=hacc_scp['Policy']['PolicySummary']['Id'],
-        TargetId=account
-    )
-    
-
-    print('Vault setup complete.')
     return
