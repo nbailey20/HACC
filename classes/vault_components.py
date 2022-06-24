@@ -16,6 +16,8 @@ import hacc_vars
 ##      __cmk_exists
 ##      __user_exists
 ##      __scp_exists
+##      required
+##      active
 ##
 class VaultComponents:
 
@@ -30,9 +32,14 @@ class VaultComponents:
         identity_info = self.aws_client.call('sts', 'get_caller_identity')
         self.aws_account_id = identity_info['Account']
 
-        self.scp = self.__scp_exists() if hacc_vars.create_scp else False
-        self.cmk = self.__cmk_exists()
-        self.user = self.__user_exists()
+        scp = self.__scp_exists() if hacc_vars.create_scp else False
+        self.scp = scp if scp else None
+
+        cmk = self.__cmk_exists()
+        self.cmk = cmk if cmk else None
+
+        user = self.__user_exists()
+        self.user = user if user else None
 
 
 
@@ -102,3 +109,23 @@ class VaultComponents:
                 if name == hacc_scp_name:
                     return scp['Id']
         return False
+
+
+    ## Function that returns list of required components for Vault based on config params
+    def required(self):
+        components = ['cmk', 'user']
+        if hacc_vars.create_scp:
+            components.append('scp')
+        return components
+
+
+    ## Function that returns list of active (fully setup) Vault components
+    def active(self):
+        components = []
+        if self.cmk:
+            components.append('cmk')
+        if self.user:
+            components.append('user')
+        if hacc_vars.create_scp and self.scp:
+            components.append('scp')
+        return components

@@ -337,7 +337,10 @@ def validate_args_for_action(args):
     ## Validate service and username input where possible
     if action == 'search' or action == 'delete':
         vault = Vault()
-        
+        if len(vault.get_all_services()) == 0:
+            print('Vault is curently empty, add a service credential with `hacc add`')
+            return False
+
         args.service = get_service_name_from_input(args.service, vault)
         if not args.service:
             print('Could not validate service name, exiting.')

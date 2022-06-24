@@ -48,7 +48,7 @@ VAULT_SCP = """
             ],
             "Condition": {
                 "StringNotLike": {
-                    "aws:PrincipalARN": "%s"
+                    "aws:PrincipalArn": "%s"
                 }
             }
         },
@@ -66,7 +66,7 @@ VAULT_SCP = """
             "Resource": "%s",
             "Condition": {
                 "StringNotLike": {
-                    "aws:PrincipalARN": "%s"
+                    "aws:PrincipalArn": "%s"
                 }
             }
         }

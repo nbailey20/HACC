@@ -35,8 +35,9 @@ def main():
 
     try:
         ## Parse args, ensure required config vars for action are set
+        ##  and Vault setup properly for given action
         args = parse_args()
-        if not startup(args.action):
+        if not startup(args):
             return
 
         ## Ensure args are valid for action

@@ -24,6 +24,13 @@ class VaultInstaller(VaultEradicator):
     def __init__(self):
         super().__init__()
 
+        if hacc_vars.create_scp:
+            self.aws_user_arn = f'arn:aws:iam::{self.aws_account_id}:user/{hacc_vars.aws_hacc_uname}'
+
+        region = hacc_vars.aws_hacc_region
+        path = hacc_vars.aws_hacc_param_path
+        self.aws_ssm_path_arn = f'arn:aws:ssm:{region}:{self.aws_account_id}:parameter/{path}' 
+
 
 
     ## Creates new CMK and returns ID, False on fail

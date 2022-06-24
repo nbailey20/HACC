@@ -22,6 +22,11 @@ logger=logging.getLogger()
 ##      parse_import_file
 ##          
 class Vault:
+    def __init__(self):
+        self.aws_client = AwsClient(client_type='data')
+        self.kms_arn = self.get_kms_arn()
+        self.param_path = hacc_vars.aws_hacc_param_path
+
 
     ## Return all service names stored in Vault
     ## Returns False if failure
@@ -96,9 +101,3 @@ class Vault:
             return creds_list
         except:
             return False
-
-
-    def __init__(self):
-        self.aws_client = AwsClient(client_type='data')
-        self.kms_arn = self.get_kms_arn()
-        self.param_path = hacc_vars.aws_hacc_param_path

@@ -1,5 +1,5 @@
 import hacc_vars
-from classes.vault_installation import VaultInstallation
+from classes.vault_eradicator import VaultEradicator
 from classes.vault import Vault
 from hacc_delete import delete
 import time
@@ -7,60 +7,48 @@ import time
 
 
 def eradicate(args):
-
-    vault = Vault()
-    if len(vault.get_all_services()) != 0:
-
-        ## Print scary message to prevent accidental deletion
-        if args.wipe:
-            print('This operation will delete ALL Vault credentials.')
-            print('If you continue the credentials will be gone forever!')
-        else:
-            print('This operation schedules master key deletion for all credentials.')
-            print('If you continue, you have up to 7 days to manually disable deletion or credentials can never be decrypted!')
-        
-        proceed = True if input('Are you sure you want to proceed (y/n)? ') == 'y' else False
-        if not proceed:
-            print('Aborting, close one ;)')
-            return
-
-        ## Wipe all credentials before Vault deletion
-        if args.wipe:
-            delete(args)
-            time.sleep(5)
-            if len(vault.get_all_services()) != 0:
-                print('Failed to delete all credentials from Vault, aborting eradication due to user providing wipe argument')
-                return
-
-
-    ## Vault already empty, less scary of a warning :)
+    ## Print scary message to prevent accidental deletion
+    if args.wipe:
+        print('This operation will delete ALL Vault credentials.')
+        print('If you continue the credentials will be gone forever!')
     else:
-        proceed = True if input('Are you sure you want to remove empty Vault (y/n)? ') == 'y' else False
-        if not proceed:
-            print('Aborting.')
-            return
+        print('This operation schedules master key deletion for all credentials.')
+        print('If you continue, you have up to 7 days to manually disable KMS key deletion or credentials can never be decrypted!')
+    
+    proceed = True if input('Are you sure you want to proceed (y/n)? ') == 'y' else False
+    if not proceed:
+        print('Aborting, close one ;)')
+        return
 
+    ## Wipe all credentials before Vault deletion
+    if args.wipe:
+        vault = Vault()
+        delete(args)
+        time.sleep(5)
+        if len(vault.get_all_services()) != 0:
+            print('Failed to delete all credentials from Vault, aborting eradication due to user providing wipe argument')
+            return
 
     ## Delete Vault
     print()
     print('Eradicating Vault...')
     total_resources_to_destroy = 3 if hacc_vars.create_scp else 2
 
-    eradicate = VaultInstallation()
+    eradicator = VaultEradicator()
 
     if hacc_vars.create_scp:
-        eradicate.delete_scp()
+        eradicator.delete_scp()
 
-    eradicate.delete_user()
+    eradicator.delete_iam_user_with_policy()
 
-    if eradicate.scp:
+    if eradicator.scp:
         print('Cannot delete Vault master key until SCP is removed')
     else:
-        eradicate.delete_cmk()
+        eradicator.delete_cmk_with_alias()
 
 
     ## Determine how many resources were destroyed during the eradication
-    num_resources_destroyed = len([x for x in [eradicate.cmk, eradicate.user, eradicate.scp] if x == None])
+    num_resources_destroyed = len([x for x in [eradicator.cmk, eradicator.user, eradicator.scp] if x == None])
     if not hacc_vars.create_scp:
         num_resources_destroyed -= 1
         

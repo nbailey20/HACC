@@ -35,7 +35,7 @@ class AwsClient:
             if create_scp:
                 assumed_role_object = self.call('sts', 'assume_role',
                                                 RoleArn=hacc_vars.aws_member_role,
-                                                RoleSessionName="HaccInstallSession"
+                                                RoleSessionName="HaccSession"
                                             )
                 role_creds = assumed_role_object['Credentials']
                 aws_access_key_id = role_creds['AccessKeyId']
@@ -97,8 +97,10 @@ class AwsClient:
         except ClientError as e:
             if e.response['ResponseMetadata']['HTTPStatusCode'] == 403:
                 print('HACC is not authorized to perform {client_type} {api_name}, exiting')
-                return False
+            else:
+                logger.debug(f'AWS client error: {e}')
+            return False
 
         except Exception as e:
-            print(f'API error, exiting: {e}')
+            print(f'Unknown API error: {e}')
             return False

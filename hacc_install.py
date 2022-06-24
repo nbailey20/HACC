@@ -1,5 +1,5 @@
 import hacc_vars
-from classes.vault_installation import VaultInstallation
+from classes.vault_installer import VaultInstaller
 from hacc_add import add
 import time
 
@@ -10,16 +10,16 @@ def install(args):
     print('Installing Vault...')
     total_resources_to_create = 3 if hacc_vars.create_scp else 2
 
-    install = VaultInstallation()
+    installer = VaultInstaller()
 
-    if install.cmk or install.user:
+    if installer.cmk or installer.user or installer.scp:
         print('  Previous installation detected, resuming')
 
-    if not install.cmk:
-        install.create_cmk_with_alias()
+    if not installer.cmk:
+        installer.create_cmk_with_alias()
 
-    if not install.user:
-        install.create_user_with_policy()
+    if not installer.user:
+        installer.create_user_with_policy()
 
     if hacc_vars.create_scp:
         # ## Make sure all Vault resources created before applying SCP
@@ -28,15 +28,15 @@ def install(args):
         #     print('Retry to attempt to resume installation')
         #     return
         
-        if not install.scp:
-            install.create_scp()
+        if not installer.scp:
+            installer.create_scp()
 
     else:
         print('SCP disabled for Vault installation, skipping')
 
 
     ## Determine how many resources were created during the install
-    num_resources_created = len([x for x in [install.cmk, install.user, install.scp] if x != None])
+    num_resources_created = len([x for x in [installer.cmk, installer.user, installer.scp] if x != None])
     print()
     print(f'{num_resources_created}/{total_resources_to_create} Vault components ready')
 

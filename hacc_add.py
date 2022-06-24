@@ -33,6 +33,7 @@ def add(args):
 
         for cred in creds_list:
             add_credential_for_service(vault, cred['service'], cred['username'], cred['password'])
+        print('\nCredential import complete.')
 
 
     ## Add single credential via CLI arguments
