@@ -1,7 +1,7 @@
 from classes.vault_components import VaultComponents
 import hacc_vars
 
-MGMT_ACTIONS = ['install', 'eradicate']
+MGMT_ACTIONS = ['install', 'eradicate'] ## configure is mgmt action but doesn't have any required vars
 REQUIRED_MGMT_VARS = [
     'aws_hacc_region',
     'aws_hacc_uname',
@@ -47,7 +47,7 @@ def required_config_set_for_action(args):
                     all_vars_exist = False
 
     for m in missing_vars:
-        print(f'Required configuration parameter {m} not set in hacc_vars.py, please set value and try again.')
+        print(f'Required configuration parameter {m} not set in hacc_vars.py, please set value with hacc configure --set {m}=... (or edit manually) and try again.')
 
     return all_vars_exist
 

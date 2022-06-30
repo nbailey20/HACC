@@ -45,4 +45,4 @@ def add(args):
         password = args.password
 
         add_credential_for_service(vault, service_name, user, password)
-        return
+    return

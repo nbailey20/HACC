@@ -8,6 +8,7 @@ from hacc_rotate import rotate
 from hacc_install import install
 from hacc_eradicate import eradicate
 from hacc_backup import backup
+from hacc_configure import configure
 
 import logging
 

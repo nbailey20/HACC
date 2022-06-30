@@ -77,7 +77,7 @@ Sample Usage:
 ## Future Needs
 * Support for services with more than 4KB of credentials via multiple parameters per service
 * 'configure' (as opposed to install) keyword to grant additional devices access to existing Vault
-    * encrypt hacc_vars file to be provided to additional user as config file
+    * encrypt hacc_vars file to be provided to additional user as config file, or manually prompt for config vars
 * Confirm user doesn't already exist for add action before asking for password if not provided
 * Test that all required config variables for action are valid
 * Set max password generation length for dumb sites --max-len
@@ -85,4 +85,7 @@ Sample Usage:
 * Backup option --no-creds for usernames/services only
 * -y option to automate interactive questions
 * Support service/name prefixes properly for rotate action
+* Support for different password types, e.g. base64, random, xkcd
 * Add confirmation before installing vault, but show how many components are setup first
+* Optional (via hacc var) check for latest client version in github, upgrade if not
+* Reduce args passed to funcs to only necessary values
