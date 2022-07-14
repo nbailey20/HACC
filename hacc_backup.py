@@ -5,7 +5,7 @@ import json
 
 
 ## Creates new backup file with entire Vault contents
-def backup(args):
+def backup(args, config):
     print('Backing up Vault data...')
     vault = Vault()
 

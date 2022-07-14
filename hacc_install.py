@@ -1,4 +1,4 @@
-import hacc_vars
+#import hacc_vars
 from classes.vault_installer import VaultInstaller
 from hacc_add import add
 import time
@@ -6,9 +6,9 @@ import time
     
 ## Setup IAM user, KMS CMK for Vault
 ## Optionally setup SCP for organizational account to lock down Vault access
-def install(args):
+def install(args, config):
     print('Installing Vault...')
-    total_resources_to_create = 3 if hacc_vars.create_scp else 2
+    total_resources_to_create = 3 if config['create_scp'] else 2
 
     installer = VaultInstaller()
 
@@ -21,7 +21,7 @@ def install(args):
     if not installer.user:
         installer.create_user_with_policy()
 
-    if hacc_vars.create_scp:
+    if config['create_scp']:
         # ## Make sure all Vault resources created before applying SCP
         # if not install.cmk or not install.user:
         #     print('Vault resources must be fully setup before SCP can be created.')

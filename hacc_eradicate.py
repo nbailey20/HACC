@@ -1,4 +1,4 @@
-import hacc_vars
+#import hacc_vars
 from classes.vault_eradicator import VaultEradicator
 from classes.vault import Vault
 from hacc_delete import delete
@@ -6,7 +6,7 @@ import time
 
 
 
-def eradicate(args):
+def eradicate(args, config):
     ## Print scary message to prevent accidental deletion
     if args.wipe:
         print('This operation will delete ALL Vault credentials.')
@@ -32,11 +32,11 @@ def eradicate(args):
     ## Delete Vault
     print()
     print('Eradicating Vault...')
-    total_resources_to_destroy = 3 if hacc_vars.create_scp else 2
+    total_resources_to_destroy = 3 if config['create_scp'] else 2
 
     eradicator = VaultEradicator()
 
-    if hacc_vars.create_scp:
+    if config['create_scp']:
         eradicator.delete_scp()
 
     eradicator.delete_iam_user_with_policy()
@@ -49,7 +49,7 @@ def eradicate(args):
 
     ## Determine how many resources were destroyed during the eradication
     num_resources_destroyed = len([x for x in [eradicator.cmk, eradicator.user, eradicator.scp] if x == None])
-    if not hacc_vars.create_scp:
+    if not config['create_scp']:
         num_resources_destroyed -= 1
         
     print()

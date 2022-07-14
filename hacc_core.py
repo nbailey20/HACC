@@ -1,5 +1,4 @@
 from classes.vault_components import VaultComponents
-import hacc_vars
 
 MGMT_ACTIONS = ['install', 'eradicate'] ## configure is mgmt action but doesn't have any required vars
 REQUIRED_MGMT_VARS = [
@@ -22,27 +21,52 @@ REQUIRED_DATA_VARS = [
 REQUIRED_SCP_VARS = ['aws_hacc_scp', 'aws_member_role']
 
 
+## Function to read config parameters from hacc_vars file into object
+def get_config_params():
+    try:
+        f = open('hacc_vars.py', 'r')
+        hacc_vars = f.readlines()
+        f.close()
+    except:
+        print('Unable to read required configuration file hacc_vars.py, aborting.')
+        return False
+
+    config = {}
+    for line in hacc_vars:
+        line = line.strip()
+        try:
+            ## ignore comments in config file, strip quotes
+            if line[0] != '#':
+                param, value = [x.strip() for x in line.split('=')]
+                config[param] = value.replace('"', '').replace("'", "")
+        except:
+            continue
+
+    return config
+
+
+
 ## Function to check all required config vars are set when client is invoked
-def required_config_set_for_action(args):
+def required_config_set_for_action(args, config):
     all_vars_exist = True
     missing_vars = []
 
     if args.action in DATA_ACTIONS:
         for v in REQUIRED_DATA_VARS:
-            if not hasattr(hacc_vars, v) or getattr(hacc_vars, v) == '':
+            if not v in config or config[v] == '':
                 missing_vars.append(v)
                 all_vars_exist = False
 
     elif args.action in MGMT_ACTIONS:
         for v in REQUIRED_MGMT_VARS:
-            if not hasattr(hacc_vars, v) or getattr(hacc_vars, v) == '':
+            if not v in config or config[v] == '':
                 missing_vars.append(v)
                 all_vars_exist = False
 
         ## conditionally check for SCP vars if create_scp == True
-        if not 'create_scp' in missing_vars and hacc_vars.create_scp == True:
+        if not 'create_scp' in missing_vars and config['create_scp'] == True:
             for v in REQUIRED_SCP_VARS:
-                if not hasattr(hacc_vars, v) or getattr(hacc_vars, v) == '':
+                if not v in config  or config[v] == '':
                     missing_vars.append(v)
                     all_vars_exist = False
 
@@ -53,7 +77,7 @@ def required_config_set_for_action(args):
 
 
 ## Function to confirm all required Vault components for action are setup
-def vault_components_exist_for_action(args):
+def vault_components_exist_for_action(args, config):
     if args.action in DATA_ACTIONS:
         components = VaultComponents()
         active = components.active()
@@ -77,5 +101,5 @@ def vault_components_exist_for_action(args):
     return True
 
 
-def startup(args):
-    return required_config_set_for_action(args) and vault_components_exist_for_action(args)
+def startup(args, config):
+    return required_config_set_for_action(args, config) and vault_components_exist_for_action(args, config)

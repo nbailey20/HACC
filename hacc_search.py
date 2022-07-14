@@ -5,7 +5,7 @@ logger=logging.getLogger()
 
 
 ## Print specific credential for service
-def search(args):
+def search(args, config):
 
     service_name = args.service
     user = args.username

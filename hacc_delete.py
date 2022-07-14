@@ -18,7 +18,7 @@ def delete_all_creds():
 
 
 
-def delete(args):
+def delete(args, config):
 
     ## Wipe all Vault creds before eradication
     if args.wipe:
