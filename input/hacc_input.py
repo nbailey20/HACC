@@ -138,9 +138,9 @@ ACTION_REQUIRED_SUBARGS = {
 }
 
 ## Arguments that are required together for action TODO use this
-ARGUMENT_REQUIRED_SUBARGS = {
-    'export':    ['file']
-}
+# ARGUMENT_REQUIRED_SUBARGS = {
+#     'export':    ['file']
+# }
 
 ## -v/--debug arg is always allowed, redundant to list here
 ## same for -y/--yes, ignored if not applicable

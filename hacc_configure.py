@@ -7,7 +7,7 @@ import re, json
 def get_all_configuration(config):
     config['aws_access_key_id'] = get_hacc_access_key()
     ## TODO, get aws_secret_access_key
-    return json.dumps(config)
+    return json.dumps(config, indent=4, sort_keys=True)
 
 
 def get_configuration(val, config):
@@ -28,15 +28,9 @@ def get_configuration(val, config):
     return
 
 
-def set_configuration_variable(val):
+def set_config_from_cli(inpt):
     ## Parse user input
-    try:
-        param_name, param_val = val.split('=')
-        #var_name = val_list[0].strip()
-        #var_val = val_list[1]
-    except:
-        print('Malformed input, expecting string of form variable=value')
-        return
+    param_name, param_val = inpt.split('=')
 
     ## TODO: Update credential variables
     if param_name == 'aws_access_key_id':
@@ -49,10 +43,10 @@ def set_configuration_variable(val):
     config = f.readlines()
     f.close()
 
-    ## Update data locally
+    ## Update data locally, also check for commented config
     value_updated = False
     for i in range(len(config)):
-        line_pattern = param_name + r'\s+=\s+\S+'
+        line_pattern = r'\s*#*\s*' + param_name + r'\s*=\s*\S+'
         line_repl = param_name + ' = ' + '\''+param_val+'\''
         updated_line, num_subs = re.subn(line_pattern, line_repl, config[i])
 
@@ -61,7 +55,7 @@ def set_configuration_variable(val):
             value_updated = True
             break
     if not value_updated:
-        print(f'Variable {param_name} not known, see hacc_vars_template for acceptable configuration variables.')
+        print(f'Variable {param_name} not known, cannot set value.')
         return
 
     ## Write updated data to hacc_vars
@@ -70,6 +64,51 @@ def set_configuration_variable(val):
     f.close()
     print(f'Updated {param_name}.')
     return
+
+
+def set_config_from_file(param, config):
+    if param == 'all':
+        for p in config:
+            set_config_from_file(p, config)
+        return
+
+    if not param in config:
+        print(f'Variable {param} not found in imported configuration.')
+    else:
+        cli_expr = f'{param}={config[param]}'
+        set_config_from_cli(cli_expr)
+    return
+
+
+def get_set_type(inpt, f_name):
+    if f_name and '=' in inpt:
+        return 'conflict'
+    elif f_name:
+        return 'file'
+    elif '=' in inpt:
+        return 'cli'
+
+
+
+def import_configuration_file(f_name):
+    ## Read encrypted file
+    try:
+        f = open(f_name, 'r')
+        enc_config = f.read()
+        f.close()
+    except:
+        print('Could not open file {f_name}.')
+
+    ## Decrypt file
+    passwd = input('Enter password used to encrypt configuration file: ')
+    config = decrypt_config_data(enc_config, passwd)
+    try:
+        config = json.loads(config)
+        return config
+    except:
+        print(f'Failed to decrypt configuration file {f_name}.')
+        return
+
 
 
 def export_configuration(f_name, config, generate_passwd=True):
@@ -99,32 +138,6 @@ def export_configuration(f_name, config, generate_passwd=True):
     return
 
 
-def import_configuration_file(f_name):
-    ## Read encrypted file
-    try:
-        f = open(f_name, 'r')
-        enc_config = f.readlines()
-        f.close()
-    except:
-        print('Could not open file {f_name}.')
-
-    ## Decrypt file
-    passwd = input('Enter password used to encrypt configuration file: ')
-    config = decrypt_config_data(enc_config, passwd)
-    if not config:
-        print(f'Failed to decrypt configuration file {f_name}.')
-
-    ## Set hacc_vars variables
-    f = open('hacc_vars.py', 'w')
-    for a in config:
-        if a != 'aws_access_key_id' and a != 'aws_secret_access_key':
-            f.write(f'{a} = {a.value()}')
-    f.close()
-    print('Updated variables in hacc_vars file.')
-
-    ## TODO, set AWS credential vars
-    return
-
 
 def configure(args, config):
     if args.export:
@@ -132,13 +145,22 @@ def configure(args, config):
             export_configuration(args.file, config, generate_passwd=False)
         else:
             export_configuration(args.file, config)
+
     elif args.show:
         get_configuration(args.show, config)
+
     elif args.set:
-        if args.file:
-            import_configuration_file(args.file)
-        else:
-            set_configuration_variable(args.set)
+        set_type = get_set_type(args.set, args.file)
+
+        if set_type == 'conflict':
+            print('Usage: "--set" accepts either command line assignment with "param=value" or an import file with -f, not both!')
+        elif set_type == 'cli':
+            set_config_from_cli(args.set)
+        elif set_type == 'file':
+            config = import_configuration_file(args.file)
+            if config:
+                set_config_from_file(args.set, config)
+
     else:
         print('Usage: configure action requires "show", "set", or "export" argument')
     return
