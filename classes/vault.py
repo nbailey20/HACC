@@ -1,7 +1,5 @@
-import hacc_vars
 from classes.aws_client import AwsClient
 import json
-
 import logging
 
 logger=logging.getLogger()
@@ -22,10 +20,10 @@ logger=logging.getLogger()
 ##      parse_import_file
 ##          
 class Vault:
-    def __init__(self):
-        self.aws_client = AwsClient(client_type='data')
-        self.kms_arn = self.get_kms_arn()
-        self.param_path = hacc_vars.aws_hacc_param_path
+    def __init__(self, config):
+        self.aws_client = AwsClient(config, client_type='data')
+        self.kms_arn = self.get_kms_arn(config['aws_hacc_kms_alias'])
+        self.param_path = config['aws_hacc_param_path']
 
 
     ## Return all service names stored in Vault
@@ -35,7 +33,7 @@ class Vault:
 
         curr_params = self.aws_client.call(
                         'ssm', 'get_parameters_by_path', 
-                        Path = '/'+hacc_vars.aws_hacc_param_path,
+                        Path = '/'+self.param_path,
                         WithDecryption = False
                     )
         
@@ -50,7 +48,7 @@ class Vault:
 
             more_params = self.aws_client.call(
                             'ssm', 'get_parameters_by_path', 
-                            Path = '/'+hacc_vars.aws_hacc_param_path,
+                            Path = '/'+self.param_path,
                             WithDecryption = False,
                             NextToken = curr_params['NextToken']
                         )
@@ -76,8 +74,8 @@ class Vault:
 
     ## Returns KMS ARN used to encrypt Vault credentials
     ## Returns False if failure to get key
-    def get_kms_arn(self):
-        kms_alias = hacc_vars.aws_hacc_kms_alias
+    def get_kms_arn(self, kms_alias):
+        kms_alias = kms_alias
 
         logger.debug(f'Retrieving Vault encryption key')
 

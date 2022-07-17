@@ -1,4 +1,3 @@
-#from hacc_core import get_all_services, get_kms_arn, HaccService, ApiClient
 from classes.hacc_service import HaccService
 from classes.vault import Vault
 import json
@@ -7,7 +6,7 @@ import json
 ## Creates new backup file with entire Vault contents
 def backup(args, config):
     print('Backing up Vault data...')
-    vault = Vault()
+    vault = Vault(config)
 
     all_svcs = vault.get_all_services()
     # If no services in vault, can't look anything up

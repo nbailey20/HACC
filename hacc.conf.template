@@ -1,4 +1,5 @@
-## Rename this file to hacc_vars.py once all values provided
+## Rename this file to hacc.conf once all values provided
+## Do not add comments to any line with configuration, above or below is fine :)
 
 # Region where Vault should live
 aws_hacc_region = 'us-east-1'
@@ -18,7 +19,7 @@ aws_hacc_param_path = 'hacc-vault'
 
 
 # Boolean to indicate whether optional SCP should be created to further lock down Vault account
-create_scp = False
+create_scp = 'False'
 
 # Organizational SCP name that locks down Vault so only client can access
 ## Mandatory if create_scp == True, UNCOMMENT LINE BELOW

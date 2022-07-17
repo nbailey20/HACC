@@ -1,4 +1,3 @@
-#import hacc_vars
 from classes.vault_eradicator import VaultEradicator
 from classes.vault import Vault
 from hacc_delete import delete
@@ -22,7 +21,7 @@ def eradicate(args, config):
 
     ## Wipe all credentials before Vault deletion
     if args.wipe:
-        vault = Vault()
+        vault = Vault(config)
         delete(args)
         time.sleep(5)
         if len(vault.get_all_services()) != 0:
@@ -34,17 +33,17 @@ def eradicate(args, config):
     print('Eradicating Vault...')
     total_resources_to_destroy = 3 if config['create_scp'] else 2
 
-    eradicator = VaultEradicator()
+    eradicator = VaultEradicator(config)
 
     if config['create_scp']:
         eradicator.delete_scp()
 
-    eradicator.delete_iam_user_with_policy()
+    eradicator.delete_iam_user_with_policy(config['aws_hacc_uname'], config['aws_hacc_iam_policy'])
 
     if eradicator.scp:
         print('Cannot delete Vault master key until SCP is removed')
     else:
-        eradicator.delete_cmk_with_alias()
+        eradicator.delete_cmk_with_alias(config['aws_hacc_kms_alias'])
 
 
     ## Determine how many resources were destroyed during the eradication

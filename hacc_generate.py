@@ -1,8 +1,8 @@
 import secrets ## random library unsuitable to cryptographic purposes
+import wordlist
 
 MAX_CHAR_SWAPS = 5 ## Max number of character substitions to make in password
 NUM_WORDS_IN_PASS = 4 ## XKCD-style passwords
-WORDLIST_FILE = 'wordlist.txt'
 
 DIGIT_CHAR_MAP = {
     'b': '6',
@@ -17,13 +17,6 @@ SPECIAL_CHAR_MAP = {
     'i': '!',
     's': '$'
 }
-
-## Returns number of lines in wordlist file
-def get_num_words(filename):
-    with open(filename) as f:
-        for i, _ in enumerate(f):
-            pass
-    return i+1
 
 
 ## Perform random character substitions in given password
@@ -58,20 +51,12 @@ def sub_chars(password, char_map, num_subs):
 ##  4 random words joined with some char subs
 def generate_password():
     pass_words = []
-    wordlist_len = get_num_words(WORDLIST_FILE)
+    wordlist_len = len(wordlist.wordlist)
 
     for _ in range(NUM_WORDS_IN_PASS):
-        f = open(WORDLIST_FILE)
         ## get random line number for wordlist
         line_num = secrets.randbelow(wordlist_len)
-
-        ## add word at line_num to password
-        for i, line in enumerate(f):
-            if i == line_num:
-                pass_words.append(line.strip())
-            elif i > line_num:
-                break
-        f.close()
+        pass_words.append(wordlist.wordlist[line_num])
 
     ## CamelCase words
     pass_words = [x[0].upper()+x[1:] for x in pass_words]

@@ -1,4 +1,5 @@
 from classes.vault_components import VaultComponents
+import os, subprocess
 
 MGMT_ACTIONS = ['install', 'eradicate'] ## configure is mgmt action but doesn't have any required vars
 REQUIRED_MGMT_VARS = [
@@ -23,12 +24,19 @@ REQUIRED_SCP_VARS = ['aws_hacc_scp', 'aws_member_role']
 
 ## Function to read config parameters from hacc_vars file into object
 def get_config_params():
+    ## check for windows system
+    if 'USERPROFILE' in os.environ:
+        hacc_config_location = os.environ['USERPROFILE'] + '\.hacc\hacc.conf'
+    ## check for linux/mac
+    elif 'HOME' in os.environ:
+        hacc_config_location = os.environ['HOME'] + '/.hacc/hacc.conf'
+
     try:
-        f = open('hacc_vars.py', 'r')
+        f = open(hacc_config_location, 'r')
         hacc_vars = f.readlines()
         f.close()
     except:
-        print('Unable to read required configuration file hacc_vars.py, aborting.')
+        print(f'Unable to read required configuration file {hacc_config_location}, aborting.')
         return False
 
     config = {}
@@ -38,7 +46,13 @@ def get_config_params():
             ## ignore comments in config file, strip quotes
             if line[0] != '#':
                 param, value = [x.strip() for x in line.split('=')]
-                config[param] = value.replace('"', '').replace("'", "")
+                value = value.replace('"', '').replace("'", "")
+                if value == 'True':
+                    config[param] = True
+                elif value == 'False':
+                    config[param] = False
+                else:
+                    config[param] = value
         except:
             continue
 
@@ -79,7 +93,7 @@ def required_config_set_for_action(args, config):
 ## Function to confirm all required Vault components for action are setup
 def vault_components_exist_for_action(args, config):
     if args.action in DATA_ACTIONS:
-        components = VaultComponents()
+        components = VaultComponents(config)
         active = components.active()
         required = components.required()
 
@@ -89,11 +103,14 @@ def vault_components_exist_for_action(args, config):
 
         elif len(active) != len(required):
             print('Vault is not fully setup, complete installation before attempting this command.')
+            print(f'Active components: {active}')
+            missing = [x for x in required if x not in active]
+            print(f'Missing components: {missing}')
             return False
 
     ## If wipe flag provided, make sure enough components exist to do so
     elif args.action == 'eradicate' and args.wipe:
-        components = VaultComponents()
+        components = VaultComponents(config)
         if not components.user or not components.cmk:
             print('Missing Vault components needed for wipe (-w) flag')
             print('  If you are resuming a previous Vault eradication, try again without wipe flag.')

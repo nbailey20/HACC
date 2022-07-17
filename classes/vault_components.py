@@ -1,5 +1,4 @@
 from classes.aws_client import AwsClient
-import hacc_vars
 
 
 ## VaultComponent Object:
@@ -21,32 +20,27 @@ import hacc_vars
 ##
 class VaultComponents:
 
-    def __init__(self):
-        # region = hacc_vars.aws_hacc_region
-        # path = hacc_vars.aws_hacc_param_path
-        # self.aws_ssm_path_arn = f'arn:aws:ssm:{region}:{self.aws_account_id}:parameter/{path}'
-
+    def __init__(self, config):
         ## Configure AWS clients based on whether SCP (multi-account) enabled
-        self.aws_client = AwsClient(client_type='mgmt', create_scp=hacc_vars.create_scp)
+        self.aws_client = AwsClient(config, client_type='mgmt')
 
         identity_info = self.aws_client.call('sts', 'get_caller_identity')
         self.aws_account_id = identity_info['Account']
 
-        scp = self.__scp_exists() if hacc_vars.create_scp else False
-        self.scp = scp if scp else None
+        self.scp = self.__scp_exists(config['aws_hacc_scp']) if config['create_scp'] else None
 
-        cmk = self.__cmk_exists()
-        self.cmk = cmk if cmk else None
+        self.cmk = self.__cmk_exists(config['aws_hacc_kms_alias'])
+       # self.cmk = cmk if cmk else None
 
-        user = self.__user_exists()
-        self.user = user if user else None
+        self.user = self.__user_exists(config['aws_hacc_uname'])
+      #  self.user = user if user else None
 
 
 
     ## Checks if KMS key exists with expected alias from config file
     ## Returns KMS ARN if key exists, otherwise False
-    def __cmk_exists(self):
-        kms_alias = f'alias/{hacc_vars.aws_hacc_kms_alias}'
+    def __cmk_exists(self, kms_alias):
+        kms_alias = f'alias/{kms_alias}'
 
         hacc_kms_arn = self.aws_client.call(
                             'kms', 'describe_key',
@@ -60,9 +54,7 @@ class VaultComponents:
 
     ## Checks if expected IAM user exists for Vault
     ## Returns user ARN if exists, False otherwise
-    def __user_exists(self):
-        username = hacc_vars.aws_hacc_uname
-
+    def __user_exists(self, username):
         hacc_user = self.aws_client.call(
                         'iam', 'get_user',
                         UserName = username
@@ -74,9 +66,7 @@ class VaultComponents:
 
 
     ## Returns SCP ID if Vault SCP exists for account, False otherwise
-    def __scp_exists(self):
-        hacc_scp_name = hacc_vars.aws_hacc_scp
-
+    def __scp_exists(self, scp_name):
         vault_account_scp_obj = self.aws_client.call(
                                     'org', 'list_policies_for_target',
                                     TargetId = self.aws_account_id,
@@ -89,7 +79,7 @@ class VaultComponents:
         ## Check if policy with expected name exists
         for scp in vault_account_scp_obj['Policies']:
             name = scp['Name']
-            if name == hacc_scp_name:
+            if name == scp_name:
                 return scp['Id']
 
         ## If more than 10 SCPs, get more to check
@@ -106,7 +96,7 @@ class VaultComponents:
 
             for scp in vault_account_scp_obj['Policies']:
                 name = scp['Name']
-                if name == hacc_scp_name:
+                if name == scp_name:
                     return scp['Id']
         return False
 
@@ -114,7 +104,7 @@ class VaultComponents:
     ## Function that returns list of required components for Vault based on config params
     def required(self):
         components = ['cmk', 'user']
-        if hacc_vars.create_scp:
+        if self.scp:
             components.append('scp')
         return components
 
@@ -126,6 +116,6 @@ class VaultComponents:
             components.append('cmk')
         if self.user:
             components.append('user')
-        if hacc_vars.create_scp and self.scp:
+        if self.scp:
             components.append('scp')
         return components

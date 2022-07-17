@@ -443,7 +443,7 @@ def validate_args_for_action(args, config):
 
     ## Validate service and username input where possible
     if action == 'search' or action == 'delete':
-        vault = Vault()
+        vault = Vault(config)
         if len(vault.get_all_services()) == 0:
             print('Vault is curently empty, add a service credential with `hacc add`')
             return False

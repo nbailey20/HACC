@@ -20,7 +20,7 @@ def add_credential_for_service(vault_obj, service_name, user, passwd):
 
 
 def add(args, config):
-    vault = Vault()
+    vault = Vault(config)
 
     ## Import credentials from provided filename
     if args.file:

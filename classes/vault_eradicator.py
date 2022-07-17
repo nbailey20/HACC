@@ -1,6 +1,5 @@
 from classes.vault_components import VaultComponents
 from install.hacc_credentials import delete_hacc_profile, get_hacc_access_key
-import hacc_vars
 import time
 
 
@@ -20,17 +19,16 @@ import time
 ##      delete_scp
 ##
 class VaultEradicator(VaultComponents):
-    def __init__(self):
+    def __init__(self, config):
         super().__init__()
 
 
 
     ## Deletes expected CMK alias, returns False on fail
-    def __delete_alias(self):
-        key_alias = hacc_vars.aws_hacc_kms_alias
+    def __delete_alias(self, kms_alias):
         alias_delete_res = self.aws_client.call(
                                 'kms', 'delete_alias',
-                                AliasName = f'alias/{key_alias}'
+                                AliasName = f'alias/{kms_alias}'
                             )
         return alias_delete_res
 
@@ -48,7 +46,7 @@ class VaultEradicator(VaultComponents):
     ## Returns True if delete successful or key doesn't exist
     ## Unsets cmk attribute of parent class
     ## Returns False if failed to delete key/alias
-    def delete_cmk_with_alias(self):
+    def delete_cmk_with_alias(self, kms_alias):
         print('Checking for existing Vault key')
 
         if not self.cmk:
@@ -57,7 +55,7 @@ class VaultEradicator(VaultComponents):
 
         print('Existing Vault key found, deleting...')
 
-        alias_delete_res = self.__delete_alias()
+        alias_delete_res = self.__delete_alias(kms_alias)
         ## If we can't delete alias, leave CMK component for next time
         if not alias_delete_res:
             print('Failed to delete alias for Vault key')
@@ -109,7 +107,7 @@ class VaultEradicator(VaultComponents):
     ## Returns True if delete successful or user doesn't exist
     ## Unsets user attribute of parent class
     ## Returns False if failed to delete user/policy
-    def delete_iam_user_with_policy(self):
+    def delete_iam_user_with_policy(self, username, policy_name):
         print('Checking for Vault IAM user')
 
         if not self.user:
@@ -117,9 +115,7 @@ class VaultEradicator(VaultComponents):
             return True
         print('Existing Vault user found, deleting...')
 
-        username = hacc_vars.aws_hacc_uname
-
-        delete_policy_res = self.__delete_iam_policy(username, hacc_vars.aws_hacc_iam_policy)
+        delete_policy_res = self.__delete_iam_policy(username, policy_name)
         ## If we can't delete policy, leave IAM component for next time
         if not delete_policy_res:
             print('Failed to delete user policy')

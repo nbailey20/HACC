@@ -1,6 +1,8 @@
-import hacc_vars
-import boto3
-from botocore.exceptions import ClientError
+try:
+    import boto3
+    from botocore.exceptions import ClientError
+except:
+    print('Required Python module boto3 required for HACC client. Install and try again.')
 import logging
 
 logger=logging.getLogger()
@@ -18,14 +20,16 @@ logger=logging.getLogger()
 ##
 class AwsClient:
 
-    def __init__(self, client_type='data', create_scp=True):
+    def __init__(self, config, client_type='data'):
+        region = config['aws_hacc_region']
+        create_scp = config['create_scp']
 
         ## If API client is for data operations, only need SSM and KMS clients
         if client_type == 'data':
-            hacc_session = boto3.session.Session(profile_name=hacc_vars.aws_hacc_uname)
+            hacc_session = boto3.session.Session(profile_name=config['aws_hacc_uname'])
 
-            self.ssm = hacc_session.client('ssm', region_name=hacc_vars.aws_hacc_region)
-            self.kms = hacc_session.client('kms', region_name=hacc_vars.aws_hacc_region)
+            self.ssm = hacc_session.client('ssm', region_name=region)
+            self.kms = hacc_session.client('kms', region_name=region)
 
         ## Install/eradicate action clients
         if client_type == 'mgmt':
@@ -34,7 +38,7 @@ class AwsClient:
             ## Assume cross account role for Vault resources, create SCP in root account
             if create_scp:
                 assumed_role_object = self.call('sts', 'assume_role',
-                                                RoleArn=hacc_vars.aws_member_role,
+                                                RoleArn=config['aws_member_role'],
                                                 RoleSessionName="HaccSession"
                                             )
                 role_creds = assumed_role_object['Credentials']
@@ -47,12 +51,12 @@ class AwsClient:
                                         aws_secret_access_key = aws_secret_access_key,
                                         aws_session_token = aws_session_token
                                     )
-                self.kms = boto3.client('kms', region_name = hacc_vars.aws_hacc_region,
+                self.kms = boto3.client('kms', region_name = region,
                                             aws_access_key_id = aws_access_key_id,
                                             aws_secret_access_key = aws_secret_access_key,
                                             aws_session_token = aws_session_token
                                         )
-                self.sts = boto3.client('sts', region_name = hacc_vars.aws_hacc_region,
+                self.sts = boto3.client('sts', region_name = region,
                                             aws_access_key_id = aws_access_key_id,
                                             aws_secret_access_key = aws_secret_access_key,
                                             aws_session_token = aws_session_token
@@ -63,7 +67,7 @@ class AwsClient:
             ## Only one account, use current AWS creds
             else:
                 self.iam = boto3.client('iam')
-                self.kms = boto3.client('kms', region_name=hacc_vars.aws_hacc_region)
+                self.kms = boto3.client('kms', region_name=region)
 
 
 

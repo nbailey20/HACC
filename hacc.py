@@ -27,7 +27,7 @@ logger.handlers[0].setFormatter(logging.Formatter(
 ))
 
 
-HACC_VERSION = 'v0.6'
+HACC_VERSION = 'v0.7'
 
 
 def main():
@@ -41,6 +41,8 @@ def main():
 
         ## Read config params from hacc_vars file into object
         config = get_config_params()
+        if not config:
+            return
 
         if not startup(args, config):
             return

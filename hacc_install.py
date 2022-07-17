@@ -1,4 +1,3 @@
-#import hacc_vars
 from classes.vault_installer import VaultInstaller
 from hacc_add import add
 import time
@@ -10,26 +9,20 @@ def install(args, config):
     print('Installing Vault...')
     total_resources_to_create = 3 if config['create_scp'] else 2
 
-    installer = VaultInstaller()
+    installer = VaultInstaller(config)
 
     if installer.cmk or installer.user or installer.scp:
         print('  Previous installation detected, resuming')
 
     if not installer.cmk:
-        installer.create_cmk_with_alias()
+        installer.create_cmk_with_alias(config['aws_hacc_kms_alias'])
 
     if not installer.user:
-        installer.create_user_with_policy()
+        installer.create_user_with_policy(config['aws_hacc_uname'])
 
     if config['create_scp']:
-        # ## Make sure all Vault resources created before applying SCP
-        # if not install.cmk or not install.user:
-        #     print('Vault resources must be fully setup before SCP can be created.')
-        #     print('Retry to attempt to resume installation')
-        #     return
-        
         if not installer.scp:
-            installer.create_scp()
+            installer.create_scp(config['aws_hacc_scp'])
 
     else:
         print('SCP disabled for Vault installation, skipping')

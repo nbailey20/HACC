@@ -1,7 +1,6 @@
 from classes.vault_eradicator import VaultEradicator
 from install.hacc_credentials import create_hacc_profile
 import install.hacc_policies
-import hacc_vars
 import json
 
 
@@ -21,14 +20,15 @@ import json
 ##      create_scp
 ##
 class VaultInstaller(VaultEradicator):
-    def __init__(self):
+    def __init__(self, config):
         super().__init__()
 
-        if hacc_vars.create_scp:
-            self.aws_user_arn = f'arn:aws:iam::{self.aws_account_id}:user/{hacc_vars.aws_hacc_uname}'
+        if config['create_scp']:
+            cross_account_user = config['aws_hacc_uname']
+            self.aws_user_arn = f'arn:aws:iam::{self.aws_account_id}:user/{cross_account_user}'
 
-        region = hacc_vars.aws_hacc_region
-        path = hacc_vars.aws_hacc_param_path
+        region = config['aws_hacc_region']
+        path = config['aws_hacc_param_path']
         self.aws_ssm_path_arn = f'arn:aws:ssm:{region}:{self.aws_account_id}:parameter/{path}' 
 
 
@@ -58,7 +58,7 @@ class VaultInstaller(VaultEradicator):
     ## Creates or confirms KMS exists for Vault 
     ## Returns True if key is present and sets CMK component parent attribute with ARN
     ## Returns False if key/alias failed to create
-    def create_cmk_with_alias(self):
+    def create_cmk_with_alias(self, kms_alias):
         print('Checking for existing Vault key')
 
         if self.cmk:
@@ -73,8 +73,7 @@ class VaultInstaller(VaultEradicator):
             return False
 
         ## Create new alias
-        key_name = hacc_vars.aws_hacc_kms_alias
-        hacc_alias_res = self.__create_alias(key_name, key_id)
+        hacc_alias_res = self.__create_alias(kms_alias, key_id)
         if hacc_alias_res:
             self.cmk = key_id
             return True
@@ -125,7 +124,7 @@ class VaultInstaller(VaultEradicator):
     ## Returns True if user is present
     ## Sets user component parent attribute with IAM ARN
     ## Returns False if user/policy failed to create
-    def create_user_with_policy(self):
+    def create_user_with_policy(self, username, policy_name):
         print('Checking for existing IAM user')
 
         if self.user:
@@ -134,7 +133,7 @@ class VaultInstaller(VaultEradicator):
         print('No existing user found, creating...')
 
         ## Create IAM user
-        user_arn = self.__create_iam_user(hacc_vars.aws_hacc_uname)
+        user_arn = self.__create_iam_user(username)
         if not user_arn:
             print('Failed to create IAM user for Vault')
             return False
@@ -146,8 +145,8 @@ class VaultInstaller(VaultEradicator):
                                     self.cmk)
                         )
         hacc_policy = self.__put_iam_policy(
-                            hacc_vars.aws_hacc_uname,
-                            hacc_vars.aws_hacc_iam_policy,
+                            username,
+                            policy_name,
                             json.dumps(user_perms)
                         )
         if not hacc_policy:
@@ -157,7 +156,7 @@ class VaultInstaller(VaultEradicator):
             return False
 
         ## Create IAM access key for user
-        access_key, secret_key = self.__create_iam_access_key(hacc_vars.aws_hacc_uname)
+        access_key, secret_key = self.__create_iam_access_key(username)
         if not access_key:
             print('Failed to create credentials for user')
             print('  Cleaning up Vault user with no credentials')
@@ -206,7 +205,7 @@ class VaultInstaller(VaultEradicator):
     ## Returns True if SCP is present
     ## Sets scp component parent attribute with SCP ID
     ## Returns False if SCP failed to create/attach to Vault account
-    def create_scp(self):
+    def create_scp(self, scp_name):
         print('Checking for existing Vault SCP')
 
         if self.scp:
@@ -222,7 +221,7 @@ class VaultInstaller(VaultEradicator):
                                      self.cmk,
                                      self.aws_user_arn)
                                 )
-        policy_id = self.__create_org_policy(hacc_vars.aws_hacc_scp, json.dumps(scp_policy))
+        policy_id = self.__create_org_policy(scp_name, json.dumps(scp_policy))
         if not policy_id:
             print('Failed to create SCP in AWS organization')
             return False
