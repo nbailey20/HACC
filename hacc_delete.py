@@ -2,8 +2,8 @@ from classes.hacc_service import HaccService
 from classes.vault import Vault
 
 
-def delete_all_creds():
-    vault = Vault()
+def delete_all_creds(config):
+    vault = Vault(config)
 
     for svc_name in vault.get_all_services():
         svc_obj = HaccService(svc_name, vault=vault)
@@ -18,12 +18,12 @@ def delete_all_creds():
 
 
 
-def delete(args):
+def delete(args, config):
 
     ## Wipe all Vault creds before eradication
     if args.wipe:
         print('Wiping all credentials from Vault...')
-        delete_all_creds()
+        delete_all_creds(config)
         return
 
 
@@ -33,7 +33,7 @@ def delete(args):
     service_name = args.service
     user = args.username
 
-    svc_obj = HaccService(service_name)
+    svc_obj = HaccService(service_name, config=config)
     if not svc_obj.remove_credential(user):
         print(f'  Username {user} does not exist for service {service_name}, exiting.')
         return

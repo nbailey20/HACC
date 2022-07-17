@@ -1,4 +1,5 @@
 import argparse
+#from calendar import c
 import re
 from classes.vault import Vault
 from classes.hacc_service import HaccService
@@ -39,6 +40,11 @@ ALLOWED_FLAGS = {
         'action':  'backup',
         'help':    'Backup entire Vault'
     },
+    'configure': {
+        's_flag':   '-c',
+        'action':   'configure',
+        'help':     'View or modify client configuration'
+    },
     'subargs': [
         {
             's_flag': '-u',
@@ -61,7 +67,7 @@ ALLOWED_FLAGS = {
         {
             's_flag': '-f',
             'name':   'file',
-            'help':   'File name for importing credentials and backing up Vault',
+            'help':   'File name for import / export operations',
             'type':   'string'
         },
         {
@@ -69,18 +75,37 @@ ALLOWED_FLAGS = {
             'name':   'wipe',
             'help':   'Wipe all existing credentials during Vault eradication',
             'type':   'bool'
+        },
+        {
+            's_flag': None,
+            'name':   'export',
+            'help':   'Export existing client configuration as encrypted file',
+            'type':   'bool'
+        },
+        {
+            's_flag': None,
+            'name':   'set',
+            'help':   'Set client configuration parameter',
+            'type':   'string'
+        },
+        {
+            's_flag': None,
+            'name':   'show',
+            'help':   'Show client configuration parameter',
+            'type':   'string'
         }
     ]
 }
 
 ACTION_ALLOWED_SUBARGS = {
-    'install': ['debug', 'file'],
+    'install':   ['debug', 'file'],
     'eradicate': ['debug', 'wipe'],
-    'add': ['debug', 'service', 'username', 'password', 'generate', 'file'],
-    'delete': ['debug', 'service', 'username'],
-    'rotate': ['debug', 'service', 'username', 'password', 'generate'],
-    'search': ['debug', 'service', 'username'],
-    'backup': ['debug', 'file']
+    'add':       ['debug', 'service', 'username', 'password', 'generate', 'file'],
+    'delete':    ['debug', 'service', 'username'],
+    'rotate':    ['debug', 'service', 'username', 'password', 'generate'],
+    'search':    ['debug', 'service', 'username'],
+    'backup':    ['debug', 'file'],
+    'configure': ['debug', 'export', 'set', 'show', 'file']
 }
 
 ACTION_INCOMPATABLE_SUBARGS = {
@@ -92,20 +117,100 @@ ACTION_INCOMPATABLE_SUBARGS = {
     ],
     'rotate': [
         ['password', 'generate']
+    ],
+    'configure': [
+        ['export', 'set'],
+        ['export', 'show'],
+        ['set', 'show'],
+        ['show', 'file']
     ]
 }
 
 ACTION_REQUIRED_SUBARGS = {
-    'install': [],
+    'install':   [],
     'eradicate': [],
-    'add': ['service', 'username', 'password'],
-    'delete': ['service', 'username'],
-    'rotate': ['service', 'username', 'password'],
-    'search': ['service', 'username'],
-    'backup': ['file']
+    'add':       ['service', 'username', 'password'],
+    'delete':    ['service', 'username'],
+    'rotate':    ['service', 'username', 'password'],
+    'search':    ['service', 'username'],
+    'backup':    ['file'],
+    'configure': [],
 }
 
+## Arguments that are required together for action TODO use this
+# ARGUMENT_REQUIRED_SUBARGS = {
+#     'export':    ['file']
+# }
 
+## -v/--debug arg is always allowed, redundant to list here
+## same for -y/--yes, ignored if not applicable
+ALLOWED_ARG_INPUT_COMBOS = [
+    ['install'],
+    ['install', 'file'],
+
+    ['eradicate'],
+    ['eradicate', 'wipe'],
+
+    ['add'],
+    ['add', 'service'],
+    ['add', 'username'],
+    ['add', 'password'],
+    ['add', 'generate'],
+    ['add', 'file'],
+    ['add', 'service', 'username'],
+    ['add', 'service', 'password'],
+    ['add', 'service', 'generate'],
+    ['add', 'username', 'password'],
+    ['add', 'username', 'generate'],
+    ['add', 'service', 'username', 'password'],
+    ['add', 'service', 'username', 'generate'],
+
+    ['delete'],
+    ['delete', 'service'],
+    ['delete', 'username'],
+    ['delete', 'service', 'username'],
+
+    ['rotate'],
+    ['rotate', 'service'],
+    ['rotate', 'username'],
+    ['rotate', 'password'],
+    ['rotate', 'generate'],
+    ['rotate', 'service', 'username'],
+    ['rotate', 'service', 'password'],
+    ['rotate', 'service', 'generate'],
+    ['rotate', 'username', 'password'],
+    ['rotate', 'username', 'generate'],
+    ['rotate', 'service', 'username', 'password'],
+    ['rotate', 'service', 'username', 'generate'],
+
+    ['search'],
+    ['search', 'service'],
+    ['search', 'username'],
+    ['search', 'service', 'username'],
+
+    ['backup'],
+    ['backup', 'file'],
+
+    ['configure', 'show'],
+    ['configure', 'set'],
+    ['configure', 'export'],
+    ['configure', 'set', 'file'],
+    ['configure', 'export', 'file']
+]
+
+HACC_SAMPLE_USAGE = [
+    'Sample Usage:',
+    '  hacc --configure --set aws_hacc_region=us-east-2',
+    '  hacc -c --show all',
+    '  hacc --install -v',
+    '  hacc -a --username example@gmail.com -p 1234 testService',
+    '  hacc --add testService -u test@yahoo.com --generate',
+    '  hacc testService',
+    '  hacc --rotate test -u test@yahoo.com -g',
+    '  hacc --backup -f test_backup.txt',
+    '  hacc -d testService -u example',
+    '  hacc --eradicate --wipe'
+]
 
 
 def parse_args():
@@ -113,7 +218,7 @@ def parse_args():
     parser = argparse.ArgumentParser(
         prog='hacc',
         description='Homemade Authentication Credential Client - HACC',
-        epilog='Sample Usage:\n  hacc -iv\n  hacc -a -u example@gmail.com -p 1234 testService\n  hacc testService\n  hacc -r test -u example -g\n  hacc -d testService\n  hacc -e -v',
+        epilog='\n'.join(HACC_SAMPLE_USAGE),
         formatter_class=argparse.RawTextHelpFormatter
     )
     # Set all actions to be mutually exclusive args
@@ -138,23 +243,38 @@ def parse_args():
         help='Service name, a folder that can hold multiple credentials'
     )
 
-    # Add optional subargs
+    # Add optional subargs, some without single-letter abbreviations
     for a in ALLOWED_FLAGS['subargs']:
         if a['type'] == 'string':
-            parser.add_argument(
-                a['s_flag'], 
-                '--' + a['name'], 
-                dest=a['name'], 
-                help=a['help']
-            )
+            if a['s_flag']:
+                parser.add_argument(
+                    a['s_flag'], 
+                    '--' + a['name'], 
+                    dest=a['name'], 
+                    help=a['help']
+                )
+            else:
+                parser.add_argument(
+                    '--' + a['name'], 
+                    dest=a['name'], 
+                    help=a['help']
+                )
         elif a['type'] == 'bool':
-            parser.add_argument(
-                a['s_flag'], 
-                '--' + a['name'], 
-                dest=a['name'],
-                action='store_true',
-                help=a['help']
-            )
+            if a['s_flag']:
+                parser.add_argument(
+                    a['s_flag'], 
+                    '--' + a['name'], 
+                    dest=a['name'],
+                    action='store_true',
+                    help=a['help']
+                )
+            else:
+                parser.add_argument(
+                    '--' + a['name'], 
+                    dest=a['name'],
+                    action='store_true',
+                    help=a['help']
+                )
     
     # Add verbosity flag
     parser.add_argument(
@@ -323,7 +443,7 @@ def missing_args_for_action(args):
 ## Expand any subarg prefix shortcuts
 ## Returns a set of updated args that are ready for the given action
 ## Returns False if args cannot be gathered or input not valid
-def validate_args_for_action(args):
+def validate_args_for_action(args, config):
     action = args.action
     
 
@@ -336,7 +456,7 @@ def validate_args_for_action(args):
 
     ## Validate service and username input where possible
     if action == 'search' or action == 'delete':
-        vault = Vault()
+        vault = Vault(config)
         if len(vault.get_all_services()) == 0:
             print('Vault is curently empty, add a service credential with `hacc add`')
             return False

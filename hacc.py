@@ -1,4 +1,4 @@
-from hacc_core import startup
+from hacc_core import get_config_params, startup
 from input.hacc_input import parse_args, eval_args, validate_args_for_action
 
 from hacc_search import search
@@ -8,6 +8,7 @@ from hacc_rotate import rotate
 from hacc_install import install
 from hacc_eradicate import eradicate
 from hacc_backup import backup
+from hacc_configure import configure
 
 import logging
 
@@ -26,7 +27,7 @@ logger.handlers[0].setFormatter(logging.Formatter(
 ))
 
 
-HACC_VERSION = 'v0.6'
+HACC_VERSION = 'v0.7'
 
 
 def main():
@@ -37,7 +38,13 @@ def main():
         ## Parse args, ensure required config vars for action are set
         ##  and Vault setup properly for given action
         args = parse_args()
-        if not startup(args):
+
+        ## Read config params from hacc_vars file into object
+        config = get_config_params()
+        if not config:
+            return
+
+        if not startup(args, config):
             return
 
         ## Ensure args are valid for action
@@ -53,13 +60,13 @@ def main():
         logger.debug(f'Initial args provided: {args}')
 
         ## Validate input/gather any remaining args before passing to action
-        valid_args = validate_args_for_action(args)
+        valid_args = validate_args_for_action(args, config)
         if not valid_args:
             return False
         logger.debug(f'Validated input args: {valid_args}')
 
         ## Call appropriate function for action
-        globals()[valid_args.action](valid_args)
+        globals()[valid_args.action](valid_args, config)
     
     ## cleanly exit without errors
     except KeyboardInterrupt:
