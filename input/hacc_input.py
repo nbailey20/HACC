@@ -198,6 +198,19 @@ ALLOWED_ARG_INPUT_COMBOS = [
     ['configure', 'export', 'file']
 ]
 
+HACC_SAMPLE_USAGE = [
+    'Sample Usage:',
+    '  hacc --configure --set aws_hacc_region=us-east-2',
+    '  hacc -c --show all',
+    '  hacc --install -v',
+    '  hacc -a --username example@gmail.com -p 1234 testService',
+    '  hacc --add testService -u test@yahoo.com --generate',
+    '  hacc testService',
+    '  hacc --rotate test -u test@yahoo.com -g',
+    '  hacc --backup -f test_backup.txt',
+    '  hacc -d testService -u example',
+    '  hacc --eradicate --wipe'
+]
 
 
 def parse_args():
@@ -205,7 +218,7 @@ def parse_args():
     parser = argparse.ArgumentParser(
         prog='hacc',
         description='Homemade Authentication Credential Client - HACC',
-        epilog='Sample Usage:\n  hacc -iv\n  hacc -a -u example@gmail.com -p 1234 testService\n  hacc testService\n  hacc -r test -u example -g\n  hacc -d testService\n  hacc -e -v',
+        epilog='\n'.join(HACC_SAMPLE_USAGE),
         formatter_class=argparse.RawTextHelpFormatter
     )
     # Set all actions to be mutually exclusive args

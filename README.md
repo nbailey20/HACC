@@ -7,7 +7,7 @@ HACC is an open-source credential manager command-line tool that uses your perso
 * Encrypted with AWS KMS Customer-Managed Key so only you can decrypt
 * Up to 40MB of encrypted data costs $1/month (only cost is the key)
 
-Current Version: v0.6
+Current Version: v0.7
 
 ## Current Features
 
@@ -28,13 +28,15 @@ Current Version: v0.6
 * Ability to provide backup file for new vault install or add to existing vault, "--file" subarg
 * Ability to rotate existing credentials
 * Cleanly exit at any point with ctrl-c
+* 'configure' keyword to set/show/export client configuration parameters
+    * export config as encrypted file to grant multiple users access to single Vault
 
 
 ## hacc -h
 ```
-HACC v0.6
+HACC v0.7
 
-usage: hacc [-h] [-i | -e | -a | -d | -r | -b] [-u USERNAME] [-p PASSWORD] [-g] [-f FILE] [-w] [-v] [service]
+usage: hacc [-h] [-i | -e | -a | -d | -r | -b | -c] [-u USERNAME] [-p PASSWORD] [-g] [-f FILE] [-w] [--export] [--set SET] [--show SHOW] [-v] [service]
 
 Homemade Authentication Credential Client - HACC
 
@@ -48,8 +50,11 @@ optional arguments:
   -p PASSWORD, --password PASSWORD
                         Password for new credentials, used with add action
   -g, --generate        Generate random password for add operation
-  -f FILE, --file FILE  File name for importing credentials and backing up Vault
+  -f FILE, --file FILE  File name for import / export operations
   -w, --wipe            Wipe all existing credentials during Vault eradication
+  --export              Export existing client configuration as encrypted file
+  --set SET             Set client configuration parameter
+  --show SHOW           Show client configuration parameter
   -v, --verbose         Display verbose output
 
 Actions:
@@ -59,14 +64,19 @@ Actions:
   -d, --delete          Delete credentials in Vault
   -r, --rotate          Rotate existing password in Vault
   -b, --backup          Backup entire Vault
+  -c, --configure       View or modify client configuration
 
 Sample Usage:
-  hacc -iv
-  hacc -a -u example@gmail.com -p 1234 testService
+  hacc --configure --set aws_hacc_region=us-east-2
+  hacc -c --show all
+  hacc --install -v
+  hacc -a --username example@gmail.com -p 1234 testService
+  hacc --add testService -u test@yahoo.com --generate
   hacc testService
-  hacc -r test -u example -g
-  hacc -d testService
-  hacc -e -v
+  hacc --rotate test -u test@yahoo.com -g
+  hacc --backup -f test_backup.txt
+  hacc -d testService -u example
+  hacc --eradicate --wipe
 ```
 
 ## Creating executable file from Python source
@@ -76,8 +86,6 @@ Sample Usage:
 
 ## Future Needs
 * Support for services with more than 4KB of credentials via multiple parameters per service
-* 'configure' (as opposed to install) keyword to grant additional devices access to existing Vault
-    * encrypt hacc_vars file to be provided to additional user as config file, or manually prompt for config vars
 * Confirm user doesn't already exist for add action before asking for password if not provided
 * Test that all required config variables for action are valid
 * Set max password generation length for dumb sites --max-len
