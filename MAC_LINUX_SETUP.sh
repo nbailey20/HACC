@@ -23,7 +23,8 @@ else
     echo "Moved configuration file to ~/hacc/hacc.conf"
 fi
 
-mkdir /usr/local/Hacc
+sudo mkdir /usr/local/Hacc
+sudo chown -R $USER /usr/local/Hacc
 cp -r Hacc/ /usr/local/Hacc/ && ln -s /usr/local/Hacc/hacc /usr/local/bin/hacc
 chmod +x /usr/local/Hacc/hacc
 if [[ $? == 0 ]]; then
