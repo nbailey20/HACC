@@ -16,6 +16,7 @@ if [ ! -f "hacc.conf" ]; then
         mkdir ~/hacc
         cp hacc.conf.template ~/hacc/hacc.conf
         echo "Created empty configuration file ~/hacc/hacc.conf that can be updated with hacc --configure"
+    fi
 
 else
     mv hacc.conf ~/hacc/hacc.conf
