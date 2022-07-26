@@ -2,8 +2,8 @@
 
 echo "Starting setup for HACC - Homemade Authentication Credential Client"
 
-if [ ! -f "hacc.conf" ]; then
-    if [ ! -f "hacc.conf.template" ]; then
+if [ ! -f "Hacc/hacc.conf" ]; then
+    if [ ! -f "Hacc/hacc.conf.template" ]; then
             echo "Neither HACC configuration file or template file found, exiting." && exit 1
     fi
 
@@ -13,13 +13,13 @@ if [ ! -f "hacc.conf" ]; then
         exit 2
     else
         echo "Thanks for confirming :)"
-        mkdir ~/hacc
-        cp hacc.conf.template ~/hacc/hacc.conf
-        echo "Created empty configuration file ~/hacc/hacc.conf that can be updated with hacc --configure"
+        mkdir ~/.hacc
+        cp Hacc/hacc.conf.template ~/.hacc/hacc.conf
+        echo "Created empty configuration file ~/.hacc/hacc.conf that can be updated with hacc --configure"
     fi
 
 else
-    mv hacc.conf ~/hacc/hacc.conf
+    mv Hacc/hacc.conf ~/.hacc/hacc.conf
     echo "Moved configuration file to ~/hacc/hacc.conf"
 fi
 
