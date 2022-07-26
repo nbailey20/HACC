@@ -17,6 +17,7 @@ import logging
 
 if sys.version_info[0] < 3 or sys.version_info[1] < 9:
     print("Must be using Python 3.9+")
+    sys.exit()
 
 ## Configure logger
 logging.basicConfig()
