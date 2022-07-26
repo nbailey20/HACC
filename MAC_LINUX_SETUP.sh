@@ -7,10 +7,10 @@ if [ ! -f "Hacc/hacc.conf" ]; then
             echo "Neither HACC configuration file or template file found, exiting." && exit 1
     fi
 
-    read -p "Are you configuring the client with an existing vault? (y/n): " existing && [[ $existing == [yY] || $existing == [nN] ]] || echo "Unknown input" && exit 1
+    read -p "Are you configuring the client with an existing vault? (y/n): " existing && [[ $existing == [yY] || $existing == [nN] ]] || echo "Unknown input" && exit 2
     if [[ $existing == [nN] ]]; then
         echo "Please ensure all required values are present in hacc.conf.template and then rename to hacc.conf and rerun this script."
-        exit 2
+        exit 3
     else
         echo "Thanks for confirming :)"
         mkdir ~/.hacc
@@ -28,5 +28,5 @@ if [[ $? == 0 ]]; then
     echo "Installed client at /usr/local/bin/hacc, please start new terminal and test with `hacc`"
 else
     echo "Failed to install client in /usr/local/bin/hacc, aborting."
-    exit 3
+    exit 4
 fi
