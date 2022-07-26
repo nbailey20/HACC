@@ -38,6 +38,7 @@ HACC_VERSION = 'v0.7'
 
 
 def main():
+    print(sys.version_info)
     print(f'HACC {HACC_VERSION}')
     print()
 
