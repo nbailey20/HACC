@@ -10,9 +10,13 @@ from hacc_eradicate import eradicate
 from hacc_backup import backup
 from hacc_configure import configure
 
+import sys
 import logging
 
- ## Configure logger
+if sys.version_info[0] < 3 or sys.version_info[1] < 9:
+    print("Must be using Python 3.9+")
+
+## Configure logger
 logging.basicConfig()
 
 ## suppress lots of noisy logs
