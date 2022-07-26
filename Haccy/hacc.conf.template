@@ -1,4 +1,4 @@
-## Rename this file to hacc.conf once all values provided
+## IMPORTANT! Rename this file to hacc.conf once all values provided
 ## Do not add comments to any line with configuration, above or below is fine :)
 
 # Region where Vault should live
