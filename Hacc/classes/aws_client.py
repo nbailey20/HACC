@@ -3,9 +3,9 @@ try:
     import boto3
     from botocore.exceptions import ClientError
 except:
-    print('Required Python module boto3 required for HACC client. Install and try again.')
+    print('Python module boto3 required for HACC client. Install (pip install boto3) and try again.')
     sys.exit()
-    
+
 import logging
 
 logger=logging.getLogger()
