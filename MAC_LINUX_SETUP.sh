@@ -23,8 +23,9 @@ else
     echo "Moved configuration file to ~/hacc/hacc.conf"
 fi
 
-sudo mkdir /usr/local/Hacc
-sudo cp -r Hacc/ /usr/local/Hacc/ && sudo ln -s /usr/local/Hacc/hacc /usr/local/bin/hacc
+mkdir /usr/local/Hacc
+cp -r Hacc/ /usr/local/Hacc/ && ln -s /usr/local/Hacc/hacc /usr/local/bin/hacc
+chmod +x /usr/local/Hacc/hacc
 if [[ $? == 0 ]]; then
     echo "Installed client at /usr/local/bin/hacc, please start new terminal and test with 'hacc'"
 else
