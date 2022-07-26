@@ -25,7 +25,7 @@ fi
 
 sudo cp -r Hacc/ /usr/local/ && sudo ln -s /usr/local/Hacc/hacc /usr/local/bin/hacc
 if [[ $? == 0 ]]; then
-    echo "Installed client at /usr/local/bin/hacc, please start new terminal and test with `hacc`"
+    echo "Installed client at /usr/local/bin/hacc, please start new terminal and test with \'hacc\'"
 else
     echo "Failed to install client in /usr/local/bin/hacc, aborting."
     exit 4
