@@ -103,7 +103,7 @@ class AwsClient:
 
         except ClientError as e:
             if e.response['ResponseMetadata']['HTTPStatusCode'] == 403:
-                print('HACC is not authorized to perform {client_type} {api_name}, exiting')
+                print(f'HACC is not authorized to perform {client_type} {api_name}, exiting')
             else:
                 logger.debug(f'AWS client error: {e}')
             return False
