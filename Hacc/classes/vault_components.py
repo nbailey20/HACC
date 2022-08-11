@@ -25,7 +25,8 @@ class VaultComponents:
         self.aws_client = AwsClient(config, client_type='mgmt')
 
         identity_info = self.aws_client.call('sts', 'get_caller_identity')
-        self.aws_account_id = identity_info['Account']
+        if identity_info:
+            self.aws_account_id = identity_info['Account']
 
         self.scp = self.__scp_exists(config['aws_hacc_scp']) if config['create_scp'] else None
 

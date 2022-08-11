@@ -98,7 +98,7 @@ def vault_components_exist_for_action(args, config):
         required = components.required()
 
         if len(active) == 0:
-            print('No Vault detected, install before attempting this command.')
+            print('No Vault detected, install or configure before attempting this command.')
             return False
 
         elif len(active) != len(required):
