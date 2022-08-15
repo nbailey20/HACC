@@ -1,11 +1,11 @@
 # Homemade Authentication Credential Client - HACC
 
-HACC is an open-source credential manager command-line tool that uses your personal AWS account to securely store your secrets, so you don't have to wonder what's happening behind the scenes.
+HACC is an open-source credential manager command-line tool that uses your personal AWS account to securely store your secrets, so you don't have to wonder who's secretly selling your data behind the scenes!
 
 * Built with Python3
 * Credentials stored in AWS Parameter Store
 * Encrypted with AWS KMS Customer-Managed Key so only you can decrypt
-* Up to 40MB of encrypted data costs $1/month (only cost is the key)
+* Can store up to 40MB of encrypted data
 
 Current Version: v0.7
 
@@ -80,7 +80,7 @@ Sample Usage:
 ```
 
 ## Creating executable file from Python source
-```pyinstaller hacc.py```
+```pyinstaller hacc```
 * Will create dist\hacc folder, add this directory to PATH env variable
 * Note: if rebuilding, first delete build and dist folders or errors may occur, and restart terminal after running command
 
@@ -95,5 +95,7 @@ Sample Usage:
 * Support service/name prefixes properly for rotate action
 * Support for different password types, e.g. base64, random, xkcd
 * Add confirmation before installing vault, but show how many components are setup first
-* Optional (via hacc var) check for latest client version in github, upgrade if not
+* Optional (via hacc var) check for latest client version in github, upgrade if not - use brew/windows thing instead?
 * Reduce args passed to funcs to only necessary values
+* Option for AWS-managed SSM KMS key for completely free Vault
+* Add MIT license
