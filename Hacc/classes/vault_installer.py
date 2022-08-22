@@ -1,6 +1,6 @@
 from classes.vault_eradicator import VaultEradicator
-from install.hacc_credentials import create_hacc_profile
-import install.hacc_policies
+from vault_install.hacc_credentials import create_hacc_profile
+import vault_install.hacc_policies
 import json
 
 
@@ -139,7 +139,7 @@ class VaultInstaller(VaultEradicator):
             return False
 
         ## Put IAM policy for user
-        user_perms = json.loads(install.hacc_policies.VAULT_IAM_PERMS % 
+        user_perms = json.loads(vault_install.hacc_policies.VAULT_IAM_PERMS % 
                                     (self.aws_ssm_path_arn,
                                     self.aws_ssm_path_arn+'/*',
                                     self.cmk)
@@ -214,7 +214,7 @@ class VaultInstaller(VaultEradicator):
         print('No existing SCP found, creating Vault SCP...')
 
         ## Create policy in org
-        scp_policy = json.loads(install.hacc_policies.VAULT_SCP % 
+        scp_policy = json.loads(vault_install.hacc_policies.VAULT_SCP % 
                                     (self.aws_ssm_path_arn,
                                      self.aws_ssm_path_arn+'/*',
                                      self.aws_user_arn,

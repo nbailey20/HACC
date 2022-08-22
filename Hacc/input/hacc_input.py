@@ -45,6 +45,11 @@ ALLOWED_FLAGS = {
         'action':   'configure',
         'help':     'View or modify client configuration'
     },
+    'upgrade': {
+        's_flag':   None,
+        'action':   'upgrade',
+        'help':     'Upgrade client software'
+    },
     'subargs': [
         {
             's_flag': '-u',
@@ -105,7 +110,8 @@ ACTION_ALLOWED_SUBARGS = {
     'rotate':    ['debug', 'service', 'username', 'password', 'generate'],
     'search':    ['debug', 'service', 'username'],
     'backup':    ['debug', 'file'],
-    'configure': ['debug', 'export', 'set', 'show', 'file']
+    'configure': ['debug', 'export', 'set', 'show', 'file'],
+    'upgrade':   ['debug']
 }
 
 ACTION_INCOMPATABLE_SUBARGS = {
@@ -135,6 +141,7 @@ ACTION_REQUIRED_SUBARGS = {
     'search':    ['service', 'username'],
     'backup':    ['file'],
     'configure': [],
+    'upgrade':   []
 }
 
 ## Arguments that are required together for action TODO use this
@@ -150,6 +157,8 @@ ALLOWED_ARG_INPUT_COMBOS = [
 
     ['eradicate'],
     ['eradicate', 'wipe'],
+
+    ['upgrade'],
 
     ['add'],
     ['add', 'service'],
@@ -227,16 +236,26 @@ def parse_args():
     
     # Add main actions, set search as default action
     for a in [ALLOWED_FLAGS[x] for x in ALLOWED_FLAGS if x != 'subargs']:
-        action_types.add_argument(
-            a['s_flag'], 
-            '--' + a['action'], 
-            dest='action', 
-            default='search',
-            action='store_const', 
-            const= a['action'], 
-            help= a['help']
-        )
-    
+        if a['s_flag']:
+            action_types.add_argument(
+                a['s_flag'], 
+                '--' + a['action'], 
+                dest='action', 
+                default='search',
+                action='store_const', 
+                const= a['action'], 
+                help= a['help']
+            )
+        else:
+            action_types.add_argument(
+                '--' + a['action'], 
+                dest='action', 
+                default='search',
+                action='store_const', 
+                const= a['action'], 
+                help= a['help']
+            )
+
     # Add default search action
     parser.add_argument(
         'service', nargs='?', default=None, 

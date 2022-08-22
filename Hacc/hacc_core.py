@@ -1,5 +1,8 @@
+import os
+
+from versions.hacc_versions import check_for_upgrades, check_for_old_versions, cleanup_old_versions
 from classes.vault_components import VaultComponents
-import os, subprocess
+
 
 MGMT_ACTIONS = ['install', 'eradicate'] ## configure is mgmt action but doesn't have any required vars
 REQUIRED_MGMT_VARS = [
@@ -20,6 +23,11 @@ REQUIRED_DATA_VARS = [
 ]
 
 REQUIRED_SCP_VARS = ['aws_hacc_scp', 'aws_member_role']
+
+REQUIRED_COMMON_VARS = [
+    'check_for_upgrades',
+    'cleanup_old_versions'
+]
 
 
 ## Function to read config parameters from hacc_vars file into object
@@ -59,35 +67,39 @@ def get_config_params():
     return config
 
 
+## Function to compare list of required vars against loaded vars
+## Returns list containing any missing required vars, empty if none
+def get_missing_vars(required, loaded):
+    missing_vars = []
+    for v in required:
+        if not v in loaded or loaded[v] == '':
+            missing_vars.append(v)
+    return missing_vars
+
 
 ## Function to check all required config vars are set when client is invoked
 def required_config_set_for_action(args, config):
-    all_vars_exist = True
-    missing_vars = []
+    missing_vars = None
 
     if args.action in DATA_ACTIONS:
-        for v in REQUIRED_DATA_VARS:
-            if not v in config or config[v] == '':
-                missing_vars.append(v)
-                all_vars_exist = False
+        missing_vars = get_missing_vars(REQUIRED_DATA_VARS, config)
 
     elif args.action in MGMT_ACTIONS:
-        for v in REQUIRED_MGMT_VARS:
-            if not v in config or config[v] == '':
-                missing_vars.append(v)
-                all_vars_exist = False
+        missing_vars = get_missing_vars(REQUIRED_MGMT_VARS, config)
 
         ## conditionally check for SCP vars if create_scp == True
         if not 'create_scp' in missing_vars and config['create_scp'] == True:
-            for v in REQUIRED_SCP_VARS:
-                if not v in config  or config[v] == '':
-                    missing_vars.append(v)
-                    all_vars_exist = False
+            missing_vars.append(get_missing_vars(REQUIRED_SCP_VARS, config))
+
+    missing_vars.append(get_missing_vars(REQUIRED_COMMON_VARS, config))
+    missing_vars = [item for sublist in missing_vars for item in sublist]
 
     for m in missing_vars:
         print(f'Required configuration parameter {m} not set in hacc_vars.py, please set value with hacc configure --set {m}=... (or edit manually) and try again.')
 
-    return all_vars_exist
+    if len(missing_vars):
+        return False
+    return True
 
 
 ## Function to confirm all required Vault components for action are setup
@@ -118,5 +130,32 @@ def vault_components_exist_for_action(args, config):
     return True
 
 
-def startup(args, config):
-    return required_config_set_for_action(args, config) and vault_components_exist_for_action(args, config)
+
+## Initialization function for HACC client
+## 1. Loads config variables from configuration file
+## 2. Confirms all required variables for action exist
+## 3. Checks for software upgrades (if check_for_upgrades == True)
+## 4. Cleans up old software versions (if cleanup_old_versions == True)
+## 5. Confirms all required Vault components properly setup for action
+##
+## Returns configuration variable dict required by client, None if error
+def startup(args, current_version):
+    config = get_config_params()
+    if not required_config_set_for_action(args, config):
+        return None
+
+    if config['check_for_upgrades']:
+        new_version = check_for_upgrades(current_version)
+        if new_version:
+            print(f'New HACC version {new_version} available for installation. Upgrade with hacc --upgrade')
+
+    if config['cleanup_old_versions']:
+        old_versions = check_for_old_versions(current_version)
+        if old_versions:
+            cleanup_old_versions(old_versions)
+
+    if not vault_components_exist_for_action(args, config):
+        return None
+
+    config['version'] = current_version
+    return config

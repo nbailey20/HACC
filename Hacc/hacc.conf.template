@@ -17,7 +17,6 @@ aws_hacc_kms_alias = 'hacc-key'
 aws_hacc_param_path = 'hacc-vault'
 
 
-
 # Boolean to indicate whether optional SCP should be created to further lock down Vault account
 create_scp = 'False'
 
@@ -28,3 +27,10 @@ create_scp = 'False'
 # Cross account role for member (vault) account accessible via mgmt account creds
 ## Mandatory if create_scp == True, UNCOMMENT LINE BELOW
 # aws_member_role = ''
+
+
+# Boolean to indicate whether client should automatically check for new versions
+check_for_upgrades = 'True'
+
+# Boolean to indicate whether previous client versions should be removed
+cleanup_old_versions = 'False'

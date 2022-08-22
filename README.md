@@ -96,6 +96,7 @@ Sample Usage:
 * Support for different password types, e.g. base64, random, xkcd
 * Add confirmation before installing vault, but show how many components are setup first
 * Optional (via hacc var) check for latest client version in github, upgrade if not - use brew/windows thing instead?
+* Configuration bool to indicate whether previous HACC client versions should be cleaned up from system
 * Reduce args passed to funcs to only necessary values
 * Option for AWS-managed SSM KMS key for completely free Vault
 * Add MIT license
