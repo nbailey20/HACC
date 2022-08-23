@@ -1,4 +1,5 @@
-import subprocess, os
+import subprocess
+import os
 
 
 ## Returns True if existing AWS credentials/config file contains a profile for Vault

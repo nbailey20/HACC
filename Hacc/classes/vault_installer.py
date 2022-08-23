@@ -1,7 +1,8 @@
+import json
+
 from classes.vault_eradicator import VaultEradicator
 from vault_install.hacc_credentials import create_hacc_profile
 import vault_install.hacc_policies
-import json
 
 
 ## VaultInstaller Object:

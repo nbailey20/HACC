@@ -1,7 +1,14 @@
+import sys
 import os
 import requests
 import shutil
-from packaging import version
+
+try:
+    from packaging import version
+except:
+    print('Python module "packaging" required for HACC client. Install (pip install packaging) and try again.')
+    sys.exit()
+
 
 
 ## Function that takes in a list of Hacc versions + current version and returns either:

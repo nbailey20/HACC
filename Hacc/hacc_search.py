@@ -1,5 +1,7 @@
-from classes.hacc_service import HaccService
 import logging
+
+from classes.hacc_service import HaccService
+
 
 logger=logging.getLogger()
 

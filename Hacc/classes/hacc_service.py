@@ -1,8 +1,10 @@
+import logging
+import sys
+
 from classes.vault import Vault
-import logging, sys
+
 
 logger=logging.getLogger()
-
 
 
 ## HaccService Object:

@@ -1,6 +1,8 @@
+import time
+
 from hacc_add import add
 from hacc_delete import delete
-import time
+
 
 def rotate(args, config):
     delete(args, config)

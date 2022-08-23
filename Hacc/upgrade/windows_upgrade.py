@@ -18,13 +18,12 @@ def build_executable(source_dir):
 
 ## Function to persistently set user PATH variable via Windows registry
 ## Returns True on success and False otherwise
-def set_user_path(name, value):
-    REG_PATH = 'HKEY_CURRENT_USER\Environment'
+def update_user_path(value):
+    REG_PATH = 'Environment'
     try:
-        winreg.CreateKey(winreg.HKEY_CURRENT_USER, REG_PATH)
         with winreg.OpenKey(winreg.HKEY_CURRENT_USER, REG_PATH,
                             0, winreg.KEY_WRITE) as registry_key:
-            winreg.SetValueEx(registry_key, name, 0, winreg.REG_SZ, value)
+            winreg.SetValueEx(registry_key, 'Path', 0, winreg.REG_SZ, value)
         return True
     except WindowsError:
         return False
