@@ -27,7 +27,7 @@ fi
 
 sudo mkdir -p /usr/local/Hacc/${VERSION}
 sudo chown -R $USER /usr/local/Hacc
-cp -r Hacc/ /usr/local/Hacc/${VERSION} && ln -s /usr/local/Hacc/${VERSION}/hacc /usr/local/bin/hacc
+cp -r Hacc/* /usr/local/Hacc/${VERSION} && ln -s /usr/local/Hacc/${VERSION}/hacc /usr/local/bin/hacc
 chmod +x /usr/local/Hacc/${VERSION}/hacc
 if [[ $? == 0 ]]; then
     echo "Installed client at /usr/local/bin/hacc, please start new terminal and test with 'hacc'"
