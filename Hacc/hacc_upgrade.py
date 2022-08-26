@@ -89,24 +89,25 @@ def upgrade(_, config):
         with zipfile.ZipFile(download_dest, 'r') as zf:
             zf.extractall(install_dir)
         shutil.rmtree(tempdir)
+    except Exception as e:
+        print(f'ERROR extracting new version sourcecode to installation directory {install_dir}, aborting: {e}')
+        return
 
+    try:
         ## zipfile contains <hacc_setup_dir>/Hacc/, need to move files from both dirs to right place
-        hacc_setup_dir = os.listdir(install_dir)[0] ## only thing in install directory
-        for file_name in hacc_setup_dir:
+        hacc_setup_dir = os.path.join(install_dir, os.listdir(install_dir)[0]) ## only thing in install directory
+        for file_name in os.listdir(hacc_setup_dir):
             if file_name is not 'Hacc':
                 shutil.move(os.path.join(hacc_setup_dir, file_name), install_dir)
 
         ## don't want additional Hacc directory in path, move its files up a level
-        hacc_source_dir = os.path.join(hacc_source_dir, 'Hacc')
+        hacc_source_dir = os.path.join(hacc_setup_dir, 'Hacc')
         for file_name in hacc_source_dir:
             shutil.move(os.path.join(hacc_source_dir, file_name), install_dir)
-        
-        ## clean up after ourselves
-        shutil.rmtree(tempdir)
         shutil.rmtree(hacc_setup_dir)
-        
+
     except Exception as e:
-        print(f'ERROR extracting new version sourcecode to installation directory {install_dir}, aborting: {e}')
+        print(f'ERROR organizing files into expected path structure, aborting: {e}')
         return
 
     ## Complete upgrade with OS-dependent commands
