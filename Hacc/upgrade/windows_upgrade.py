@@ -22,11 +22,12 @@ def set_user_path(value):
     print(f'Setting path with value {value}')
     try:
         path_update_res = subprocess.run(['setx', 'PATH', value],
-                                            stdout=subprocess.DEVNULL
-                                        )
-        if path_update_res != 0:
-            return False
-        return True
+                                            stdout=subprocess.PIPE
+                                        ).communicate()
+        print(path_update_res)
+       # if path_update_res != 0:
+        return False
+        #return True
     except:
         return False
 
