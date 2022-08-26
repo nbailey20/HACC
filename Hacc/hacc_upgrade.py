@@ -26,13 +26,17 @@ def get_download_dir(os):
     return dirpath
 
 
-def get_install_dir(os, version):
+def get_install_dir(os, new_version):
     ## check for windows system
     if os == 'windows':
-        return f'%USERPROFILE%\AppData\Local\Hacc\{version}\\'
+        return os.join(os.environ['userprofile'],
+                        'AppData',
+                        'Local',
+                        'Hacc',
+                        new_version)
     ## check for linux/mac
     if os == 'linux':
-        return f'/usr/local/Hacc/{version}/'
+        return os.join('/usr', 'local', 'Hacc', new_version)
 
 
 def complete_upgrade(os, install_dir):
@@ -81,7 +85,7 @@ def upgrade(_, config):
 
     ## Unzip download file, clean up temporary download dir
     try:
-        install_dir = get_install_dir(os_type, current_version)
+        install_dir = get_install_dir(os_type, new_version)
         with zipfile.ZipFile(download_dest, 'r') as zf:
             zf.extractall(install_dir)
         shutil.rmtree(tempdir)
@@ -92,7 +96,7 @@ def upgrade(_, config):
             shutil.move(os.path.join(install_dir, 'Hacc', file_name), install_dir)
         
     except Exception as e:
-        print(f'ERROR extracting new version sourcecode, aborting: {e}')
+        print(f'ERROR extracting new version sourcecode to installation directory {install_dir}, aborting: {e}')
         return
 
     ## Complete upgrade with OS-dependent commands
