@@ -85,6 +85,12 @@ def upgrade(_, config):
         with zipfile.ZipFile(download_dest, 'r') as zf:
             zf.extractall(install_dir)
         shutil.rmtree(tempdir)
+
+        ## zipfile contains Hacc folder, only want its contents in install_dir
+        hacc_files = os.listdir(os.path.join(install_dir, 'Hacc'))
+        for file_name in hacc_files:
+            shutil.move(os.path.join(install_dir, 'Hacc', file_name), install_dir)
+        
     except Exception as e:
         print(f'ERROR extracting new version sourcecode, aborting: {e}')
         return
