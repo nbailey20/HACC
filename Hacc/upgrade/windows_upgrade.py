@@ -20,16 +20,16 @@ def build_executable(source_dir):
 ## Returns True on success and False otherwise
 def set_user_path(value):
     print(f'Setting path with value {value}')
-    try:
-        path_update_res = subprocess.run(['setx', 'PATH', value],
+    #try:
+    path_update_res = subprocess.run(['setx', 'PATH', value],
                                             stdout=subprocess.PIPE
                                         ).communicate()
-        print(path_update_res)
+    print(path_update_res)
        # if path_update_res != 0:
-        return False
+    return False
         #return True
-    except:
-        return False
+  #  except:
+  #      return False
 
 
 ## Function to get user PATH env variable from Windows registry
