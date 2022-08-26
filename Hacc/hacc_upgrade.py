@@ -84,8 +84,8 @@ def upgrade(_, config):
         return
 
     ## Unzip download file, clean up temporary download dir
+    install_dir = get_install_dir(os_type, new_version)
     try:
-        install_dir = get_install_dir(os_type, new_version)
         with zipfile.ZipFile(download_dest, 'r') as zf:
             zf.extractall(install_dir)
         shutil.rmtree(tempdir)
