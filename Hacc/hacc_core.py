@@ -79,7 +79,7 @@ def get_missing_vars(required, loaded):
 
 ## Function to check all required config vars are set when client is invoked
 def required_config_set_for_action(args, config):
-    missing_vars = None
+    missing_vars = []
 
     if args.action in DATA_ACTIONS:
         missing_vars = get_missing_vars(REQUIRED_DATA_VARS, config)
