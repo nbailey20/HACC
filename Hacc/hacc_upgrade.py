@@ -29,14 +29,14 @@ def get_download_dir(os):
 def get_install_dir(os, new_version):
     ## check for windows system
     if os == 'windows':
-        return os.join(os.environ['userprofile'],
+        return os.path.join(os.environ['userprofile'],
                         'AppData',
                         'Local',
                         'Hacc',
                         new_version)
     ## check for linux/mac
     if os == 'linux':
-        return os.join('/usr', 'local', 'Hacc', new_version)
+        return os.path.join('/usr', 'local', 'Hacc', new_version)
 
 
 def complete_upgrade(os, install_dir):
