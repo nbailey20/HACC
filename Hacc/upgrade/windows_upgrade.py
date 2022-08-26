@@ -24,8 +24,8 @@ def set_user_path(value):
     path_update_res = subprocess.run(['setx', 'PATH', value],
                                             stdout=subprocess.DEVNULL
                                         ).returncode
-    print(path_update_res)
-    if path_update_res != 0:
+    print(f'path update res: {path_update_res}, type: {type(path_update_res)}')
+    if path_update_res != '0':
         return False
     return True
   #  except:
