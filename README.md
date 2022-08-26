@@ -7,7 +7,7 @@ HACC is an open-source credential manager command-line tool that uses your perso
 * Encrypted with AWS KMS Customer-Managed Key so only you can decrypt
 * Can store up to 40MB of encrypted data
 
-Current Version: v0.7.1
+Current Version: v0.8.0
 
 ## Current Features
 
@@ -30,6 +30,7 @@ Current Version: v0.7.1
 * Cleanly exit at any point with ctrl-c
 * 'configure' keyword to set/show/export client configuration parameters
     * export config as encrypted file to grant multiple users access to single Vault
+* Optionally check for client version updates in github, --upgrade keyword if not on latest version
 
 
 ## hacc -h
@@ -95,7 +96,6 @@ Sample Usage:
 * Support service/name prefixes properly for rotate action
 * Support for different password types, e.g. base64, random, xkcd
 * Add confirmation before installing vault, but show how many components are setup first
-* Optional (via hacc var) check for latest client version in github, upgrade if not - use brew/windows thing instead?
 * Configuration bool to indicate whether previous HACC client versions should be cleaned up from system
 * Reduce args passed to funcs to only necessary values
 * Option for AWS-managed SSM KMS key for completely free Vault
