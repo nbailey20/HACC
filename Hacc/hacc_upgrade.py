@@ -17,30 +17,30 @@ def get_os_type():
     return None
 
 
-def get_download_dir(os):
+def get_download_dir(os_type):
     dirpath = tempfile.mkdtemp()
-    if os == 'windows':
+    if os_type == 'windows':
         dirpath += '\\'
-    if os == 'linux':
+    if os_type == 'linux':
         dirpath += '/'
     return dirpath
 
 
-def get_install_dir(os, new_version):
+def get_install_dir(os_type, new_version):
     ## check for windows system
-    if os == 'windows':
+    if os_type == 'windows':
         return os.path.join(os.environ['userprofile'],
                         'AppData',
                         'Local',
                         'Hacc',
                         new_version)
     ## check for linux/mac
-    if os == 'linux':
+    if os_type == 'linux':
         return os.path.join('/usr', 'local', 'Hacc', new_version)
 
 
-def complete_upgrade(os, install_dir):
-    if os == 'windows':
+def complete_upgrade(os_type, install_dir):
+    if os_type == 'windows':
         from upgrade.windows_upgrade import build_executable, update_user_path
 
         client_entrypoint = build_executable(install_dir)
@@ -51,7 +51,7 @@ def complete_upgrade(os, install_dir):
         if not path_updated:
             print(f'ERROR updating user PATH with value {client_entrypoint}, manually set value to complete upgrade.')
 
-    if os == 'linux':
+    if os_type == 'linux':
         from upgrade.mac_linux_upgrade import update_bin_symlink
 
         symlink_created = update_bin_symlink(install_dir)
