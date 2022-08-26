@@ -25,9 +25,10 @@ def set_user_path(value):
                                             stdout=subprocess.DEVNULL
                                         ).returncode
     print(f'path update res: {path_update_res}, type: {type(path_update_res)}')
-    if path_update_res != '0':
-        return False
-    return True
+    print(path_update_res==0)
+    if path_update_res == 0:
+        return True
+    return False
   #  except:
   #      return False
 

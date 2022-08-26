@@ -7,7 +7,7 @@ HACC is an open-source credential manager command-line tool that uses your perso
 * Encrypted with AWS KMS Customer-Managed Key so only you can decrypt
 * Can store up to 40MB of encrypted data
 
-Current Version: v0.8.1
+Current Version: v0.8.2
 
 ## Current Features
 
