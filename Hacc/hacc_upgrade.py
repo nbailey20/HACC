@@ -120,4 +120,5 @@ def upgrade(_, config):
         print('Failed to install upgraded version of client, aborting.')
     else:
         print(f'Successfully upgraded HACC software to version {new_version}')
+        print('Please restart your terminal for the upgrade to take effect')
     return
