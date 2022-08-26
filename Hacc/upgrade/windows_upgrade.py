@@ -55,11 +55,12 @@ def update_user_path(executable_path):
     path_list = path_str.split(';')
     hacc_path_found = False
     for idx, path in enumerate(path_list):
-        if 'hacc\\Hacc\\' in path:
+        if '\\dist\\hacc' in path:
             path_list[idx] = executable_path
             hacc_path_found = True
 
     if not hacc_path_found:
+        print('ERROR: did not find any existing Hacc location in PATH')
         return False
 
     updated_path_str = ';'.join(path_list)
