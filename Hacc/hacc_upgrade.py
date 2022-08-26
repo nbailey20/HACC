@@ -93,22 +93,26 @@ def upgrade(_, config):
         print(f'ERROR extracting new version sourcecode to installation directory {install_dir}, aborting: {e}')
         return
 
-    try:
-        ## zipfile contains <hacc_setup_dir>/Hacc/, need to move files from both dirs to right place
-        hacc_setup_dir = os.path.join(install_dir, os.listdir(install_dir)[0]) ## only thing in install directory
-        for file_name in os.listdir(hacc_setup_dir):
-            if file_name is not 'Hacc':
-                shutil.move(os.path.join(hacc_setup_dir, file_name), install_dir)
+   # try:
+    ## zipfile contains <hacc_setup_dir>/Hacc/, need to move files from both dirs to right place
+    hacc_setup_dir = os.path.join(install_dir, os.listdir(install_dir)[0]) ## only thing in install directory
+    print(f'Hacc setup dir {hacc_setup_dir}')
+    for file_name in os.listdir(hacc_setup_dir):
+        print(f'Setup file name {file_name}')
+        if file_name is not 'Hacc':
+            shutil.move(os.path.join(hacc_setup_dir, file_name), install_dir)
 
-        ## don't want additional Hacc directory in path, move its files up a level
-        hacc_source_dir = os.path.join(hacc_setup_dir, 'Hacc')
-        for file_name in hacc_source_dir:
-            shutil.move(os.path.join(hacc_source_dir, file_name), install_dir)
-        shutil.rmtree(hacc_setup_dir)
+    ## don't want additional Hacc directory in path, move its files up a level
+    hacc_source_dir = os.path.join(hacc_setup_dir, 'Hacc')
+    print(f'hacc source dir {hacc_source_dir}')
+    for file_name in hacc_source_dir:
+        print(f'Source file name {file_name}')
+        shutil.move(os.path.join(hacc_source_dir, file_name), install_dir)
+    shutil.rmtree(hacc_setup_dir)
 
-    except Exception as e:
-        print(f'ERROR organizing files into expected path structure, aborting: {e}')
-        return
+    # except Exception as e:
+    #     print(f'ERROR organizing files into expected path structure, aborting: {e}')
+    #     return
 
     ## Complete upgrade with OS-dependent commands
     upgrade_success = complete_upgrade(os_type, install_dir)
