@@ -1,6 +1,7 @@
+import json
+
 from classes.hacc_service import HaccService
 from classes.vault import Vault
-import json
 
 
 ## Creates new backup file with entire Vault contents

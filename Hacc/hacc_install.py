@@ -1,8 +1,9 @@
-from classes.vault_installer import VaultInstaller
-from hacc_add import add
 import time
 
-    
+from classes.vault_installer import VaultInstaller
+from hacc_add import add
+
+
 ## Setup IAM user, KMS CMK for Vault
 ## Optionally setup SCP for organizational account to lock down Vault access
 def install(args, config):

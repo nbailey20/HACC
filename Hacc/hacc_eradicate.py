@@ -1,8 +1,8 @@
+import time
+
 from classes.vault_eradicator import VaultEradicator
 from classes.vault import Vault
 from hacc_delete import delete
-import time
-
 
 
 def eradicate(args, config):

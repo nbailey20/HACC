@@ -1,6 +1,7 @@
-from classes.vault_components import VaultComponents
-from install.hacc_credentials import delete_hacc_profile, get_hacc_access_key
 import time
+
+from classes.vault_components import VaultComponents
+from vault_install.hacc_credentials import delete_hacc_profile, get_hacc_access_key
 
 
 ## VaultEradicator Object:

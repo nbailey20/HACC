@@ -1,4 +1,5 @@
 import secrets ## random library unsuitable to cryptographic purposes
+
 import wordlist
 
 MAX_CHAR_SWAPS = 5 ## Max number of character substitions to make in password

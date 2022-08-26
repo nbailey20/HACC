@@ -1,8 +1,12 @@
 #!/usr/bin/env python3
 
-from hacc_core import get_config_params, startup
-from input.hacc_input import parse_args, eval_args, validate_args_for_action
+## Entrypoint for HACC software
+## Author: Nick Bailey
 
+import logging
+
+from hacc_core import startup
+from input.hacc_input import parse_args, eval_args, validate_args_for_action
 from hacc_search import search
 from hacc_add import add
 from hacc_delete import delete
@@ -11,8 +15,11 @@ from hacc_install import install
 from hacc_eradicate import eradicate
 from hacc_backup import backup
 from hacc_configure import configure
+from hacc_upgrade import upgrade
 
-import logging
+
+HACC_VERSION = 'v0.8.0'
+
 
 ## Configure logger
 logging.basicConfig()
@@ -29,29 +36,21 @@ logger.handlers[0].setFormatter(logging.Formatter(
 ))
 
 
-HACC_VERSION = 'v0.7'
-
 
 def main():
     print(f'HACC {HACC_VERSION}')
     print()
 
     try:
-        ## Parse args, ensure required config vars for action are set
-        ##  and Vault setup properly for given action
         args = parse_args()
-
-        ## Read config params from hacc_vars file into object
-        config = get_config_params()
-        if not config:
-            return
-
-        if not startup(args, config):
-            return
-
         ## Ensure args are valid for action
         if not eval_args(args):
-            return 
+            return
+
+        ## Initialize client for provided args
+        config = startup(args, HACC_VERSION)
+        if not config:
+            return
 
         ## Setting logging level
         if args.debug:

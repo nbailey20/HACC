@@ -1,7 +1,11 @@
-from install.hacc_credentials import get_hacc_access_key, get_hacc_secret_key, set_hacc_access_key, set_hacc_secret_key
+import re
+import json
+import os
+
+from vault_install.hacc_credentials import get_hacc_access_key, get_hacc_secret_key, set_hacc_access_key, set_hacc_secret_key
 from configure.hacc_encryption import encrypt_config_data, decrypt_config_data
 from hacc_generate import generate_password
-import re, json, os
+
 
 def get_all_configuration(config):
     profile_name = config['aws_hacc_uname']
