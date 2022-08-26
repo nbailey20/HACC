@@ -18,21 +18,22 @@ def build_executable(source_dir):
 
 ## Function to persistently set user PATH variable via Windows registry
 ## Returns True on success and False otherwise
-def update_user_path(value):
-    REG_PATH = 'Environment'
+def set_user_path(value):
     try:
-        with winreg.OpenKey(winreg.HKEY_CURRENT_USER, REG_PATH,
-                            0, winreg.KEY_WRITE) as registry_key:
-            winreg.SetValueEx(registry_key, 'Path', 0, winreg.REG_SZ, value)
+        path_update_res = subprocess.run(['setx', 'PATH', value],
+                                            stdout=subprocess.DEVNULL
+                                        )
+        if path_update_res != 0:
+            return False
         return True
-    except WindowsError:
+    except:
         return False
 
 
 ## Function to get user PATH env variable from Windows registry
-## Returns value of PATH on success, None otherwise
+## Returns value of PATH on success and None otherwise
 def get_user_path():
-    REG_PATH = 'HKEY_CURRENT_USER\Environment'
+    REG_PATH = 'Environment'
     try:
         with winreg.OpenKey(winreg.HKEY_CURRENT_USER, REG_PATH,
                             0, winreg.KEY_READ) as registry_key:
@@ -45,7 +46,21 @@ def get_user_path():
 ## Function to update user path with newly built executable location by manipulating Windows registry
 ## Returns True if successful, False otherwise
 def update_user_path(executable_path):
-    current_path = get_user_path()
-    print(f'Current path: {current_path}')
-    print(f'Path to add: {executable_path}')
-    return True
+    path_str = get_user_path()
+    print(path_str)
+
+    ## Make sure not to overwrite whole PATH string, only HACC
+    path_list = path_str.split(';')
+    hacc_path_found = False
+    for idx, path in enumerate(path_list):
+        if 'hacc\\Hacc\\' in path:
+            path_list[idx] = executable_path
+            hacc_path_found = True
+
+    if not hacc_path_found:
+        return False
+
+    updated_path_str = ';'.join(path_list)
+    if set_user_path(updated_path_str):
+        return True
+    return False
