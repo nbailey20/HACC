@@ -98,7 +98,7 @@ def upgrade(_, config):
     hacc_setup_dir = os.path.join(install_dir, os.listdir(install_dir)[0]) ## only thing in install directory
     print(f'Hacc setup dir {hacc_setup_dir}')
     for file_name in os.listdir(hacc_setup_dir):
-        if file_name is not 'Hacc':
+        if file_name != 'Hacc':
             print(f'Moving setup file name {file_name}')
             shutil.move(os.path.join(hacc_setup_dir, file_name), install_dir)
 
