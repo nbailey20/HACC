@@ -13,12 +13,13 @@ def build_executable(source_dir):
     os.chdir(cwd)
     if build_res != 0:
         return None
-    return source_dir+'dist\hacc'
+    return source_dir+'\dist\hacc'
 
 
 ## Function to persistently set user PATH variable via Windows registry
 ## Returns True on success and False otherwise
 def set_user_path(value):
+    print(f'Setting path with value {value}')
     try:
         path_update_res = subprocess.run(['setx', 'PATH', value],
                                             stdout=subprocess.DEVNULL
@@ -47,7 +48,7 @@ def get_user_path():
 ## Returns True if successful, False otherwise
 def update_user_path(executable_path):
     path_str = get_user_path()
-    print(path_str)
+    print(f'Current: {path_str}')
 
     ## Make sure not to overwrite whole PATH string, only HACC
     path_list = path_str.split(';')
@@ -61,6 +62,7 @@ def update_user_path(executable_path):
         return False
 
     updated_path_str = ';'.join(path_list)
+    print(f'Updated: {updated_path_str}')
     if set_user_path(updated_path_str):
         return True
     return False
