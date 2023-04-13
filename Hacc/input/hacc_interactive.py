@@ -49,15 +49,10 @@ def get_input_with_choices(choices, choice_type):
     padded_panel = Padding(Panel(''), 1)
     console = Console()
     console.print(f'Select {choice_type} name/number from above options, or hit enter to display more: ')
-    with Live(padded_panel, refresh_per_second=4) as live:
+    with Live(padded_panel, refresh_per_second=4, screen=True) as live:
         #while not input_val:
         for page_num in range(num_choice_pages):
-        # panel_text += f'[cyan][{idx+1}] [yellow]{choices[idx]}\n'
             padded_panel = build_input_choices_panel(choices, page_num, num_choice_pages)
-            #  padded_panel = Group(
-           # live.console.print(padded_panel)
-                #     Panel(f'Select {choice_type} name/number from above options, or hit enter to display more: ')
-                #  )
             live.update(padded_panel)
 
             input_val = Prompt.ask(f'Select {choice_type} name/number from above options, or hit enter to display more: ')
