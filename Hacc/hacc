@@ -18,7 +18,7 @@ from hacc_configure import configure
 from hacc_upgrade import upgrade
 
 
-HACC_VERSION = 'v0.8.2'
+HACC_VERSION = 'v0.8.3'
 
 
 ## Configure logger
@@ -39,7 +39,6 @@ logger.handlers[0].setFormatter(logging.Formatter(
 
 def main():
     print(f'HACC {HACC_VERSION}')
-    print()
 
     try:
         args = parse_args()

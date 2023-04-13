@@ -3,6 +3,14 @@ import sys
 
 from classes.vault import Vault
 
+try:
+    from rich import print
+    from rich.panel import Panel
+    from rich.padding import Padding
+except:
+    print('Python module "rich" required for HACC client. Install (pip install rich) and try again.')
+    sys.exit()
+
 
 logger=logging.getLogger()
 
@@ -124,19 +132,20 @@ class HaccService:
         else:
             return False
 
-  
+
     ## Prints username, and optionally password for service
     def print_credential(self, user, print_password=False):
         if print_password:
             password = self.get_credential(user)
-        print()
-        print('#############################')
-        print(f'Service {self.service_name}')
-        print(f'Username: {user}')
-        if print_password:
-            print(f'Password: {password}')
-        print('#############################')
-        print()
+            panel = Panel(f'[yellow]{user} [cyan]: [purple]{password}',
+                            title=f'[green]{self.service_name}',
+                            expand=False)
+        else:
+            panel = Panel(f'[cyan]Username: [yellow]{user}',
+                            title=f'[green]{self.service_name}',
+                            expand=False)
+        padded_panel = Padding(panel, 1)
+        print(padded_panel)
 
 
 

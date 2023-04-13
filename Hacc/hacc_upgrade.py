@@ -46,7 +46,7 @@ def complete_upgrade(os_type, install_dir):
         client_entrypoint = build_executable(install_dir)
         if not client_entrypoint:
             print('ERROR building Windows executable from Python source, aborting.')
-            return
+            return False
         path_updated = update_user_path(client_entrypoint)
         if not path_updated:
             print(f'ERROR updating user PATH with value {client_entrypoint}, manually set value to complete upgrade.')
@@ -57,7 +57,7 @@ def complete_upgrade(os_type, install_dir):
         symlink_created = update_bin_symlink(install_dir)
         if not symlink_created:
             print(f'ERROR updating symlink /usr/local/bin/hacc to point to {install_dir}, manual assistance required to complete upgrade.')
-    return
+    return True
 
 
 def upgrade(_, config):
