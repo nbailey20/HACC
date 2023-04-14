@@ -137,12 +137,12 @@ class HaccService:
     def print_credential(self, user, print_password=False):
         if print_password:
             password = self.get_credential(user)
-            panel = Panel(f'[yellow]{user} [cyan]: [purple]{password}',
-                            title=f'[green]{self.service_name}',
+            panel = Panel(f'[yellow]{user} [green]: [purple]{password}',
+                            title=f'[steel_blue3]{self.service_name}',
                             expand=False)
         else:
-            panel = Panel(f'[cyan]Username: [yellow]{user}',
-                            title=f'[green]{self.service_name}',
+            panel = Panel(f'[cyan]Username [green]: [yellow]{user}',
+                            title=f'[steel_blue3]{self.service_name}',
                             expand=False)
         padded_panel = Padding(panel, 1)
         print(padded_panel)
