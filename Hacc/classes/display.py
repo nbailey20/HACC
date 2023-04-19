@@ -55,6 +55,7 @@ class Display:
         footer = Text('Built in Python3 by Nick Bailey')
         footer.stylize('green')
 
+        ## Handle different display_type options
         if display_type == 'startup':
             main_panel, panel_size = self.__build_startup_panel(display_data['client_version'])
 
@@ -77,7 +78,7 @@ class Display:
         self.MAX_NUM = NUM_CHOICES_PER_PAGE
         self.layout = Layout()
 
-        self.layout.split(
+        self.layout.split_column(
             Layout(name='main'),
             Layout(name='footer')
         )

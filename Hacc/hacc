@@ -50,7 +50,7 @@ def main():
     display = Display()
     display.update(display_type='startup', display_data={'client_version': HACC_VERSION})
 
-    with Live(display.layout):
+    with Live(display.layout, auto_refresh=False, redirect_stderr=False, redirect_stdout=False):
         try:
             args = parse_args()
             ## Ensure args are valid for action
@@ -82,6 +82,9 @@ def main():
         ## cleanly exit without errors
         except KeyboardInterrupt:
             display.update(display_type='exit', display_data={'client_version': HACC_VERSION})
+
+      #  live.stop()
+        #time.sleep(5)
 
 
 if __name__ == '__main__':
