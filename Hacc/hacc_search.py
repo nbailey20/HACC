@@ -7,7 +7,7 @@ logger=logging.getLogger()
 
 
 ## Print specific credential for service
-def search(args, config):
+def search(display, args, config):
 
     service_name = args.service
     user = args.username
@@ -17,5 +17,11 @@ def search(args, config):
         print(f'Service {service_name} does not exist in Vault, exiting.')
         return
 
-    local_service.print_credential(user, print_password=True)
+    display_data = {
+        'user': user,
+        'passwd': local_service.get_credential(user),
+        'service': service_name
+    }
+    display.update(display_type='credential', display_data=display_data)
+    # local_service.print_credential(user, print_password=True)
     return

@@ -1,12 +1,21 @@
 #!/usr/bin/env python3
 
-## Entrypoint for HACC software
+## Entrypoint for HACC client
 ## Author: Nick Bailey
 
 import logging
+import sys, time
+
+try:
+    from rich.live import Live
+except:
+    print('Python module "rich" required for HACC client. Install (pip install rich) and try again.')
+    sys.exit()
 
 from hacc_core import startup
+from classes.display import Display
 from input.hacc_input import parse_args, eval_args, validate_args_for_action
+
 from hacc_search import search
 from hacc_add import add
 from hacc_delete import delete
@@ -38,39 +47,41 @@ logger.handlers[0].setFormatter(logging.Formatter(
 
 
 def main():
-    print(f'HACC {HACC_VERSION}')
+    display = Display()
+    display.update(display_type='startup', display_data={'client_version': HACC_VERSION})
 
-    try:
-        args = parse_args()
-        ## Ensure args are valid for action
-        if not eval_args(args):
-            return
+    with Live(display.layout):
+        try:
+            args = parse_args()
+            ## Ensure args are valid for action
+            if not eval_args(args):
+                return
 
-        ## Initialize client for provided args
-        config = startup(args, HACC_VERSION)
-        if not config:
-            return
+            ## Initialize client for provided args
+            config = startup(args, HACC_VERSION)
+            if not config:
+                return
 
-        ## Setting logging level
-        if args.debug:
-            logger.setLevel(logging.DEBUG)
-        else:
-            logger.setLevel(logging.INFO)
+            ## Setting logging level
+            if args.debug:
+                logger.setLevel(logging.DEBUG)
+            else:
+                logger.setLevel(logging.INFO)
 
-        logger.debug(f'Initial args provided: {args}')
+            logger.debug(f'Initial args provided: {args}')
 
-        ## Validate input/gather any remaining args before passing to action
-        valid_args = validate_args_for_action(args, config)
-        if not valid_args:
-            return False
-        logger.debug(f'Validated input args: {valid_args}')
+            ## Validate input/gather any remaining args before passing to action
+            valid_args = validate_args_for_action(args, config)
+            if not valid_args:
+                return False
+            logger.debug(f'Validated input args: {valid_args}')
 
-        ## Call appropriate function for action
-        globals()[valid_args.action](valid_args, config)
-    
-    ## cleanly exit without errors
-    except KeyboardInterrupt:
-        print('\n\nReceived ctrl-c, exiting.')
+            ## Call appropriate function for action
+            globals()[valid_args.action](display, valid_args, config)
+        
+        ## cleanly exit without errors
+        except KeyboardInterrupt:
+            display.update(display_type='exit', display_data={'client_version': HACC_VERSION})
 
 
 if __name__ == '__main__':

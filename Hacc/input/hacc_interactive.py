@@ -1,5 +1,4 @@
 import sys
-from tkinter import N
 
 try:
     from rich import print
