@@ -17,7 +17,6 @@ def get_input_with_choices(display, choices, choice_type, service=None):
     num_choices_per_page = display.NUM_CHOICES_PER_PAGE
     total_pages = ceil((len(choices)*1.0) / num_choices_per_page)
     curr_page = 0
-    curr_idx = 0
     display_data = {
         'choices': choices,
         'choice_type': choice_type,
@@ -34,16 +33,10 @@ def get_input_with_choices(display, choices, choice_type, service=None):
         if event.event_type != keyboard.KEY_DOWN:
             continue
 
-        if event.name == 'down':
-            display_data['curr_idx'] += 1
-        elif event.name == 'up':
-            display_data['curr_idx'] -= 1
-        elif event.name == 'right':
+        if event.name == 'right':
             display_data['curr_page'] += 1
-            display_data['curr_idx'] = display_data['curr_page']*num_choices_per_page
         elif event.name == 'left':
             display_data['curr_page'] -= 1
-            display_data['curr_idx'] = display_data['curr_page']*num_choices_per_page
         elif event.name in [str(x) for x in range(1,10)]:
             display_data['selection'] = int(event.name) + display_data['curr_page']*num_choices_per_page - 1
             display.update(display_type='interactive', data=display_data)
@@ -105,4 +98,5 @@ def get_input_for_end():
             continue
 
         if event.name == 'q':
+            keyboard.send('backspace')
             return

@@ -51,10 +51,7 @@ def main():
     args = parse_args()
 
     display = Display(client_version=HACC_VERSION)
-    display.update(
-        display_type = 'text_new',
-        data = {'text': 'Starting up...'}
-    )
+    display.update(display_type='startup', data={})
 
     with Live(display.layout, screen=True):
         try:

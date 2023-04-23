@@ -6,6 +6,7 @@ try:
     from rich.padding import Padding
     from rich.layout import Layout
     from rich.text import Text
+    from rich.spinner import Spinner
 except:
     print('Python module "rich" required for HACC client. Install (pip install rich) and try again.')
     sys.exit()
@@ -20,7 +21,31 @@ DEFAULT_FOOTER_TEXT = "Just HACC it."
 logger=logging.getLogger()
 
 class Display:
-    ## Builds main panel to display on client startup
+    ## Builds loading layout to display on client startup
+    ## Returns tuple of (rich.padding, int, int, rich.Text)
+    ## Ints are height and width of panel
+    ## Text is footer of layout
+    def __build_startup_layout(self):
+        startup_text = 'Starting up...'
+        spinner_name = 'point'
+        spinner_len = 10
+
+        panel = Panel(
+            Spinner(spinner_name, text=startup_text),
+            title=f'[steel_blue3]HACC {self.client_version}',
+            expand=False
+        )
+
+        self.panel_width = spinner_len + len(startup_text) + PANEL_WIDTH_PADDING
+
+        footer = Text(DEFAULT_FOOTER_TEXT)
+        footer.stylize('green')
+        footer.align('center', self.panel_width)
+
+        return (Padding(panel, 1), BASE_PANEL_HEIGHT, self.panel_width, footer)
+
+
+    ## Builds generic text layout
     ## Returns tuple of (rich.padding, int, int, rich.Text)
     ## Ints are height and width of panel
     ## Text is footer of layout
@@ -51,8 +76,10 @@ class Display:
         return (Padding(panel, 1), panel_height, self.panel_width, footer)
 
 
-    ## Builds credential panel for display
-    ## Returns tuple of (rich.padding, int, int) where ints are the height and width of panel
+    ## Builds credential layout for display
+    ## Returns tuple of (rich.padding, int, int, rich.text)
+    ##  Ints are the height and width of panel
+    ## Rich.text is the footer
     def __build_credential_layout(self, service, user, passwd):
         panel_text = f'[yellow]{user} [green]: [purple]{passwd}'
         panel = Panel(
@@ -71,26 +98,28 @@ class Display:
         return (Padding(panel, 1), BASE_PANEL_HEIGHT, self.panel_width, footer)
 
 
-    ## Creates single page of numbered choices with current idx highlighted
+    ## Creates single page of numbered choices based on current page num, and selected choice is highlighted
     def __build_interactive_layout(self, choices, choice_type, page_num, total_pages, service=None, selection=None):
         start_idx = page_num * NUM_CHOICES_PER_PAGE
+        end_idx = min(len(choices), start_idx+NUM_CHOICES_PER_PAGE)
         panel_text = ""
         max_line_len = 0
 
-        for idx in range(start_idx, min(len(choices), start_idx+NUM_CHOICES_PER_PAGE)):
+        for idx in range(start_idx, end_idx):
             display_idx = idx % NUM_CHOICES_PER_PAGE + 1
 
             line_len = len(f'[{display_idx}] {choices[idx]}')
             if line_len > max_line_len:
                 max_line_len = line_len
 
-            if selection and selection == idx:
+            if selection != None and selection == idx:
                 panel_text += f'[gold1][{display_idx}] [gold1]{choices[idx]}\n'
             else:
                 panel_text += f'[purple3][{display_idx}] [green]{choices[idx]}\n'
 
         self.panel_text = panel_text
         self.panel_width = max_line_len+PANEL_WIDTH_PADDING
+        panel_height = end_idx - start_idx
 
         if service:
             panel = Panel(
@@ -118,7 +147,7 @@ class Display:
         footer.stylize('gold1')
         footer.align('center', self.panel_width)
 
-        return (Padding(panel, 1), NUM_CHOICES_PER_PAGE+BASE_PANEL_HEIGHT, self.panel_width, footer)
+        return (Padding(panel, 1), panel_height+BASE_PANEL_HEIGHT, self.panel_width, footer)
 
 
     ## Updates self.layout based on display_type and display_data
@@ -132,7 +161,11 @@ class Display:
         footer = Text('Just HACC it.')
 
         ## Handle different display_type options
-        if display_type == 'text_new':
+        if display_type == 'startup':
+            main_panel, panel_height, self.panel_width, footer = self.__build_startup_layout()
+            self.layout['main'].size = panel_height
+            self.layout['main'].update(main_panel)
+        elif display_type == 'text_new':
             main_panel, panel_height, self.panel_width, footer = self.__build_text_layout(data['text'])
             self.layout['main'].size = panel_height
             self.layout['main'].update(main_panel)
