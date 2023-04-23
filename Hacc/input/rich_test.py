@@ -22,25 +22,26 @@ consistent_text = Text("Make a selection or left/right arrows for more options..
 consistent_text.stylize("bold magenta")
 layout["consistent"].update(consistent_text)
 
-with Live(layout):
+with Live(layout, console=console):
     idx = 0
     while True:
-        event = keyboard.read_event()
-        if event.event_type == keyboard.KEY_DOWN and event.name == 'down':
+        #event = keyboard.read_event()
+        name = Prompt.ask("Enter your name", default="Paul Atreides")
+        if name == 'down':
             refresh_string[idx] = f"[green]{str(idx)}"
             refresh_string[idx+1] = f"[yellow]{str(idx+1)}"
             layout["refresh"].update(Panel("\n".join(refresh_string), expand=False))
             idx += 1
-        elif event.event_type == keyboard.KEY_DOWN and event.name == 'up':
-            refresh_string[idx] = f"[green]{str(idx)}"
-            refresh_string[idx-1] = f"[yellow]{str(idx-1)}"
-            layout["refresh"].update(Panel("\n".join(refresh_string), expand=False))
-            idx -= 1
-        elif event.event_type == keyboard.KEY_DOWN and event.name in [str(i) for i in range(1,10)]:
-            refresh_string[idx] = f"[green]{str(idx)}"
-            idx = int(event.name)
-            refresh_string[idx] = f"[yellow]{str(idx)}"
-            layout["refresh"].update(Panel("\n".join(refresh_string), expand=False))
+        # elif event.event_type == keyboard.KEY_DOWN and event.name == 'up':
+        #     refresh_string[idx] = f"[green]{str(idx)}"
+        #     refresh_string[idx-1] = f"[yellow]{str(idx-1)}"
+        #     layout["refresh"].update(Panel("\n".join(refresh_string), expand=False))
+        #     idx -= 1
+        # elif event.event_type == keyboard.KEY_DOWN and event.name in [str(i) for i in range(1,10)]:
+        #     refresh_string[idx] = f"[green]{str(idx)}"
+        #     idx = int(event.name)
+        #     refresh_string[idx] = f"[yellow]{str(idx)}"
+        #     layout["refresh"].update(Panel("\n".join(refresh_string), expand=False))
 
         # if idx < 0:
         #     idx = len(refresh_string)-1

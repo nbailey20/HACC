@@ -4,13 +4,12 @@ from hacc_add import add
 from hacc_delete import delete
 
 
-def rotate(args, config):
-    delete(args, config)
-
-    print()
-    print('Sleeping for 3 seconds to fully delete before updating...')
+def rotate(display, args, config):
+    delete(display, args, config)
+    display.update(
+        display_type='text_append',
+        data={'text': 'Sleeping for 3 seconds to fully delete before updating...'}
+    )
     time.sleep(3)
-    print()
-
-    add(args, config)
+    add(display, args, config)
     return

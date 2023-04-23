@@ -1,5 +1,4 @@
 import argparse
-#from calendar import c
 import re
 from classes.vault import Vault
 from classes.hacc_service import HaccService
@@ -308,7 +307,7 @@ def parse_args():
     return args
 
 
-def allowed_subargs(args):
+def allowed_subargs(display, args):
     # Example args:
     # Namespace(action='delete', service=None, username='asdf', password='qwer', debug=True)
 
@@ -319,14 +318,17 @@ def allowed_subargs(args):
 
         valid_arg = True if subarg in ACTION_ALLOWED_SUBARGS[args.action] else False
         if not valid_arg:
-            print('hacc --{0}: unknown option --{1}'.format(args.action, subarg))
+            display.update(
+                display_type='text_append', 
+                data={'text': f'hacc --{args.action}: unknown option --{subarg}'}
+            )
             return False
 
     return True
 
 
 
-def compatable_subargs(args):
+def compatable_subargs(display, args):
     ## If action has no incompatable subargs, we're done
     if args.action not in ACTION_INCOMPATABLE_SUBARGS:
         return True
@@ -339,18 +341,21 @@ def compatable_subargs(args):
                 inc_args.append(subarg)
         
         if len(inc_args) > 1:
-            print(f'Incompatable arguments: {"/".join(inc_args)}, aborting.')
+            display.update(
+                display_type='text_append', 
+                data={'text': f'Incompatable arguments: {"/".join(inc_args)}, aborting.'}
+            )
             return False
     return True
 
 
 
 ## Evaluate all arguments are to ensure they are allowed and compatable for given action
-def eval_args(args):
-    if not allowed_subargs(args):
+def eval_args(display, args):
+    if not allowed_subargs(display, args):
         return False
 
-    if not compatable_subargs(args):
+    if not compatable_subargs(display, args):
         return False
     
     return True
@@ -373,7 +378,7 @@ def get_possible_input_matches(input, choices):
 ## Takes provided input service name
 ## Input can either match service name exactly, or be a prefix
 ## Returns complete service name, False if no matches in Vault
-def get_service_name_from_input(svc_input, vault):
+def get_service_name_from_input(display, svc_input, vault):
 
     ## Check if exact service name provided
     if vault.service_exists(svc_input):
@@ -393,7 +398,7 @@ def get_service_name_from_input(svc_input, vault):
     
     else:
         ## Multiple possible input matches, interactively ask for clarification
-        new_input = get_input_with_choices(possible_svcs, 'service')
+        new_input = get_input_with_choices(display, possible_svcs, 'service')
 
         ## Check if user entered choice line number instead of value
         try:
@@ -403,14 +408,14 @@ def get_service_name_from_input(svc_input, vault):
             choice_num = None
 
         ## recurse on new input
-        return get_service_name_from_input(new_input, vault)
+        return get_service_name_from_input(display, new_input, vault)
 
 
 
 ## Takes provided input username for service
 ## Input can either match username exactly, or be a prefix
 ## Returns complete username, False if no matches in Vault
-def get_service_user_from_input(service, user_input, vault):
+def get_service_user_from_input(display, service, user_input, vault):
     svc_obj = HaccService(service, vault=vault)
 
     ## Check if exact username provided
@@ -431,7 +436,7 @@ def get_service_user_from_input(service, user_input, vault):
     
     else:
         ## Multiple possible input matches, interactively ask for clarification
-        new_input = get_input_with_choices(possible_users, 'username')
+        new_input = get_input_with_choices(display, possible_users, 'username', service=service)
 
         ## Check if user entered choice line number instead of value
         try:
@@ -441,7 +446,7 @@ def get_service_user_from_input(service, user_input, vault):
             choice_num = None
 
         ## recurse on new input
-        return get_service_user_from_input(service, new_input, vault)
+        return get_service_user_from_input(display, service, new_input, vault)
 
 
 
@@ -462,7 +467,7 @@ def missing_args_for_action(args):
 ## Expand any subarg prefix shortcuts
 ## Returns a set of updated args that are ready for the given action
 ## Returns False if args cannot be gathered or input not valid
-def validate_args_for_action(args, config):
+def validate_args_for_action(display, args, config):
     action = args.action
     
 
@@ -477,17 +482,26 @@ def validate_args_for_action(args, config):
     if action == 'search' or action == 'delete':
         vault = Vault(config)
         if len(vault.get_all_services()) == 0:
-            print('Vault is curently empty, add a service credential with `hacc add`')
+            display.update(
+                display_type='text_append', 
+                data={'text': 'Vault is curently empty, add a service credential with `hacc add`'}
+            )
             return False
 
-        args.service = get_service_name_from_input(args.service, vault)
+        args.service = get_service_name_from_input(display, args.service, vault)
         if not args.service:
-            print('Could not validate service name, exiting.')
+            display.update(
+                display_type='text_append', 
+                data={'text': 'Could not validate service name, exiting.'}
+            )
             return False
 
-        args.username = get_service_user_from_input(args.service, args.username, vault)
+        args.username = get_service_user_from_input(display, args.service, args.username, vault)
         if not args.username:
-            print(f'Could not validate username for service {args.service}, exiting.')
+            display.update(
+                display_type='text_append', 
+                data={'text': f'Could not validate username for service {args.service}, exiting.'}
+            )
             return False
 
         logger.debug('Successfully validated service and username input')
@@ -508,14 +522,20 @@ def validate_args_for_action(args, config):
         if subarg == 'password':
             args.password = get_password_for_credential(args.generate)
             if not args.password:
-                print(f'Could not gather password, exiting.')
+                display.update(
+                    display_type='text_append', 
+                    data={'text': f'Could not gather password, exiting.'}
+                )
                 return False
             logger.debug('Interactively generated required password argument')
 
         else:
             subarg_val = get_input_string_for_subarg(subarg, action)
             if not subarg_val:
-                print(f'Could not gather required input: {subarg}')
+                display.update(
+                    display_type='text_append', 
+                    data={'text': f'Could not gather required input: {subarg}'}
+                )
                 return False
 
             setattr(args, subarg, subarg_val)

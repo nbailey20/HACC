@@ -4,7 +4,7 @@
 ## Author: Nick Bailey
 
 import logging
-import sys, time
+import sys
 
 try:
     from rich.live import Live
@@ -15,6 +15,7 @@ except:
 from hacc_core import startup
 from classes.display import Display
 from input.hacc_input import parse_args, eval_args, validate_args_for_action
+from input.hacc_interactive import get_input_for_end
 
 from hacc_search import search
 from hacc_add import add
@@ -47,18 +48,22 @@ logger.handlers[0].setFormatter(logging.Formatter(
 
 
 def main():
-    display = Display()
-    display.update(display_type='startup', display_data={'client_version': HACC_VERSION})
+    args = parse_args()
 
-    with Live(display.layout, auto_refresh=False, redirect_stderr=False, redirect_stdout=False):
+    display = Display(client_version=HACC_VERSION)
+    display.update(
+        display_type = 'text_new',
+        data = {'text': 'Starting up...'}
+    )
+
+    with Live(display.layout, screen=True):
         try:
-            args = parse_args()
             ## Ensure args are valid for action
-            if not eval_args(args):
+            if not eval_args(display, args):
                 return
 
             ## Initialize client for provided args
-            config = startup(args, HACC_VERSION)
+            config = startup(display, args, HACC_VERSION)
             if not config:
                 return
 
@@ -71,20 +76,22 @@ def main():
             logger.debug(f'Initial args provided: {args}')
 
             ## Validate input/gather any remaining args before passing to action
-            valid_args = validate_args_for_action(args, config)
+            valid_args = validate_args_for_action(display, args, config)
             if not valid_args:
                 return False
             logger.debug(f'Validated input args: {valid_args}')
 
             ## Call appropriate function for action
             globals()[valid_args.action](display, valid_args, config)
+
+            ## Wait for user response before stopping live display
+            display.update(display_type='end', data={})
+            get_input_for_end()
         
         ## cleanly exit without errors
         except KeyboardInterrupt:
-            display.update(display_type='exit', display_data={'client_version': HACC_VERSION})
+            print('Ctrl-c received, goodbye!')
 
-      #  live.stop()
-        #time.sleep(5)
 
 
 if __name__ == '__main__':

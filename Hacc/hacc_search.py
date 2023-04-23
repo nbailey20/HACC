@@ -14,7 +14,10 @@ def search(display, args, config):
 
     local_service = HaccService(service_name, config=config)
     if not bool(local_service.credentials):
-        print(f'Service {service_name} does not exist in Vault, exiting.')
+        display.update(
+            display_type='text_append', 
+            data={'text': f'Service {service_name} does not exist in Vault, exiting.'}
+        )
         return
 
     display_data = {
@@ -22,6 +25,5 @@ def search(display, args, config):
         'passwd': local_service.get_credential(user),
         'service': service_name
     }
-    display.update(display_type='credential', display_data=display_data)
-    # local_service.print_credential(user, print_password=True)
+    display.update(display_type='credential', data=display_data)
     return

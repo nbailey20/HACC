@@ -1,101 +1,55 @@
 import sys
+from math import ceil
 
 try:
-    from rich import print
-    from rich.live import Live
-    from rich.panel import Panel
-    from rich.padding import Padding
-    from rich.prompt import Prompt
-    from rich.layout import Layout
-    from rich.text import Text
+    import keyboard
 except:
-    print('Python module "rich" required for HACC client. Install (pip install rich) and try again.')
+    print('Python module "keyboard" required for HACC client interactive mode. Install (pip install keyboard) and try again or use flags to narrow your search results.')
     sys.exit()
-
-from math import ceil
+    
 from hacc_generate import generate_password
 
-NUM_CHOICES_PER_PAGE = 9
-
-
-## Creates single page of numbered choices with current idx highlighted
-def build_input_choices_panel(choices, choice_type, curr_idx, page_num, total_pages):
-    start_idx = page_num * NUM_CHOICES_PER_PAGE
-    panel_text = ""
-
-    for idx in range(start_idx, min(len(choices), start_idx+NUM_CHOICES_PER_PAGE)):
-        display_idx = idx % NUM_CHOICES_PER_PAGE + 1
-        if idx == curr_idx:
-            panel_text += f'[gold1][{display_idx}] [gold1]{choices[idx]}\n'
-        else:
-            panel_text += f'[purple3][{display_idx}] [green]{choices[idx]}\n'
-   # panel_text += Prompt.ask(f'Select {choice_type} name/number from above options, or hit enter to display more:')
-
-    panel_type = choice_type[0].upper()+choice_type[1:]
-    if len(choices) > 1:
-        panel_type += 's'
-    panel = Panel(panel_text,
-                  title=f'[steel_blue3]{panel_type} {page_num+1} / {total_pages}',
-                  expand=False)
-    return Padding(panel, 1)
 
 
 ## Gets user input from paginated numbered list of acceptable choices
 ## User can provide choice number or prefix string to match against
-def get_input_with_choices(choices, choice_type):
-    try:
-        import keyboard
-    except:
-        print('Python module "keyboard" required for HACC client interactive mode. Install (pip install keyboard) and try again or use flags to narrow your search results.')
-        sys.exit()
+def get_input_with_choices(display, choices, choice_type, service=None):
+    num_choices_per_page = display.NUM_CHOICES_PER_PAGE
+    total_pages = ceil((len(choices)*1.0) / num_choices_per_page)
+    curr_page = 0
+    curr_idx = 0
+    display_data = {
+        'choices': choices,
+        'choice_type': choice_type,
+        'curr_page': curr_page,
+        'total_pages': total_pages
+    }
+    if service:
+        display_data['service'] = service
+    
+    ## Begin interactive loop
+    display.update(display_type='interactive', data=display_data)
+    while True:
+        event = keyboard.read_event()
+        if event.event_type != keyboard.KEY_DOWN:
+            continue
 
-    num_choice_pages = ceil((len(choices)*1.0) / NUM_CHOICES_PER_PAGE)
-    #input_val = ""
+        if event.name == 'down':
+            display_data['curr_idx'] += 1
+        elif event.name == 'up':
+            display_data['curr_idx'] -= 1
+        elif event.name == 'right':
+            display_data['curr_page'] += 1
+            display_data['curr_idx'] = display_data['curr_page']*num_choices_per_page
+        elif event.name == 'left':
+            display_data['curr_page'] -= 1
+            display_data['curr_idx'] = display_data['curr_page']*num_choices_per_page
+        elif event.name in [str(x) for x in range(1,10)]:
+            display_data['selection'] = int(event.name) + display_data['curr_page']*num_choices_per_page - 1
+            display.update(display_type='interactive', data=display_data)
+            return display_data['selection'] + 1
 
-    ## add 4 to account for panel space
-    service_size = NUM_CHOICES_PER_PAGE+4
-    if len(choices) < NUM_CHOICES_PER_PAGE:
-        service_size = len(choices)+4
-
-    layout = Layout()
-    layout.split(
-        
-        Layout(name='services', size=service_size),
-        Layout(name='instruction', size=2)
-    )
-
-    instruction_text = Text(f'Select {choice_type} with arrow/# keys and press enter.')
-    instruction_text.stylize('steel_blue3')
-    layout['instruction'].update(instruction_text)
-
-    with Live(layout):
-        curr_page = 0
-        curr_idx = 0
-        padded_panel = build_input_choices_panel(choices, choice_type, curr_idx, curr_page, num_choice_pages)
-        layout['services'].update(padded_panel)
-        layout['instruction'].update(instruction_text)
-
-        ## Begin interactive loop
-        while True:
-            event = keyboard.read_event()
-            if event.event_type != keyboard.KEY_DOWN:
-                continue
-
-            if event.name == 'down':
-                curr_idx += 1
-            elif event.name == 'up':
-                curr_idx -= 1
-            elif event.name == 'right':
-                curr_page += 1
-                curr_idx = curr_page*NUM_CHOICES_PER_PAGE
-            elif event.name == 'left':
-                curr_page -= 1
-                curr_idx = curr_page*NUM_CHOICES_PER_PAGE
-            elif event.name == 'enter':
-                return curr_idx+1
-
-            padded_panel = build_input_choices_panel(choices, choice_type, curr_idx, curr_page, num_choice_pages)
-            layout["services"].update(padded_panel)
+        display.update(display_type='interactive', data=display_data)
 
 
 
@@ -139,3 +93,16 @@ def get_password_for_credential(user_requested_generate):
         credential_password = input_password
         
     return credential_password
+
+
+## Wait until user indicates they are done with the running client
+## Returns when the user presses ending sequence q
+def get_input_for_end():
+    ## Begin interactive loop
+    while True:
+        event = keyboard.read_event()
+        if event.event_type != keyboard.KEY_DOWN:
+            continue
+
+        if event.name == 'q':
+            return

@@ -31,7 +31,7 @@ REQUIRED_COMMON_VARS = [
 
 
 ## Function to read config parameters from hacc_vars file into object
-def get_config_params():
+def get_config_params(display):
     ## check for windows system
     if 'USERPROFILE' in os.environ:
         hacc_config_location = os.environ['USERPROFILE'] + '\.hacc\hacc.conf'
@@ -44,7 +44,10 @@ def get_config_params():
         hacc_vars = f.readlines()
         f.close()
     except:
-        print(f'Unable to read required configuration file {hacc_config_location}, aborting.')
+        display.update(
+            display_type = 'text_append',
+            data = {'text': f'Unable to read required configuration file {hacc_config_location}, aborting.'}
+        )
         return False
 
     config = {}
@@ -78,7 +81,7 @@ def get_missing_vars(required, loaded):
 
 
 ## Function to check all required config vars are set when client is invoked
-def required_config_set_for_action(args, config):
+def required_config_set_for_action(display, args, config):
     missing_vars = []
 
     if args.action in DATA_ACTIONS:
@@ -95,7 +98,10 @@ def required_config_set_for_action(args, config):
     missing_vars = [item for sublist in missing_vars for item in sublist]
 
     for m in missing_vars:
-        print(f'Required configuration parameter {m} not set in hacc_vars.py, please set value with hacc configure --set {m}=... (or edit manually) and try again.')
+        display.update(
+            display_type = 'text_append',
+            data = {'text': f'Required configuration parameter {m} not set in hacc_vars.py, please set value with hacc configure --set {m}=... (or edit manually) and try again.'}
+        )
 
     if len(missing_vars):
         return False
@@ -103,29 +109,48 @@ def required_config_set_for_action(args, config):
 
 
 ## Function to confirm all required Vault components for action are setup
-def vault_components_exist_for_action(args, config):
+def vault_components_exist_for_action(display, args, config):
     if args.action in DATA_ACTIONS:
         components = VaultComponents(config)
         active = components.active()
         required = components.required()
 
         if len(active) == 0:
-            print('No Vault detected, install or configure before attempting this command.')
+            display.update(
+                display_type = 'text_append',
+                data = {'text': 'No Vault detected, install or configure before attempting this command.'}
+            )
             return False
 
         elif len(active) != len(required):
-            print('Vault is not fully setup, complete installation before attempting this command.')
-            print(f'Active components: {active}')
             missing = [x for x in required if x not in active]
-            print(f'Missing components: {missing}')
+
+            display.update(
+                display_type = 'text_append',
+                data = {'text': 'Vault is not fully setup, complete installation before attempting this command.'}
+            )
+            display.update(
+                display_type = 'text_append',
+                data = {'text': f'Active components: {active}'}
+            )
+            display.update(
+                display_type = 'text_append',
+                data = {'text': f'Missing components: {missing}'}
+            )
             return False
 
     ## If wipe flag provided, make sure enough components exist to do so
     elif args.action == 'eradicate' and args.wipe:
         components = VaultComponents(config)
         if not components.user or not components.cmk:
-            print('Missing Vault components needed for wipe (-w) flag')
-            print('  If you are resuming a previous Vault eradication, try again without wipe flag.')
+            display.update(
+                display_type = 'text_append',
+                data = {'text': 'Missing Vault components needed for wipe (-w) flag'}
+            )
+            display.update(
+                display_type = 'text_append',
+                data = {'text': 'If you are resuming a previous Vault eradication, try again without wipe flag.'}
+            )
             return False
     return True
 
@@ -139,22 +164,25 @@ def vault_components_exist_for_action(args, config):
 ## 5. Confirms all required Vault components properly setup for action
 ##
 ## Returns configuration variable dict required by client, None if error
-def startup(args, current_version):
-    config = get_config_params()
-    if not required_config_set_for_action(args, config):
+def startup(display, args, current_version):
+    config = get_config_params(display)
+    if not required_config_set_for_action(display, args, config):
         return None
 
     if config['check_for_upgrades']:
-        new_version = check_for_upgrades(current_version)
+        new_version = check_for_upgrades(display, current_version)
         if new_version:
-            print(f'New HACC version {new_version} available for installation. Upgrade with hacc --upgrade')
+            display.update(
+                display_type = 'text_append',
+                data = {'text': f'New HACC version {new_version} available for installation. Upgrade with hacc --upgrade'}
+            )
 
     if config['cleanup_old_versions']:
-        old_versions = check_for_old_versions(current_version)
+        old_versions = check_for_old_versions(display, current_version)
         if old_versions:
             cleanup_old_versions(old_versions)
 
-    if not vault_components_exist_for_action(args, config):
+    if not vault_components_exist_for_action(display, args, config):
         return None
 
     config['version'] = current_version
