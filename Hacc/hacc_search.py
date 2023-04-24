@@ -12,7 +12,7 @@ def search(display, args, config):
     service_name = args.service
     user = args.username
 
-    local_service = HaccService(service_name, config=config)
+    local_service = HaccService(display, service_name, config=config)
     if not bool(local_service.credentials):
         display.update(
             display_type='text_append', 

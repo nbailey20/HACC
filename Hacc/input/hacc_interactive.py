@@ -10,7 +10,6 @@ except:
 from hacc_generate import generate_password
 
 
-
 ## Gets user input from paginated numbered list of acceptable choices
 ## User can provide choice number or prefix string to match against
 def get_input_with_choices(display, choices, choice_type, service=None):
@@ -34,10 +33,13 @@ def get_input_with_choices(display, choices, choice_type, service=None):
             continue
 
         if event.name == 'right':
-            display_data['curr_page'] += 1
+            display_data['curr_page'] = (display_data['curr_page']+1) % display_data['total_pages']
+
         elif event.name == 'left':
-            display_data['curr_page'] -= 1
+            display_data['curr_page'] = (display_data['curr_page']-1) % display_data['total_pages']
+
         elif event.name in [str(x) for x in range(1,10)]:
+            ## highlight selection to let user know it was successfully chosen before moving on
             display_data['selection'] = int(event.name) + display_data['curr_page']*num_choices_per_page - 1
             display.update(display_type='interactive', data=display_data)
             return display_data['selection'] + 1
@@ -45,58 +47,49 @@ def get_input_with_choices(display, choices, choice_type, service=None):
         display.update(display_type='interactive', data=display_data)
 
 
+## Waits for user to confirm or deny the current confirmation panel
+## Returns True or False based on user y/n input
+def get_user_confirmation(display, prompt):
+    display.update(
+        display_type='confirm',
+        data={'text': prompt, 'selection': None}
+    )
 
-## Gets free-form user input for subarg
-def get_input_string_for_subarg(subarg, action):
-    subarg_val = input(f'Enter {subarg} for {action}: ')
-
-    if not subarg_val:
-        print(f'Value for {subarg} not provided, exiting.')
-        return False
-    return subarg_val
-
-
-## If user_requested_generate, generate password and return it
-## If user did not specify, ask and then either return generated password or user input
-## Returns False if cannot gather password input
-def get_password_for_credential(user_requested_generate):
-    gen_password = True
-    credential_password = None
-
-    if not user_requested_generate:
-        gen_password = False if input('Would you like to generate a password (y/n)? ').lower() != 'y' else True
-
-    if gen_password:
-        need_passwd = True
-        while need_passwd:
-            proposed_password = generate_password()
-            print(f'Generated password: {proposed_password}')
-            if input('Use this password (y/n)? ').lower() == 'y':
-                credential_password = proposed_password
-                print()
-                break
-            print()
-
-    else:
-        input_password = input(f'Enter password: ')
-        if not input_password:
-            print(f'Value for password not provided, exiting.')
-            return False
-
-        credential_password = input_password
-        
-    return credential_password
-
-
-## Wait until user indicates they are done with the running client
-## Returns when the user presses ending sequence q
-def get_input_for_end():
-    ## Begin interactive loop
     while True:
         event = keyboard.read_event()
         if event.event_type != keyboard.KEY_DOWN:
             continue
 
-        if event.name == 'q':
+        if event.name == 'n' or event.name == 'y':
             keyboard.send('backspace')
-            return
+            display.update(
+                display_type='confirm',
+                data={'text': prompt, 'selection': event.name}
+            )
+            if event.name == 'y':
+                return True
+            return False
+
+
+## If user_requested_generate, generate password and return it
+## If user did not specify, ask and then either return generated password or user input
+## Returns False if cannot gather password input
+def get_password_for_credential(display):
+    need_passwd = True
+    while need_passwd:
+        proposed_password = generate_password()
+        display.update(
+            display_type='text_new',
+            data={'text': f'Generated password: {proposed_password}'}
+        )
+
+        if get_user_confirmation(display, prompt='Use this password?'):
+            return proposed_password
+
+
+## Wait until user indicates they are done with the running client
+## Returns when the user presses ending sequence q
+def get_input_for_end():
+    keyboard.wait('q')
+    keyboard.send('backspace')
+    return

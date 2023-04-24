@@ -18,19 +18,22 @@ def build_executable(source_dir):
 
 ## Function to persistently set user PATH variable via Windows registry
 ## Returns True on success and False otherwise
-def set_user_path(value):
-    print(f'Setting path with value {value}')
-    #try:
-    path_update_res = subprocess.run(['setx', 'PATH', value],
-                                            stdout=subprocess.DEVNULL
-                                        ).returncode
-    print(f'path update res: {path_update_res}, type: {type(path_update_res)}')
-    print(path_update_res==0)
-    if path_update_res == 0:
-        return True
-    return False
-  #  except:
-  #      return False
+def set_user_path(display, value):
+    display.update(
+        display_type='text_append',
+        data={'text': f'Updating path to be: {value}'}
+    )
+    try:
+        path_update_res = subprocess.run(
+            ['setx', 'PATH', value],
+            stdout=subprocess.DEVNULL
+        ).returncode
+
+        if path_update_res == 0:
+            return True
+        return False
+    except:
+        return False
 
 
 ## Function to get user PATH env variable from Windows registry
@@ -48,9 +51,12 @@ def get_user_path():
 
 ## Function to update user path with newly built executable location by manipulating Windows registry
 ## Returns True if successful, False otherwise
-def update_user_path(executable_path):
+def update_user_path(display, executable_path):
     path_str = get_user_path()
-    print(f'Current: {path_str}')
+    display.update(
+        display_type='text_append',
+        data={'text': f'Current user path: {path_str}'}
+    )
 
     ## Make sure not to overwrite whole PATH string, only HACC
     path_list = path_str.split(';')
@@ -61,11 +67,13 @@ def update_user_path(executable_path):
             hacc_path_found = True
 
     if not hacc_path_found:
-        print('ERROR: did not find any existing Hacc location in PATH')
+        display.update(
+            display_type='text_append',
+            data={'text': 'ERROR: did not find any existing Hacc location in PATH'}
+        )
         return False
 
     updated_path_str = ';'.join(path_list)
-    print(f'Updated: {updated_path_str}')
-    if set_user_path(updated_path_str):
+    if set_user_path(display, updated_path_str):
         return True
     return False

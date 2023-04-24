@@ -3,10 +3,10 @@ from classes.vault import Vault
 
 
 def delete_all_creds(display, config):
-    vault = Vault(config)
+    vault = Vault(display, config)
 
     for svc_name in vault.get_all_services():
-        svc_obj = HaccService(svc_name, vault=vault)
+        svc_obj = HaccService(display, svc_name, vault=vault)
 
         for user in svc_obj.get_users():
             svc_obj.remove_credential(user)
@@ -41,7 +41,7 @@ def delete(display, args, config):
     service_name = args.service
     user = args.username
 
-    svc_obj = HaccService(service_name, config=config)
+    svc_obj = HaccService(display, service_name, config=config)
     if not svc_obj.remove_credential(user):
         display.update(
             display_type='text_append', 

@@ -14,30 +14,48 @@ def get_all_configuration(config):
     return json.dumps(config, indent=4, sort_keys=True)
 
 
-def get_configuration(val, config):
+def get_configuration(display, val, config):
     profile_name = config['aws_hacc_uname']
 
     if val == 'all':
-        print(get_all_configuration(config))
+        display.update(
+            display_type='text_append',
+            data={'text': get_all_configuration(config)}
+        )
 
     elif val == 'aws_access_key_id':
-        print(get_hacc_access_key(profile_name))
+        display.update(
+            display_type='text_append',
+            data={'text': get_hacc_access_key(profile_name)}
+        )
 
     elif val == 'aws_secret_access_key':
-        print(get_hacc_secret_key(profile_name))
+        display.update(
+            display_type='text_append',
+            data={'text': get_hacc_secret_key(profile_name)}
+        )
 
     elif val in config and config[val] != '':
-        print(config[val])
+        display.update(
+            display_type='text_append',
+            data={'text': config[val]}
+        )
 
     elif val in config:
-        print(f'No value set for {val}')
+        display.update(
+            display_type='text_append',
+            data={'text': f'No value set for {val}'}
+        )
 
     else:
-        print(f'{val} is not a known HACC configuration variable. See hacc_vars_template for expected variables.')
+        display.update(
+            display_type='text_append',
+            data={'text': f'{val} is not a known HACC configuration variable. See hacc_vars_template for expected variables.'}
+        )
     return
 
 
-def set_config_from_cli(inpt, config, config_location):
+def set_config_from_cli(display, inpt, config, config_location):
     ## Parse user input
     param_name, param_val = inpt.split('=')
 
@@ -51,15 +69,20 @@ def set_config_from_cli(inpt, config, config_location):
             credential_set = set_hacc_secret_key(param_val, profile_name)
 
         if not credential_set:
-            print(f'Error setting {param_name}, manual configuration of Vault AWS credentials required.')
+            display.update(
+                display_type='text_append',
+                data={'text': f'Error setting {param_name}, manual configuration of Vault AWS credentials required.'}
+            )
         else:
-            print(f'Successfully set parameter {param_name} in AWS credentials file for profile {profile_name}.')
+            display.update(
+                display_type='text_append',
+                data={'text': f'Successfully set parameter {param_name} in AWS credentials file for profile {profile_name}.'}
+            )
         return
 
     ## If not credential variable, must be in config file
-    f = open(config_location, 'r')
-    config = f.readlines()
-    f.close()
+    with open(config_location, 'r') as f:
+        config = f.readlines()
 
     ## Update data locally, also check for commented config
     value_updated = False
@@ -73,26 +96,35 @@ def set_config_from_cli(inpt, config, config_location):
             value_updated = True
             break
     if not value_updated:
-        print(f'Variable {param_name} not known, cannot set value.')
+        display.update(
+            display_type='text_append',
+            data={'text': f'Variable {param_name} not known, cannot set value.'}
+        )
         return
 
     ## Write updated data to config file
-    f = open(config_location, 'w')
-    f.write(''.join(config))
-    f.close()
-    print(f'Updated {param_name}.')
+    with open(config_location, 'w') as f:
+        f.write(''.join(config))
+
+    display.update(
+        display_type='text_append',
+        data={'text': f'Updated {param_name}.'}
+    )
     return
 
 
 ## Set param in file config_location to value in imported config object
-def set_config_from_file(param, config, config_location):
+def set_config_from_file(display, param, config, config_location):
     if param == 'all':
         for p in config:
-            set_config_from_file(p, config, config_location)
+            set_config_from_file(display, p, config, config_location)
         return
 
     if not param in config:
-        print(f'Variable {param} not found in imported configuration.')
+        display.update(
+            display_type='text_append',
+            data={'text': f'Variable {param} not found in imported configuration.'}
+        )
     else:
         cli_expr = f'{param}={config[param]}'
         set_config_from_cli(cli_expr, config, config_location)
@@ -109,29 +141,36 @@ def get_set_type(inpt, f_name):
 
 
 
-def import_configuration_file(f_name):
+def import_configuration_file(display, f_name, passwd):
     ## Read encrypted file
     try:
-        f = open(f_name, 'r')
-        enc_config = f.read()
-        f.close()
+        with open(f_name, 'r') as f:
+            enc_config = f.read()
     except:
-        print('Could not open file {f_name}.')
+        display.update(
+            display_type='text_append',
+            data={'text': 'Could not open file {f_name}.'}
+        )
 
     ## Decrypt file
-    passwd = input('Enter password used to encrypt configuration file: ')
     config = decrypt_config_data(enc_config, passwd)
     try:
         config = json.loads(config)
         return config
     except:
-        print(f'Failed to decrypt configuration file {f_name}.')
+        display.update(
+            display_type='text_append',
+            data={'text': f'Failed to decrypt configuration file {f_name}.'}
+        )
         return
 
 
 
-def export_configuration(f_name, config, generate_passwd=True):
-    print('Exporting HACC configuration as file...')
+def export_configuration(display, f_name, config, generate_passwd=True):
+    display.update(
+        display_type='text_new',
+        data={'text': 'Exporting HACC configuration as file...'}
+    )
     config_str = get_all_configuration(config)
     if generate_passwd:
         passwd = generate_password()
@@ -140,35 +179,58 @@ def export_configuration(f_name, config, generate_passwd=True):
 
     enc_config = encrypt_config_data(config_str, passwd)
     if not enc_config:
-        print('Could not encrypt configuration data.')
+        display.update(
+            display_type='text_append',
+            data={'text': 'Could not encrypt configuration data.'}
+        )
         return
 
     try:
-        f = open(f_name, 'w')
-        f.write(enc_config)
-        f.close()
-        print(f'Created encrypted file {f_name} in {os.getcwd()}.')
+        with open(f_name, 'w') as f:
+            f.write(enc_config)
+
+        display.update(
+            display_type='text_append',
+            data={'text': f'Created encrypted file {f_name} in {os.getcwd()}.'}
+        )
+
         if generate_passwd:
-            print()
-            print('Password for future decryption:')
-            print(f'{passwd}')
+            display.update(
+                display_type='text_append',
+                data={'text': 'Password for future decryption:'}
+            )
+            display.update(
+                display_type='text_append',
+                data={'text': f'{passwd}'}
+            )
     except:
-        print(f'Could not create configuration file {f_name}.')
+        display.update(
+            display_type='text_append',
+            data={'text': f'Could not create configuration file {f_name}.'}
+        )
     return
 
 
 
-def configure(args, config):
+def configure(display, args, config):
     if args.export:
         if args.password:
-            export_configuration(args.file, config, generate_passwd=False)
+            export_configuration(display, args.file, config, generate_passwd=False)
         else:
-            export_configuration(args.file, config)
+            export_configuration(display, args.file, config)
 
     elif args.show:
-        get_configuration(args.show, config)
+        display.update(
+            display_type='text_new',
+            data={'text': f'Displaying HACC configuration for {args.show}...'}
+        )
+        get_configuration(display, args.show, config)
 
     elif args.set:
+        display.update(
+            display_type='text_new',
+            data={'text': 'Setting HACC configuration...'}
+        )
         ## Get configuration file location
         if 'USERPROFILE' in os.environ:
             hacc_config_location = os.environ['USERPROFILE'] + '\.hacc\hacc.conf'
@@ -179,14 +241,20 @@ def configure(args, config):
         set_type = get_set_type(args.set, args.file)
 
         if set_type == 'conflict':
-            print('Usage: "--set" accepts either command line assignment with "param=value" or an import file with -f, not both!')
+            display.update(
+                display_type='text_append',
+                data={'text': 'Usage: "--set" accepts either command line assignment with "param=value" or an import file with -f, not both!'}
+            )
         elif set_type == 'cli':
-            set_config_from_cli(args.set, config, hacc_config_location)
+            set_config_from_cli(display, args.set, config, hacc_config_location)
         elif set_type == 'file':
-            config = import_configuration_file(args.file)
+            config = import_configuration_file(display, args.file, args.password)
             if config:
-                set_config_from_file(args.set, config, hacc_config_location)
+                set_config_from_file(display, args.set, config, hacc_config_location)
 
     else:
-        print('Usage: configure action requires "show", "set", or "export" argument')
+        display.update(
+            display_type='text_append',
+            data={'text': 'Usage: configure action requires "show", "set", or "export" argument'}
+        )
     return

@@ -3,34 +3,55 @@ import time
 from classes.vault_eradicator import VaultEradicator
 from classes.vault import Vault
 from hacc_delete import delete
+from input.hacc_interactive import get_user_confirmation
 
 
-def eradicate(args, config):
+def eradicate(display, args, config):
     ## Print scary message to prevent accidental deletion
     if args.wipe:
-        print('This operation will delete ALL Vault credentials.')
-        print('If you continue the credentials will be gone forever!')
+        display.update(
+            display_type='text_new', 
+            data={'text': 'This operation will delete ALL Vault credentials.'}
+        )
+        display.update(
+            display_type='text_append', 
+            data={'text': 'If you continue the credentials will be gone forever!'}
+        )
     else:
-        print('This operation schedules master key deletion for all credentials.')
-        print('If you continue, you have up to 7 days to manually disable KMS key deletion or credentials can never be decrypted!')
-    
-    proceed = True if input('Are you sure you want to proceed (y/n)? ') == 'y' else False
-    if not proceed:
-        print('Aborting, close one ;)')
+        display.update(
+            display_type='text_new', 
+            data={'text': 'This operation schedules master key deletion for all credentials.'}
+        )
+        display.update(
+            display_type='text_append', 
+            data={'text': 'If you continue, you have up to 7 days to manually disable KMS key deletion or credentials can never be decrypted!'}
+        )
+
+    if not get_user_confirmation(display, prompt='Are you sure you want to proceed?'):
+        display.update(
+            display_type='text_append', 
+            data={'text': 'Aborting, close one ;)'}
+        )
         return
 
     ## Wipe all credentials before Vault deletion
     if args.wipe:
-        vault = Vault(config)
-        delete(args)
+        vault = Vault(display, config)
+        delete(display, args, config)
         time.sleep(5)
+
         if len(vault.get_all_services()) != 0:
-            print('Failed to delete all credentials from Vault, aborting eradication due to user providing wipe argument')
+            display.update(
+                display_type='text_append', 
+                data={'text': 'Failed to delete all credentials from Vault, aborting eradication due to user providing wipe argument'}
+            )
             return
 
     ## Delete Vault
-    print()
-    print('Eradicating Vault...')
+    display.update(
+        display_type='text_append', 
+        data={'text': 'Eradicating Vault...'}
+    )
     total_resources_to_destroy = 3 if config['create_scp'] else 2
 
     eradicator = VaultEradicator(config)
@@ -41,7 +62,10 @@ def eradicate(args, config):
     eradicator.delete_iam_user_with_policy(config['aws_hacc_uname'], config['aws_hacc_iam_policy'])
 
     if eradicator.scp:
-        print('Cannot delete Vault master key until SCP is removed')
+        display.update(
+            display_type='text_append', 
+            data={'text': 'Cannot delete Vault master key until SCP is removed'}
+        )
     else:
         eradicator.delete_cmk_with_alias(config['aws_hacc_kms_alias'])
 
@@ -51,14 +75,24 @@ def eradicate(args, config):
     if not config['create_scp']:
         num_resources_destroyed -= 1
         
-    print()
-    print(f'{num_resources_destroyed}/{total_resources_to_destroy} Vault components destroyed')
+    display.update(
+        display_type='text_append', 
+        data={'text': f'{num_resources_destroyed}/{total_resources_to_destroy} Vault components destroyed'}
+    )
 
     if num_resources_destroyed != total_resources_to_destroy:
-        print('Vault eradication finished but not all resources successfully destroyed')
-        print('  Retry to attempt to complete eradication')
+        display.update(
+            display_type='text_append',
+            data={'text': 'Vault eradication finished but not all resources successfully destroyed'}
+        )
+        display.update(
+            display_type='text_append',
+            data={'text': 'Retry to attempt to complete eradication'}
+        )
         return
 
-    print()
-    print('Successfully completed Vault eradication.')
+    display.update(
+        display_type='text_append',
+        data={'text': 'Successfully completed Vault eradication.'}
+    )
     return

@@ -20,8 +20,8 @@ from vault_install.hacc_credentials import delete_hacc_profile, get_hacc_access_
 ##      delete_scp
 ##
 class VaultEradicator(VaultComponents):
-    def __init__(self, config):
-        super().__init__()
+    def __init__(self, display, config):
+        super().__init__(display, config)
 
 
 

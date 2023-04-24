@@ -24,7 +24,7 @@ def compare_hacc_versions(display, version_list, current_version, operation='new
                 v_obj = version.parse(v)
             except:
                 display.update(
-                    display_type = 'text_new',
+                    display_type = 'text_append',
                     display_data = {'text': 'ERROR parsing version from remote list.'}
                 )
                 continue
@@ -44,7 +44,7 @@ def compare_hacc_versions(display, version_list, current_version, operation='new
                 v_obj = version.parse(v)
             except:
                 display.update(
-                    display_type = 'text_new',
+                    display_type = 'text_append',
                     display_data = {'text': 'ERROR parsing local source folder version.'}
                 )
                 continue
@@ -80,7 +80,7 @@ def check_for_old_versions(display, current_version):
         versions = os.listdir(hacc_dir)
     except:
         display.update(
-            display_type = 'text_new',
+            display_type = 'text_append',
             display_data = {'text': 'Could not list contents in HACC source directory, unable to check for old versions.'}
         )
         return []
@@ -97,7 +97,7 @@ def check_for_upgrades(display, current_version):
         all_versions = [tag['name'] for tag in all_version_data]
     except Exception as e:
         display.update(
-            display_type = 'text_new',
+            display_type = 'text_append',
             display_data = {'text': f'ERROR checking for potential upgrades: {e}'}
         )
         return None

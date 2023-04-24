@@ -3,15 +3,6 @@ import sys
 
 from classes.vault import Vault
 
-try:
-    from rich import print
-    from rich.panel import Panel
-    from rich.padding import Padding
-except:
-    print('Python module "rich" required for HACC client. Install (pip install rich) and try again.')
-    sys.exit()
-
-
 logger=logging.getLogger()
 
 
@@ -31,7 +22,6 @@ logger=logging.getLogger()
 ##      user_exists
 ##      add_credential
 ##      remove_credential
-##      print_credential
 class HaccService:
 
     ## Pulls creds from Vault and updates self.credentials
@@ -133,26 +123,10 @@ class HaccService:
             return False
 
 
-    ## Prints username, and optionally password for service
-    def print_credential(self, user, print_password=False):
-        if print_password:
-            password = self.get_credential(user)
-            panel = Panel(f'[yellow]{user} [green]: [purple]{password}',
-                            title=f'[steel_blue3]{self.service_name}',
-                            expand=False)
-        else:
-            panel = Panel(f'[cyan]Username [green]: [yellow]{user}',
-                            title=f'[steel_blue3]{self.service_name}',
-                            expand=False)
-        padded_panel = Padding(panel, 1)
-        print(padded_panel)
-
-
-
     ## Upon object init, pull existing service data if it exists
     ## Either provide config to initialize new vault, or existing vault object
-    def __init__(self, service_name, config=None, vault=None):
-        self.vault = Vault(config) if vault == None else vault
+    def __init__(self, display, service_name, config=None, vault=None):
+        self.vault = Vault(display, config) if vault == None else vault
         self.service_name = service_name
 
         if self.vault.service_exists(service_name):
@@ -161,4 +135,4 @@ class HaccService:
             
         else:
             self.credentials = {}
-            logger.debug('Did not find existing service in Vault, creating new')
+            logger.debug(f'Did not find existing service {service_name} in Vault, creating new')

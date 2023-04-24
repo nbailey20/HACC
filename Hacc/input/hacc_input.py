@@ -1,8 +1,9 @@
 import argparse
 import re
+from hacc_generate import generate_password
 from classes.vault import Vault
 from classes.hacc_service import HaccService
-from input.hacc_interactive import get_input_with_choices, get_input_string_for_subarg, get_password_for_credential
+from input.hacc_interactive import get_input_with_choices, get_password_for_credential
 import logging
 
 logger=logging.getLogger()
@@ -109,7 +110,7 @@ ACTION_ALLOWED_SUBARGS = {
     'rotate':    ['debug', 'service', 'username', 'password', 'generate'],
     'search':    ['debug', 'service', 'username'],
     'backup':    ['debug', 'file'],
-    'configure': ['debug', 'export', 'set', 'show', 'file'],
+    'configure': ['debug', 'export', 'set', 'show', 'file', 'password'],
     'upgrade':   ['debug']
 }
 
@@ -159,15 +160,15 @@ ALLOWED_ARG_INPUT_COMBOS = [
 
     ['upgrade'],
 
-    ['add'],
-    ['add', 'service'],
-    ['add', 'username'],
-    ['add', 'password'],
-    ['add', 'generate'],
+    #['add'],
+    #['add', 'service'],
+    #['add', 'username'],
+    #['add', 'password'],
+    #['add', 'generate'],
     ['add', 'file'],
-    ['add', 'service', 'username'],
-    ['add', 'service', 'password'],
-    ['add', 'service', 'generate'],
+    #['add', 'service', 'username'],
+    #['add', 'service', 'password'],
+    #['add', 'service', 'generate'],
     ['add', 'username', 'password'],
     ['add', 'username', 'generate'],
     ['add', 'service', 'username', 'password'],
@@ -178,12 +179,12 @@ ALLOWED_ARG_INPUT_COMBOS = [
     ['delete', 'username'],
     ['delete', 'service', 'username'],
 
-    ['rotate'],
-    ['rotate', 'service'],
-    ['rotate', 'username'],
+    #['rotate'],
+    #['rotate', 'service'],
+    #['rotate', 'username'],
     ['rotate', 'password'],
     ['rotate', 'generate'],
-    ['rotate', 'service', 'username'],
+    #['rotate', 'service', 'username'],
     ['rotate', 'service', 'password'],
     ['rotate', 'service', 'generate'],
     ['rotate', 'username', 'password'],
@@ -196,13 +197,13 @@ ALLOWED_ARG_INPUT_COMBOS = [
     ['search', 'username'],
     ['search', 'service', 'username'],
 
-    ['backup'],
+    #['backup'],
     ['backup', 'file'],
 
     ['configure', 'show'],
     ['configure', 'set'],
-    ['configure', 'export'],
-    ['configure', 'set', 'file'],
+    #['configure', 'export'],
+    ['configure', 'set', 'file', 'password'],
     ['configure', 'export', 'file']
 ]
 
@@ -416,7 +417,7 @@ def get_service_name_from_input(display, svc_input, vault):
 ## Input can either match username exactly, or be a prefix
 ## Returns complete username, False if no matches in Vault
 def get_service_user_from_input(display, service, user_input, vault):
-    svc_obj = HaccService(service, vault=vault)
+    svc_obj = HaccService(display, service, vault=vault)
 
     ## Check if exact username provided
     if svc_obj.user_exists(user_input):
@@ -480,10 +481,10 @@ def validate_args_for_action(display, args, config):
 
     ## Validate service and username input where possible
     if action == 'search' or action == 'delete':
-        vault = Vault(config)
+        vault = Vault(display, config)
         if len(vault.get_all_services()) == 0:
             display.update(
-                display_type='text_append', 
+                display_type='text_new', 
                 data={'text': 'Vault is curently empty, add a service credential with `hacc add`'}
             )
             return False
@@ -491,16 +492,16 @@ def validate_args_for_action(display, args, config):
         args.service = get_service_name_from_input(display, args.service, vault)
         if not args.service:
             display.update(
-                display_type='text_append', 
-                data={'text': 'Could not validate service name, exiting.'}
+                display_type='text_new', 
+                data={'text': 'Could not validate service name, check spelling or browse all services'}
             )
             return False
 
         args.username = get_service_user_from_input(display, args.service, args.username, vault)
         if not args.username:
             display.update(
-                display_type='text_append', 
-                data={'text': f'Could not validate username for service {args.service}, exiting.'}
+                display_type='text_new', 
+                data={'text': f'Could not validate username for service {args.service}, check spelling or browse existing usernames'}
             )
             return False
 
@@ -518,29 +519,24 @@ def validate_args_for_action(display, args, config):
     subargs_to_get = missing_args_for_action(args)
     for subarg in subargs_to_get:
 
-        ## Check if we should generate password instead of asking for input
+        ## Check if we should generate password
         if subarg == 'password':
-            args.password = get_password_for_credential(args.generate)
-            if not args.password:
-                display.update(
-                    display_type='text_append', 
-                    data={'text': f'Could not gather password, exiting.'}
-                )
-                return False
-            logger.debug('Interactively generated required password argument')
-
+            if args.generate:
+                args.password = get_password_for_credential(display)
+                continue
+            display.update(
+                display_type='text_new', 
+                data={'text': f'Password required, either provide with -p or use -g to generate a random one.'}
+            )
+            return False
+        
         else:
-            subarg_val = get_input_string_for_subarg(subarg, action)
-            if not subarg_val:
-                display.update(
-                    display_type='text_append', 
-                    data={'text': f'Could not gather required input: {subarg}'}
-                )
-                return False
-
-            setattr(args, subarg, subarg_val)
-            logger.debug(f'Interactively gathered required argument {subarg}')
-
+            display.update(
+                display_type='text_new', 
+                data={'text': f'Required argument {subarg} not provided, please include and try again.'}
+            )
+            logger.debug(f'Required subarg {subarg} not provided')
+            return False
 
     logger.debug('All required arguments provided')
     return args

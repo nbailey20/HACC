@@ -3,7 +3,7 @@ from classes.hacc_service import HaccService
 
 
 def add_credential_for_service(display, vault_obj, service_name, user, passwd):
-    service_obj = HaccService(service_name, vault=vault_obj)
+    service_obj = HaccService(display, service_name, vault=vault_obj)
 
     ## empty dicts evaluate to False
     if not bool(service_obj.credentials):
@@ -29,7 +29,7 @@ def add_credential_for_service(display, vault_obj, service_name, user, passwd):
 
 
 def add(display, args, config):
-    vault = Vault(config)
+    vault = Vault(display, config)
 
     ## Import credentials from provided filename
     if args.file:

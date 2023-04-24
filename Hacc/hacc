@@ -28,7 +28,7 @@ from hacc_configure import configure
 from hacc_upgrade import upgrade
 
 
-HACC_VERSION = 'v0.8.3'
+HACC_VERSION = 'v0.9.0'
 
 
 ## Configure logger
@@ -75,7 +75,10 @@ def main():
             ## Validate input/gather any remaining args before passing to action
             valid_args = validate_args_for_action(display, args, config)
             if not valid_args:
-                return False
+                display.update(display_type='end', data={})
+                get_input_for_end()
+                return
+
             logger.debug(f'Validated input args: {valid_args}')
 
             ## Call appropriate function for action

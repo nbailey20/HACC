@@ -20,8 +20,8 @@ logger=logging.getLogger()
 ##      parse_import_file
 ##          
 class Vault:
-    def __init__(self, config):
-        self.aws_client = AwsClient(config, client_type='data')
+    def __init__(self, display, config):
+        self.aws_client = AwsClient(display, config, client_type='data')
         self.kms_arn = self.get_kms_arn(config['aws_hacc_kms_alias'])
         self.param_path = config['aws_hacc_param_path']
 

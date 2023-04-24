@@ -7,6 +7,7 @@ try:
     from rich.layout import Layout
     from rich.text import Text
     from rich.spinner import Spinner
+    from rich.style import Style
 except:
     print('Python module "rich" required for HACC client. Install (pip install rich) and try again.')
     sys.exit()
@@ -28,7 +29,7 @@ class Display:
     def __build_startup_layout(self):
         startup_text = 'Starting up...'
         spinner_name = 'point'
-        spinner_len = 10
+        spinner_len = 5
 
         panel = Panel(
             Spinner(spinner_name, text=startup_text),
@@ -72,6 +73,34 @@ class Display:
         footer = Text(DEFAULT_FOOTER_TEXT)
         footer.stylize('green')
         footer.align('center', self.panel_width)
+
+        return (Padding(panel, 1), panel_height, self.panel_width, footer)
+
+
+    ## Builds text layout with interactive y/n user confirmation
+    ##  Appends confirmation to existing panel text
+    ## Returns tuple of (rich.padding, int, int, rich.Text)
+    ## Ints are height and width of panel
+    ## Text is footer of layout
+    def __build_confirmation_layout(self, text, selection):
+        text = self.panel_text + '\n' + text
+        confirmation = ' ([green]y [steel_blue3]/ [red]n[white])'
+        if selection == 'y':
+            confirmation = ' ([gold1]y [steel_blue3]/ [red]n[white])'
+        elif selection == 'n':
+            confirmation = ' ([green]y [steel_blue3]/ [gold1]n[white])'
+        text += confirmation
+
+        panel = Panel(
+            text,
+            title=f'[steel_blue3]HACC {self.client_version}',
+            expand=False
+        )
+
+        self.panel_width = PANEL_WIDTH_PADDING
+        panel_height = text.count('\n') + BASE_PANEL_HEIGHT
+
+        footer = Spinner('bouncingBall', text='Press y or n to confirm or deny.', style=Style(color='steel_blue3'))
 
         return (Padding(panel, 1), panel_height, self.panel_width, footer)
 
@@ -165,6 +194,7 @@ class Display:
             main_panel, panel_height, self.panel_width, footer = self.__build_startup_layout()
             self.layout['main'].size = panel_height
             self.layout['main'].update(main_panel)
+
         elif display_type == 'text_new':
             main_panel, panel_height, self.panel_width, footer = self.__build_text_layout(data['text'])
             self.layout['main'].size = panel_height
@@ -172,6 +202,11 @@ class Display:
 
         elif display_type == 'text_append':
             main_panel, panel_height, self.panel_width, footer = self.__build_text_layout(data['text'], append=True)
+            self.layout['main'].size = panel_height
+            self.layout['main'].update(main_panel)
+
+        elif display_type == 'confirm':
+            main_panel, panel_height, self.panel_width, footer = self.__build_confirmation_layout(data['text'], data['selection'])
             self.layout['main'].size = panel_height
             self.layout['main'].update(main_panel)
 

@@ -21,10 +21,13 @@ logger=logging.getLogger()
 ##      iam, boto3 client obj
 ##      sts, boto3 client obj
 ##      org, boto3 client obj
+##      display, classes.Display object
 ##
 class AwsClient:
 
-    def __init__(self, config, client_type='data'):
+    def __init__(self, display, config, client_type='data'):
+        self.display = display
+        
         region = config['aws_hacc_region']
         create_scp = config['create_scp']
 
@@ -93,7 +96,10 @@ class AwsClient:
         try:
             method_to_call = getattr(client, api_name)
         except:
-            print(f'API {api_name} not known for {client_type} client, exiting')
+            self.display.update(
+                display_type='text_append', 
+                data={'text': f'API {api_name} not known for {client_type} client, exiting'}
+            )
             return False
 
         try:
@@ -104,11 +110,17 @@ class AwsClient:
 
         except ClientError as e:
             if e.response['ResponseMetadata']['HTTPStatusCode'] == 403:
-                print(f'HACC is not authorized to perform {client_type} {api_name}, exiting')
+                self.display.update(
+                    display_type='text_append', 
+                    data={'text': f'HACC is not authorized to perform {client_type} {api_name}, exiting'}
+                )
             else:
                 logger.debug(f'AWS client error: {e}')
             return False
 
         except Exception as e:
-            print(f'Unknown API error: {e}')
+            self.display.update(
+                display_type='text_append', 
+                data={'text': f'Unknown API error, exiting: {e}'}
+            )
             return False
