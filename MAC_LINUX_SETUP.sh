@@ -1,6 +1,6 @@
 #!/bin/sh
 
-VERSION="v0.8"
+VERSION="v0.9"
 
 echo "Starting setup for HACC ${VERSION} - Homemade Authentication Credential Client"
 
@@ -11,7 +11,7 @@ if [ ! -f "Hacc/hacc.conf" ]; then
 
     read -p "Are you configuring the client with an existing vault? (y/n): " existing && [[ $existing == [yY] || $existing == [nN] ]] || exit 2
     if [[ $existing == [nN] ]]; then
-        echo "To configure new Vault, please ensure all required values are present in hacc.conf.template, then rename template to hacc.conf and rerun this script."
+        echo "To configure new Vault, please ensure all required values are present in Hacc/hacc.conf.template, then rename template to hacc.conf and rerun this script."
         exit 3
     else
         echo "Thanks for confirming :)"
@@ -21,17 +21,23 @@ if [ ! -f "Hacc/hacc.conf" ]; then
     fi
 
 else
+    mkdir ~/.hacc
     mv Hacc/hacc.conf ~/.hacc/hacc.conf
-    echo "Configuration file moved to ~/.hacc/hacc.conf, values can up be updated with hacc --configure"
+    if [[ $? == 0 ]]; then
+        echo "Configuration file moved to ~/.hacc/hacc.conf, values can up be updated with hacc --configure"
+    else
+        echo "Could not move hacc.conf to ~/.hacc/, please ensure you have permission to install on this system."
+        exit 4
+    fi
 fi
 
 sudo mkdir -p /usr/local/Hacc/${VERSION}
 sudo chown -R $USER /usr/local/Hacc
-cp -r Hacc/* /usr/local/Hacc/${VERSION} && ln -s /usr/local/Hacc/${VERSION}/hacc /usr/local/bin/hacc
-chmod +x /usr/local/Hacc/${VERSION}/hacc
+sudo cp -r Hacc/* /usr/local/Hacc/${VERSION} && sudo ln -s /usr/local/Hacc/${VERSION}/hacc /usr/local/bin/hacc
+sudo chmod +x /usr/local/Hacc/${VERSION}/hacc
 if [[ $? == 0 ]]; then
     echo "Installed client at /usr/local/bin/hacc, please start new terminal and test with 'hacc'"
 else
     echo "Failed to install client in /usr/local/bin/hacc, aborting."
-    exit 4
+    exit 5
 fi

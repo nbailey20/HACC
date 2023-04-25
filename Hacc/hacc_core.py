@@ -180,6 +180,10 @@ def startup(display, args, current_version):
     if config['cleanup_old_versions']:
         old_versions = check_for_old_versions(display, current_version)
         if old_versions:
+            display.update(
+                display_type = 'text_append',
+                data = {'text': f'Cleaning up old versions {old_versions} based on configuration settings.'}
+            )
             cleanup_old_versions(old_versions)
 
     if not vault_components_exist_for_action(display, args, config):

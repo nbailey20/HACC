@@ -28,7 +28,7 @@ from hacc_configure import configure
 from hacc_upgrade import upgrade
 
 
-HACC_VERSION = 'v0.9.0'
+HACC_VERSION = 'v0.9'
 
 
 ## Configure logger
