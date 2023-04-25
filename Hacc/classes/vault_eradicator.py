@@ -48,29 +48,50 @@ class VaultEradicator(VaultComponents):
     ## Unsets cmk attribute of parent class
     ## Returns False if failed to delete key/alias
     def delete_cmk_with_alias(self, kms_alias):
-        print('Checking for existing Vault key')
+        self.display.update(
+            display_type = 'text_append',
+            data = {'text': 'Checking for existing Vault key'}
+        )
 
         if not self.cmk:
-            print('No existing Vault key found')
+            self.display.update(
+                display_type = 'text_append',
+                data = {'text': 'No existing Vault key found'}
+            )
             return True
 
-        print('Existing Vault key found, deleting...')
+        self.display.update(
+            display_type = 'text_append',
+            data = {'text': 'Existing Vault key found, deleting...'}
+        )
 
         alias_delete_res = self.__delete_alias(kms_alias)
         ## If we can't delete alias, leave CMK component for next time
         if not alias_delete_res:
-            print('Failed to delete alias for Vault key')
+            self.display.update(
+                display_type = 'text_append',
+                data = {'text': 'Failed to delete alias for Vault key'}
+            )
             return False
 
         key_delete_res = self.__delete_cmk()
 
         if not key_delete_res:
-            print('Failed to schedule Vault key deletion')
-            print(f'  Vault key {self.cmk} will need to be manually deleted')
+            self.display.update(
+                display_type = 'text_append',
+                data = {'text': 'Failed to schedule Vault key deletion'}
+            )
+            self.display.update(
+                display_type = 'text_append',
+                data = {'text': f'Vault key {self.cmk} will need to be manually deleted'}
+            )
             self.cmk = None
             return False
 
-        print('Successfully deleted Vault key')
+        self.display.update(
+            display_type = 'text_append',
+            data = {'text': 'Successfully deleted Vault key'}
+        )
         self.cmk = None
         return True
 
@@ -109,17 +130,30 @@ class VaultEradicator(VaultComponents):
     ## Unsets user attribute of parent class
     ## Returns False if failed to delete user/policy
     def delete_iam_user_with_policy(self, username, policy_name):
-        print('Checking for Vault IAM user')
+        self.display.update(
+            display_type = 'text_append',
+            data = {'text': 'Checking for Vault IAM user'}
+        )
 
         if not self.user:
-            print('No existing IAM user found')
+            self.display.update(
+                display_type = 'text_append',
+                data = {'text': 'No existing IAM user found'}
+            )
             return True
-        print('Existing Vault user found, deleting...')
+
+        self.display.update(
+            display_type = 'text_append',
+            data = {'text': 'Existing Vault user found, deleting...'}
+        )
 
         delete_policy_res = self.__delete_iam_policy(username, policy_name)
         ## If we can't delete policy, leave IAM component for next time
         if not delete_policy_res:
-            print('Failed to delete user policy')
+            self.display.update(
+                display_type = 'text_append',
+                data = {'text': 'Failed to delete user policy'}
+            )
             return False
 
         ## Need local credential ID to delete AWS credential
@@ -127,22 +161,37 @@ class VaultEradicator(VaultComponents):
         if aws_access_key:
             delete_aws_access_res = self.__delete_iam_access_key(username, aws_access_key)
             if not delete_aws_access_res:
-                print('Failed to delete Vault user access key')
+                self.display.update(
+                    display_type = 'text_append',
+                    data = {'text': 'Failed to delete Vault user access key'}
+                )
                 return False
 
         ## If AWS access key non-existent or deleted, remove local cred
         delete_local_access_res = delete_hacc_profile()
         if not delete_local_access_res:
-            print('Failed to delete local Vault credentials')
-            print('  AWS credentials/config files will need manual cleanup to remove deprecated profile')
+            self.display.update(
+                display_type = 'text_append',
+                data = {'text': 'Failed to delete local Vault credentials'}
+            )
+            self.display.update(
+                display_type = 'text_append',
+                data = {'text': 'AWS credentials/config files will need manual cleanup to remove deprecated profile'}
+            )
 
         ## Delete user
         user_delete_res = self.__delete_iam_user(username)
         if not user_delete_res:
-            print('Failed to delete Vault IAM user')
+            self.display.update(
+                display_type = 'text_append',
+                data = {'text': 'Failed to delete Vault IAM user'}
+            )
             return False
 
-        print('Successfully deleted Vault IAM user')
+        self.display.update(
+            display_type = 'text_append',
+            data = {'text': 'Successfully deleted Vault IAM user'}
+        )
         self.user = None
         return True
 
@@ -170,29 +219,51 @@ class VaultEradicator(VaultComponents):
     ## Returns True if delete successful or SCP doesn't exist and unsets scp attribute
     ## Returns False if failed to delete SCP
     def delete_scp(self):
+        self.display.update(
+            display_type = 'text_append',
+            data = {'text': 'Checking for existing Vault SCP'}
+        )
 
-        print('Checking for existing Vault SCP')
         if not self.scp:
-            print('No existing SCP found')
+            self.display.update(
+                display_type = 'text_append',
+                data = {'text': 'No existing SCP found'}
+            )
             return True
 
         ## Detach SCP from Vault account
-        print('Found Vault SCP, deleting...')
+        self.display.update(
+            display_type = 'text_append',
+            data = {'text': 'Found Vault SCP, deleting...'}
+        )
+
         detach_scp_res = self.__detach_org_policy(self.scp)
         if not detach_scp_res:
-            print('Failed to detach SCP from Vault account')
+            self.display.update(
+                display_type = 'text_append',
+                data = {'text': 'Failed to detach SCP from Vault account'}
+            )
             return False
 
         ## Delete SCP from org
         delete_scp_res = self.__delete_org_policy(self.scp)
         if not delete_scp_res:
-            print('Failed to delete SCP from AWS organization')
-            print(f'  Unattached SCP {self.scp} will need manual cleanup')
+            self.display.update(
+                display_type = 'text_append',
+                data = {'text': 'Failed to delete SCP from AWS organization'}
+            )
+            self.display.update(
+                display_type = 'text_append',
+                data = {'text': f'Unattached SCP {self.scp} will need manual cleanup'}
+            )
             self.scp = None
             return False
 
         # Give SCP deletion time to take effect ('immediate' per AWS docs is not good enough :)
-        print('Successfully deleted SCP from Vault account, waiting 10 seconds to ensure completion')
+        self.display.update(
+            display_type = 'text_append',
+            data = {'text': 'Successfully deleted SCP from Vault account, waiting 10 seconds to ensure completion'}
+        )
         self.scp = None
         time.sleep(10)
         return True

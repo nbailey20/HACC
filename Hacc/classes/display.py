@@ -37,6 +37,7 @@ class Display:
             expand=False
         )
 
+        self.panel_text = 'Starting up...'
         self.panel_width = spinner_len + len(startup_text) + PANEL_WIDTH_PADDING
 
         footer = Text(DEFAULT_FOOTER_TEXT)

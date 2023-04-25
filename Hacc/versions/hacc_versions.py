@@ -45,7 +45,7 @@ def compare_hacc_versions(display, version_list, current_version, operation='new
             except:
                 display.update(
                     display_type = 'text_append',
-                    display_data = {'text': 'ERROR parsing local source folder version.'}
+                    display_data = {'text': f'ERROR parsing local source folder version {v} while checking for older versions.'}
                 )
                 continue
             if v_obj < current_version_obj:
@@ -85,7 +85,7 @@ def check_for_old_versions(display, current_version):
         )
         return []
 
-    old_versions = compare_hacc_versions(versions, current_version, operation='older')
+    old_versions = compare_hacc_versions(display, versions, current_version, operation='older')
     return old_versions
 
 

@@ -21,8 +21,8 @@ import vault_install.hacc_policies
 ##      create_scp
 ##
 class VaultInstaller(VaultEradicator):
-    def __init__(self, config):
-        super().__init__()
+    def __init__(self, display, config):
+        super().__init__(display, config)
 
         if config['create_scp']:
             cross_account_user = config['aws_hacc_uname']
@@ -60,17 +60,29 @@ class VaultInstaller(VaultEradicator):
     ## Returns True if key is present and sets CMK component parent attribute with ARN
     ## Returns False if key/alias failed to create
     def create_cmk_with_alias(self, kms_alias):
-        print('Checking for existing Vault key')
+        self.display.update(
+            display_type = 'text_append',
+            data = {'text': 'Checking for existing Vault key'}
+        )
 
         if self.cmk:
-            print('Found existing Vault key with alias')
+            self.display.update(
+                display_type = 'text_append',
+                data = {'text': 'Found existing Vault key with alias'}
+            )
             return True
-        print('No existing Vault key found, creating...')
 
+        self.display.update(
+            display_type = 'text_append',
+            data = {'text': 'No existing Vault key found, creating...'}
+        )
         ## Create new key
         key_id = self.__create_cmk()
         if not key_id:
-            print('Failed to create new symmetric KMS key')
+            self.display.update(
+                display_type = 'text_append',
+                data = {'text': 'Failed to create new symmetric KMS key'}
+            )
             return False
 
         ## Create new alias
@@ -80,8 +92,15 @@ class VaultInstaller(VaultEradicator):
             return True
 
         ## If alias fails but key exists, clean up for future
-        print('Failed to create alias for Vault key')
-        print('  Cleaning up Vault key component for future install attempt')
+        self.display.update(
+            display_type = 'text_append',
+            data = {'text': 'Failed to create alias for Vault key'}
+        )
+        self.display.update(
+            display_type = 'text_append',
+            data = {'text': 'Cleaning up Vault key component for future install attempt'}
+        )
+    
         self.delete_cmk_with_alias()
         return False
 
@@ -126,17 +145,29 @@ class VaultInstaller(VaultEradicator):
     ## Sets user component parent attribute with IAM ARN
     ## Returns False if user/policy failed to create
     def create_user_with_policy(self, username, policy_name):
-        print('Checking for existing IAM user')
+        self.display.update(
+            display_type = 'text_append',
+            data = {'text': 'Checking for existing IAM user'}
+        )
 
         if self.user:
-            print('Existing IAM user found')
+            self.display.update(
+                display_type = 'text_append',
+                data = {'text': 'Existing IAM user found'}
+            )
             return True
-        print('No existing user found, creating...')
 
+        self.display.update(
+            display_type = 'text_append',
+            data = {'text': 'No existing user found, creating...'}
+        )
         ## Create IAM user
         user_arn = self.__create_iam_user(username)
         if not user_arn:
-            print('Failed to create IAM user for Vault')
+            self.display.update(
+                display_type = 'text_append',
+                data = {'text': 'Failed to create IAM user for Vault'}
+            )
             return False
 
         ## Put IAM policy for user
@@ -151,28 +182,52 @@ class VaultInstaller(VaultEradicator):
                             json.dumps(user_perms)
                         )
         if not hacc_policy:
-            print('Failed to create IAM user policy') 
-            print('  Cleaning up Vault IAM component for future install attempt')
+            self.display.update(
+                display_type = 'text_append',
+                data = {'text': 'Failed to create IAM user policy'}
+            )
+            self.display.update(
+                display_type = 'text_append',
+                data = {'text': 'Cleaning up Vault IAM component for future install attempt'}
+            )
+
             self.delete_iam_user_with_policy()
             return False
 
         ## Create IAM access key for user
         access_key, secret_key = self.__create_iam_access_key(username)
         if not access_key:
-            print('Failed to create credentials for user')
-            print('  Cleaning up Vault user with no credentials')
+            self.display.update(
+                display_type = 'text_append',
+                data = {'text': 'Failed to create credentials for user'}
+            )
+            self.display.update(
+                display_type = 'text_append',
+                data = {'text': 'Cleaning up Vault user with no credentials'}
+            )
+
             self.delete_iam_user_with_policy()
             return False
 
         ## Create new HACC profile in local AWS credentials files
         created_profile = create_hacc_profile(access_key, secret_key)
         if not created_profile:
-            print('Failed to save Vault user credentials')
-            print('  Cleaning up user without saved credentials')
+            self.display.update(
+                display_type = 'text_append',
+                data = {'text': 'Failed to save Vault user credentials'}
+            )
+            self.display.update(
+                display_type = 'text_append',
+                data = {'text': 'Cleaning up user without saved credentials'}
+            )
+
             self.delete_iam_user_with_policy()
             return False
 
-        print('Successfully created Vault IAM user and saved credentials')
+        self.display.update(
+            display_type = 'text_append',
+            data = {'text': 'Successfully created Vault IAM user and saved credentials'}
+        )
         self.user = user_arn
         return True
 
@@ -207,13 +262,22 @@ class VaultInstaller(VaultEradicator):
     ## Sets scp component parent attribute with SCP ID
     ## Returns False if SCP failed to create/attach to Vault account
     def create_scp(self, scp_name):
-        print('Checking for existing Vault SCP')
+        self.display.update(
+            display_type = 'text_append',
+            data = {'text': 'Checking for existing Vault SCP'}
+        )
 
         if self.scp:
-            print('Existing SCP found for Vault account')
+            self.display.update(
+                display_type = 'text_append',
+                data = {'text': 'Existing SCP found for Vault account'}
+            )
             return True
-        print('No existing SCP found, creating Vault SCP...')
 
+        self.display.update(
+            display_type = 'text_append',
+            data = {'text': 'No existing SCP found, creating Vault SCP...'}
+        )
         ## Create policy in org
         scp_policy = json.loads(vault_install.hacc_policies.VAULT_SCP % 
                                     (self.aws_ssm_path_arn,
@@ -224,16 +288,29 @@ class VaultInstaller(VaultEradicator):
                                 )
         policy_id = self.__create_org_policy(scp_name, json.dumps(scp_policy))
         if not policy_id:
-            print('Failed to create SCP in AWS organization')
+            self.display.update(
+                display_type = 'text_append',
+                data = {'text': 'Failed to create SCP in AWS organization'}
+            )
             return False
 
         attach_scp_res = self.__attach_org_policy(policy_id, self.aws_account_id)
         if not attach_scp_res:
-            print('Failed to attach SCP to Vault account')
-            print('  Cleaning up unattached SCP in AWS organization')
+            self.display.update(
+                display_type = 'text_append',
+                data = {'text': 'Failed to attach SCP to Vault account'}
+            )
+            self.display.update(
+                display_type = 'text_append',
+                data = {'text': 'Cleaning up unattached SCP in AWS organization'}
+            )
+
             self.delete_scp()
             return False
 
-        print('Successfully attached SCP to Vault account')
+        self.display.update(
+            display_type = 'text_append',
+            data = {'text': 'Successfully attached SCP to Vault account'}
+        )
         self.scp = policy_id
         return True
