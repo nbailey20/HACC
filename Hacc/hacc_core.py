@@ -4,6 +4,7 @@ from versions.hacc_versions import check_for_upgrades, check_for_old_versions, c
 from classes.vault_components import VaultComponents
 
 
+
 MGMT_ACTIONS = ['install', 'eradicate'] ## configure is mgmt action but doesn't have any required vars
 REQUIRED_MGMT_VARS = [
     'aws_hacc_region',

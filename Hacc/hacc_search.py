@@ -1,9 +1,4 @@
-import logging
-
 from classes.hacc_service import HaccService
-
-
-logger=logging.getLogger()
 
 
 ## Print specific credential for service

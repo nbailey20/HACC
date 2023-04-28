@@ -1,5 +1,4 @@
 import sys
-import logging
 
 try:
     import boto3
@@ -8,8 +7,7 @@ except:
     print('Python module boto3 required for HACC client. Install (pip install boto3) and try again.')
     sys.exit()
 
-
-logger=logging.getLogger()
+from logger.hacc_logger import logger
 
 
 

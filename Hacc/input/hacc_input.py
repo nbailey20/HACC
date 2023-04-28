@@ -1,12 +1,12 @@
 import argparse
 import re
-from hacc_generate import generate_password
+
+from logger.hacc_logger import logger
 from classes.vault import Vault
 from classes.hacc_service import HaccService
-from input.hacc_interactive import get_input_with_choices, get_password_for_credential
-import logging
 
-logger=logging.getLogger()
+from input.hacc_interactive import get_input_with_choices, get_password_for_credential
+from hacc_generate import generate_password
 
 
 ALLOWED_FLAGS = {

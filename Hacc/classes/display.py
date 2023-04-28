@@ -1,4 +1,3 @@
-import logging
 import sys
 
 try:
@@ -19,7 +18,6 @@ PANEL_WIDTH_PADDING = 5
 FOOTER_HEIGHT = 2
 DEFAULT_FOOTER_TEXT = "Just HACC it."
 
-logger=logging.getLogger()
 
 class Display:
     ## Builds loading layout to display on client startup

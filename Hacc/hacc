@@ -3,7 +3,6 @@
 ## Entrypoint for HACC client
 ## Author: Nick Bailey
 
-import logging
 import sys
 
 try:
@@ -13,10 +12,12 @@ except:
     sys.exit()
 
 from hacc_core import startup
+from logger.hacc_logger import logger, LOGGER_DEBUG, LOGGER_INFO
 from classes.display import Display
 from input.hacc_input import parse_args, eval_args, validate_args_for_action
 from input.hacc_interactive import get_input_for_end
 
+## Main action functions
 from hacc_search import search
 from hacc_add import add
 from hacc_delete import delete
@@ -31,24 +32,15 @@ from hacc_upgrade import upgrade
 HACC_VERSION = 'v0.9'
 
 
-## Configure logger
-logging.basicConfig()
-
-## suppress lots of noisy logs
-logging.getLogger('boto3').setLevel(logging.CRITICAL) 
-logging.getLogger('botocore').setLevel(logging.CRITICAL)
-logging.getLogger('nose').setLevel(logging.CRITICAL)
-logging.getLogger('urllib3').setLevel(logging.CRITICAL)
-
-logger=logging.getLogger()
-logger.handlers[0].setFormatter(logging.Formatter(
-    'DEBUG: %(message)s'
-))
-
-
 
 def main():
     args = parse_args()
+
+    ## Setting logging level
+    if args.debug:
+        logger.setLevel(LOGGER_DEBUG)
+    else:
+        logger.setLevel(LOGGER_INFO)
 
     display = Display(client_version=HACC_VERSION)
     display.update(display_type='startup', data={})
@@ -62,14 +54,11 @@ def main():
             ## Initialize client for provided args
             config = startup(display, args, HACC_VERSION)
             if not config:
+                display.update(display_type='end', data={})
+                get_input_for_end()
                 return
 
-            ## Setting logging level
-            if args.debug:
-                logger.setLevel(logging.DEBUG)
-            else:
-                logger.setLevel(logging.INFO)
-
+            
             logger.debug(f'Initial args provided: {args}')
 
             ## Validate input/gather any remaining args before passing to action

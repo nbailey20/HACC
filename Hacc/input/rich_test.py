@@ -1,50 +1,86 @@
-from rich.layout import Layout
+
 from rich.console import Console
-from rich.live import Live
-from rich.panel import Panel
 from rich.prompt import Prompt
+
+import time
+
+from rich.align import Align
 from rich.text import Text
-
-import keyboard
-
-refresh_string = [f"[green]{str(i)}" for i in range(9)]
-refresh_string[0] = "[yellow]0"
+from rich.panel import Panel
+from rich.table import Table
+from rich.progress import Progress
+from rich.padding import Padding
 
 
 console = Console()
-layout = Layout(name="base")
-layout.split(
-    Layout(name="refresh", size=len(refresh_string)+2),
-    Layout(name="consistent")
-)
-layout["refresh"].update(Panel("\n".join(refresh_string), expand=False))
-consistent_text = Text("Make a selection or left/right arrows for more options...")
-consistent_text.stylize("bold magenta")
-layout["consistent"].update(consistent_text)
 
-with Live(layout, console=console):
-    idx = 0
-    while True:
-        #event = keyboard.read_event()
-        name = Prompt.ask("Enter your name", default="Paul Atreides")
-        if name == 'down':
-            refresh_string[idx] = f"[green]{str(idx)}"
-            refresh_string[idx+1] = f"[yellow]{str(idx+1)}"
-            layout["refresh"].update(Panel("\n".join(refresh_string), expand=False))
-            idx += 1
-        # elif event.event_type == keyboard.KEY_DOWN and event.name == 'up':
-        #     refresh_string[idx] = f"[green]{str(idx)}"
-        #     refresh_string[idx-1] = f"[yellow]{str(idx-1)}"
-        #     layout["refresh"].update(Panel("\n".join(refresh_string), expand=False))
-        #     idx -= 1
-        # elif event.event_type == keyboard.KEY_DOWN and event.name in [str(i) for i in range(1,10)]:
-        #     refresh_string[idx] = f"[green]{str(idx)}"
-        #     idx = int(event.name)
-        #     refresh_string[idx] = f"[yellow]{str(idx)}"
-        #     layout["refresh"].update(Panel("\n".join(refresh_string), expand=False))
+def do_work():
+    for i in range(3):
+        console.print(f"checking vault component {i}")
+        time.sleep(2)
+    return
 
-        # if idx < 0:
-        #     idx = len(refresh_string)-1
-        # elif idx > len(refresh_string)-2:
-        #     idx = 0
+with console.status("Starting up...", spinner="point"):
+    do_work()
 
+
+console.rule()
+
+for n in range(4):
+
+    table = Table()
+
+    table.add_column("#", justify="right", style="cyan", no_wrap=True)
+    table.add_column("Service Name", style="magenta")
+
+    table.add_row("1", "test")
+    table.add_row("2", "testlongername")
+    table.add_row("3", "test")
+    table.add_row("4", "test")
+    table.add_row("5", "test")
+    table.add_row("6", "test")
+    table.add_row("3", "test")
+    table.add_row("4", "test")
+    table.add_row("5", "test")
+    table.add_row("6", "test")
+
+    if n == 0:
+        console.print(table)
+    else:
+        console.print(Padding(table, (2, 0, 0, 0)))
+    name = Prompt.ask("Enter a service/#", default="more...")
+
+
+console.rule(style="color(5)")
+
+console.print([1, 2, 3])
+console.print("[blue underline]Looks like a link")
+console.print("FOO", style="white on blue")
+
+console.input("What is [i]your[/i] [bold red]name[/]? :smiley: ")
+
+name = Prompt.ask("Enter your name", choices=["Paul", "Jessica", "Duncan"], default="Paul")
+
+
+
+
+with Progress() as progress:
+
+    task1 = progress.add_task("[red]Downloading...", total=None)
+
+    i = 0
+    while i < 3:
+        i += 1
+        time.sleep(1)
+        progress.update(task1, advance=1)
+       
+    progress.stop_task(task1)
+
+    task2 = progress.add_task("[green]Processing...", total=5)
+    
+
+    while not progress.finished:
+        progress.update(task2, advance=1.3)
+        time.sleep(0.5)
+
+console.print('done')
