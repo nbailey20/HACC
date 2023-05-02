@@ -401,7 +401,7 @@ def get_service_name_from_input(svc_input, vault):
     
     else:
         ## Multiple possible input matches, interactively ask for clarification
-        new_input = get_input_with_choices(possible_svcs, 'service')
+        new_input = get_input_with_choices(possible_svcs, 'Service')
 
         ## Check if user entered choice line number instead of value
         try:
@@ -439,7 +439,7 @@ def get_service_user_from_input(service, user_input, vault):
     
     else:
         ## Multiple possible input matches, interactively ask for clarification
-        new_input = get_input_with_choices(possible_users, 'username', service=service)
+        new_input = get_input_with_choices(possible_users, 'Username', service=service)
 
         ## Check if user entered choice line number instead of value
         try:

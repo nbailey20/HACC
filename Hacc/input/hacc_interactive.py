@@ -28,10 +28,11 @@ def get_input_with_choices(choices, choice_type, service=None):
     user_input = default_input
     while user_input == default_input:
         choice_idx = 0
-        for _ in range(total_pages):
-            table = Table()
-            table.add_column('#', justify='right', style='cyan', no_wrap=True)
-            table.add_column(choice_type, style='magenta')
+        for page_idx in range(total_pages):
+            table = Table(title=f'[purple]{page_idx+1}/{total_pages}')
+            table.add_column('[green]#', justify='center', style='salmon1')
+            column_color = 'steel_blue3' if choice_type == 'Service' else 'yellow'
+            table.add_column('[green]'+choice_type, justify='center', style=column_color)
 
             for _ in range(min(NUM_CHOICES_PER_TABLE, total_choices-choice_idx)):
                 table.add_row(str(choice_idx+1), choices[choice_idx])
@@ -43,9 +44,9 @@ def get_input_with_choices(choices, choice_type, service=None):
                 default_input = None
 
             if service:
-                user_input = Prompt.ask(f'Enter a {choice_type}/# for service {service}', default=default_input)
+                user_input = Prompt.ask(f'Provide a {choice_type.lower()}/# for service {service}', default=default_input)
             else:
-                user_input = Prompt.ask(f'Enter a {choice_type}/#', default=default_input)
+                user_input = Prompt.ask(f'Provide a {choice_type.lower()}/#', default=default_input)
             
             if user_input != default_input:
                 break

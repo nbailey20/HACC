@@ -16,26 +16,25 @@ PANEL_WIDTH_PADDING = 5
 
 ## Print specific credential for service
 def search(args, config):
-
+    console.print("Retrieving credential...")
     service_name = args.service
     user = args.username
 
-    with console.status("Retrieving credential...", spinner="point"):
-        local_service = HaccService(service_name, config=config)
-        if not bool(local_service.credentials):
-            console.print(f'Service [steel_blue3]{service_name} [white]does not exist in Vault, exiting.')
-            return
+    local_service = HaccService(service_name, config=config)
+    if not bool(local_service.credentials):
+        console.print(f'Service [steel_blue3]{service_name} [white]does not exist in Vault, exiting.')
+        return
 
-        passwd = local_service.get_credential(user)
+    passwd = local_service.get_credential(user)
 
-        panel_text = f'[yellow]{user} [green]: [purple]{passwd}'
-        panel_width = len(user+' : '+passwd)+PANEL_WIDTH_PADDING
-        panel = Panel(
-            panel_text,
-            title=f'[steel_blue3]{service_name}',
-            expand=False,
-            width=panel_width
-        )
+    panel_text = f'[yellow]{user} [green]: [purple]{passwd}'
+    panel_width = len(user+' : '+passwd)+PANEL_WIDTH_PADDING
+    panel = Panel(
+        panel_text,
+        title=f'[steel_blue3]{service_name}',
+        expand=False,
+        width=panel_width
+    )
 
-    console.print(Padding(panel, (2,0,0,0)))
+    console.print(Padding(panel, (1,0,0,0)))
     return
