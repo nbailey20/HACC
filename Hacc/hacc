@@ -4,18 +4,22 @@
 ## Author: Nick Bailey
 
 import sys
+import time
 
 try:
-    from rich.live import Live
+    from rich.progress import Progress
+    from rich.progress import SpinnerColumn
+    from rich.progress import BarColumn
+    from rich.progress import TextColumn
 except:
     print('Python module "rich" required for HACC client. Install (pip install rich) and try again.')
     sys.exit()
 
-from hacc_core import startup
 from logger.hacc_logger import logger, LOGGER_DEBUG, LOGGER_INFO
-from classes.display import Display
+from console.hacc_console import console
+
+from hacc_core import startup
 from input.hacc_input import parse_args, eval_args, validate_args_for_action
-from input.hacc_interactive import get_input_for_end
 
 ## Main action functions
 from hacc_search import search
@@ -42,44 +46,47 @@ def main():
     else:
         logger.setLevel(LOGGER_INFO)
 
-    display = Display(client_version=HACC_VERSION)
-    display.update(display_type='startup', data={})
+    console.rule(style="color(5)")
 
-    with Live(display.layout, screen=True):
-        try:
+    try:
+        ## Startup Progress Bar
+        with Progress(
+            TextColumn('[progress.description]{task.description}'),
+            BarColumn(),
+            SpinnerColumn(spinner_name='point', finished_text='[purple]Done.'),
+            transient=True
+        ) as progress:
+
             ## Ensure args are valid for action
-            if not eval_args(display, args):
+            if not eval_args(progress, args):
                 return
 
             ## Initialize client for provided args
-            config = startup(display, args, HACC_VERSION)
+            config = startup(progress, args, HACC_VERSION)
             if not config:
-                display.update(display_type='end', data={})
-                get_input_for_end()
                 return
 
-            
-            logger.debug(f'Initial args provided: {args}')
+        console.print(f'Startup complete, performing {args.action}...\n')
 
-            ## Validate input/gather any remaining args before passing to action
-            valid_args = validate_args_for_action(display, args, config)
-            if not valid_args:
-                display.update(display_type='end', data={})
-                get_input_for_end()
-                return
+        ## Validate input/gather any remaining args before passing to action
+        logger.debug(f'Initial args provided: {args}')
+        num_provided_args = len([arg for arg in vars(args) if getattr(args, arg) != None])
+        valid_args = validate_args_for_action(args, config)
+        if not valid_args:
+            return
+        logger.debug(f'Validated input args: {valid_args}')
+        num_validated_args = len([arg for arg in vars(valid_args) if getattr(valid_args, arg) != None])
 
-            logger.debug(f'Validated input args: {valid_args}')
+        ## Only draw second horizontal line user was interactively asked for input
+        if num_provided_args != num_validated_args:
+            console.rule(style="color(5)")
 
-            ## Call appropriate function for action
-            globals()[valid_args.action](display, valid_args, config)
+        ## Call appropriate function for action
+        globals()[valid_args.action](valid_args, config)
 
-            ## Wait for user response before stopping live display
-            display.update(display_type='end', data={})
-            get_input_for_end()
-        
-        ## cleanly exit without errors
-        except KeyboardInterrupt:
-            print('Ctrl-c received, goodbye!')
+    ## cleanly exit without errors
+    except KeyboardInterrupt:
+        console.print('Ctrl-c received, goodbye!')
 
 
 

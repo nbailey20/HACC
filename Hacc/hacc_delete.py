@@ -1,63 +1,44 @@
+from console.hacc_console import console
 from classes.hacc_service import HaccService
 from classes.vault import Vault
 
 
-def delete_all_creds(display, config):
-    vault = Vault(display, config)
+def delete_all_creds(config):
+    vault = Vault(config)
 
     for svc_name in vault.get_all_services():
-        svc_obj = HaccService(display, svc_name, vault=vault)
+        svc_obj = HaccService(svc_name, vault=vault)
 
         for user in svc_obj.get_users():
             svc_obj.remove_credential(user)
 
         svc_obj.push_to_vault()
-        display.update(
-            display_type='text_append', 
-            data={'text': f'All credentials for service {svc_name} have been deleted'}
-        )
+        console.print(f'All credentials for service [steel_blue3]{svc_name} [white]have been deleted')
     return
 
 
 
-def delete(display, args, config):
+def delete(args, config):
 
     ## Wipe all Vault creds before eradication
     if args.wipe:
-        display.update(
-            display_type='text_new', 
-            data={'text': 'Wiping all credentials from Vault...'}
-        )
-        delete_all_creds(display, config)
+        console.print('Wiping all credentials from Vault...')
+        delete_all_creds(config)
         return
 
-
     ## Delete single credential via input arguments
-    display.update(
-        display_type='text_new', 
-        data={'text': 'Deleting credential...'}
-    )
-
+    console.print('Deleting credential...')
     service_name = args.service
     user = args.username
 
-    svc_obj = HaccService(display, service_name, config=config)
+    svc_obj = HaccService(service_name, config=config)
     if not svc_obj.remove_credential(user):
-        display.update(
-            display_type='text_append', 
-            data={'text': f'Username {user} does not exist for service {service_name}, exiting.'}
-        )
+        console.print(f'Username [yellow]{user} [white]does not exist for service [steel_blue3]{service_name}, [white]exiting.')
         return
 
     svc_obj.push_to_vault()
-    display.update(
-        display_type='text_append', 
-        data={'text': f'Successfully deleted username {user} from service {service_name}.'}
-    )
+    console.print(f'Successfully deleted username [yellow]{user} [white]from service [steel_blue3]{service_name}.')
 
     if not bool(svc_obj.credentials):
-        display.update(
-            display_type='text_append', 
-            data={'text': f'No more credentials for service {service_name}.'}
-        )
+        console.print(f'No more credentials for service [steel_blue3]{service_name}.')
     return

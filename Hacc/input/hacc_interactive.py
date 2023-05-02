@@ -2,94 +2,92 @@ import sys
 from math import ceil
 
 try:
-    import keyboard
+    from rich.table import Table
+    from rich.padding import Padding
+    from rich.prompt import Prompt
+    from rich.panel import Panel
 except:
-    print('Python module "keyboard" required for HACC client interactive mode. Install (pip install keyboard) and try again or use flags to narrow your search results.')
+    print('Python module "rich" required for HACC. Install (pip install rich) and try again')
     sys.exit()
-    
+
+from console.hacc_console import console, NUM_CHOICES_PER_TABLE
 from hacc_generate import generate_password
 
 
 ## Gets user input from paginated numbered list of acceptable choices
 ## User can provide choice number or prefix string to match against
-def get_input_with_choices(display, choices, choice_type, service=None):
-    num_choices_per_page = display.NUM_CHOICES_PER_PAGE
-    total_pages = ceil((len(choices)*1.0) / num_choices_per_page)
-    curr_page = 0
-    display_data = {
-        'choices': choices,
-        'choice_type': choice_type,
-        'curr_page': curr_page,
-        'total_pages': total_pages
-    }
-    if service:
-        display_data['service'] = service
-    
+def get_input_with_choices(choices, choice_type, service=None):
+    total_pages = ceil((len(choices)*1.0) / NUM_CHOICES_PER_TABLE)
+    total_choices = len(choices)
+
+    default_input = 'more...'
+    if total_pages == 1:
+        default_input = None
+
     ## Begin interactive loop
-    display.update(display_type='interactive', data=display_data)
-    while True:
-        event = keyboard.read_event()
-        if event.event_type != keyboard.KEY_DOWN:
-            continue
+    user_input = default_input
+    while user_input == default_input:
+        choice_idx = 0
+        for _ in range(total_pages):
+            table = Table()
+            table.add_column('#', justify='right', style='cyan', no_wrap=True)
+            table.add_column(choice_type, style='magenta')
 
-        if event.name == 'right':
-            display_data['curr_page'] = (display_data['curr_page']+1) % display_data['total_pages']
+            for _ in range(min(NUM_CHOICES_PER_TABLE, total_choices-choice_idx)):
+                table.add_row(str(choice_idx+1), choices[choice_idx])
+                choice_idx += 1
+            console.print(Padding(table, (1, 0, 0, 0)))
 
-        elif event.name == 'left':
-            display_data['curr_page'] = (display_data['curr_page']-1) % display_data['total_pages']
+            default_input = 'more...'
+            if choice_idx == total_choices:
+                default_input = None
 
-        elif event.name in [str(x) for x in range(1,10)]:
-            ## highlight selection to let user know it was successfully chosen before moving on
-            display_data['selection'] = int(event.name) + display_data['curr_page']*num_choices_per_page - 1
-            display.update(display_type='interactive', data=display_data)
-            return display_data['selection'] + 1
+            if service:
+                user_input = Prompt.ask(f'Enter a {choice_type}/# for service {service}', default=default_input)
+            else:
+                user_input = Prompt.ask(f'Enter a {choice_type}/#', default=default_input)
+            
+            if user_input != default_input:
+                break
+    return user_input
 
-        display.update(display_type='interactive', data=display_data)
-
-
-## Waits for user to confirm or deny the current confirmation panel
-## Returns True or False based on user y/n input
-def get_user_confirmation(display, prompt):
-    display.update(
-        display_type='confirm',
-        data={'text': prompt, 'selection': None}
-    )
-
-    while True:
-        event = keyboard.read_event()
-        if event.event_type != keyboard.KEY_DOWN:
-            continue
-
-        if event.name == 'n' or event.name == 'y':
-            keyboard.send('backspace')
-            display.update(
-                display_type='confirm',
-                data={'text': prompt, 'selection': event.name}
-            )
-            if event.name == 'y':
-                return True
-            return False
 
 
 ## If user_requested_generate, generate password and return it
 ## If user did not specify, ask and then either return generated password or user input
 ## Returns False if cannot gather password input
-def get_password_for_credential(display):
-    need_passwd = True
-    while need_passwd:
-        proposed_password = generate_password()
-        display.update(
-            display_type='text_new',
-            data={'text': f'Generated password: {proposed_password}'}
-        )
+def get_password_for_credential(user_requested_generate):
+    gen_password = True
+    credential_password = None
 
-        if get_user_confirmation(display, prompt='Use this password?'):
-            return proposed_password
+    if not user_requested_generate:
+        gen_password = False if Prompt.ask('Would you like to generate a [green]password?', default='y').lower() != 'y' else True
+
+    if gen_password:
+        need_passwd = True
+        while need_passwd:
+            proposed_password = generate_password()
+            console.print(Panel(f'[steel_blue3]Generated password: [purple]{proposed_password}', expand=False))
+            if Prompt.ask('Use this [green]password?', default='y').lower() == 'y':
+                credential_password = proposed_password
+                break
+
+    else:
+        input_password = Prompt.ask(f'Enter [green]password')
+        if not input_password:
+            console.print(f'[red]Value for [green]password [red]not provided, exiting.')
+            return False
+
+        credential_password = input_password
+    return credential_password
 
 
-## Wait until user indicates they are done with the running client
-## Returns when the user presses ending sequence q
-def get_input_for_end():
-    keyboard.wait('q')
-    keyboard.send('backspace')
-    return
+
+## Gets free-form user input for subarg
+def get_input_string_for_subarg(subarg, action):
+    subarg_val = Prompt.ask(f'Enter [green]{subarg} [white]for {action}', console=console)
+
+    if not subarg_val:
+        console.print(f'[red]Value for [green]{subarg} [red]not provided, exiting.')
+        return False
+    return subarg_val

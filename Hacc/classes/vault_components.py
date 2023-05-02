@@ -20,11 +20,9 @@ from classes.aws_client import AwsClient
 ##
 class VaultComponents:
 
-    def __init__(self, display, config):
-        self.display = display
-
+    def __init__(self, config):
         ## Configure AWS clients based on whether SCP (multi-account) enabled
-        self.aws_client = AwsClient(display, config, client_type='mgmt')
+        self.aws_client = AwsClient(config, client_type='mgmt')
 
         identity_info = self.aws_client.call('sts', 'get_caller_identity')
         if identity_info:

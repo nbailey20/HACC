@@ -123,8 +123,8 @@ class HaccService:
 
     ## Upon object init, pull existing service data if it exists
     ## Either provide config to initialize new vault, or existing vault object
-    def __init__(self, display, service_name, config=None, vault=None):
-        self.vault = Vault(display, config) if vault == None else vault
+    def __init__(self, service_name, config=None, vault=None):
+        self.vault = Vault(config) if vault == None else vault
         self.service_name = service_name
 
         if self.vault.service_exists(service_name):

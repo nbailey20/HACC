@@ -1,9 +1,16 @@
 import time
+import sys
 
+try:
+    from rich.prompt import Prompt
+except:
+    print('Python module "rich" required for HACC. Install (pip install rich) and try again')
+    sys.exit()
+
+from console.hacc_console import console
 from classes.vault_eradicator import VaultEradicator
 from classes.vault import Vault
 from hacc_delete import delete
-from input.hacc_interactive import get_user_confirmation
 
 
 def eradicate(display, args, config):
@@ -27,11 +34,9 @@ def eradicate(display, args, config):
             data={'text': 'If you continue, you have up to 7 days to manually disable KMS key deletion or credentials can never be decrypted!'}
         )
 
-    if not get_user_confirmation(display, prompt='Are you sure you want to proceed?'):
-        display.update(
-            display_type='text_append', 
-            data={'text': 'Aborting, close one ;)'}
-        )
+    proceed = Prompt.ask('Are you sure you want to proceed?', default='n')
+    if proceed.lower() != 'y' and proceed.lower() != 'yes':
+        console.print('Aborting, close one ;)')
         return
 
     ## Wipe all credentials before Vault deletion

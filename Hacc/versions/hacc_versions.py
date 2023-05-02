@@ -9,12 +9,14 @@ except:
     print('Python module "packaging" required for HACC client. Install (pip install packaging) and try again.')
     sys.exit()
 
+from console.hacc_console import console
+
 
 
 ## Function that takes in a list of Hacc versions + current version and returns either:
 ## 1. newest version newer than current version (can be empty) OR
 ## 2. list of versions older than the current version (can be empty)
-def compare_hacc_versions(display, version_list, current_version, operation='newest'):
+def compare_hacc_versions(version_list, current_version, operation='newest'):
     current_version_obj = version.parse(current_version)
 
     if operation == 'newest':
@@ -23,10 +25,7 @@ def compare_hacc_versions(display, version_list, current_version, operation='new
             try:
                 v_obj = version.parse(v)
             except:
-                display.update(
-                    display_type = 'text_append',
-                    display_data = {'text': 'ERROR parsing version from remote list.'}
-                )
+                console.print('ERROR parsing version from remote list.')
                 continue
 
             if v_obj > newest['obj']:
@@ -43,10 +42,7 @@ def compare_hacc_versions(display, version_list, current_version, operation='new
             try:
                 v_obj = version.parse(v)
             except:
-                display.update(
-                    display_type = 'text_append',
-                    display_data = {'text': f'ERROR parsing local source folder version {v} while checking for older versions.'}
-                )
+                console.print(f'ERROR parsing local source folder version {v} while checking for older versions.')
                 continue
             if v_obj < current_version_obj:
                 older_versions.append(v)
@@ -91,18 +87,15 @@ def check_for_old_versions(display, current_version):
 
 ## Function to check github for newer versions of HACC
 ## Returns newer version if it exists, None otherwise
-def check_for_upgrades(display, current_version):
+def check_for_upgrades(current_version):
     try:
         all_version_data = requests.get('https://api.github.com/repos/nbailey20/HACC/tags').json()
         all_versions = [tag['name'] for tag in all_version_data]
     except Exception as e:
-        display.update(
-            display_type = 'text_append',
-            display_data = {'text': f'ERROR checking for potential upgrades: {e}'}
-        )
+        console.print(f'ERROR checking for potential upgrades: {e}')
         return None
 
-    newer_version = compare_hacc_versions(display, all_versions, current_version)
+    newer_version = compare_hacc_versions(all_versions, current_version)
     if newer_version:
         return newer_version
     return None
