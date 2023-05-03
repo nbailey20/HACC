@@ -11,6 +11,7 @@ try:
     from rich.progress import SpinnerColumn
     from rich.progress import BarColumn
     from rich.progress import TextColumn
+    from rich.padding import Padding
 except:
     print('Python module "rich" required for HACC client. Install (pip install rich) and try again.')
     sys.exit()
@@ -34,6 +35,13 @@ from hacc_upgrade import upgrade
 
 
 HACC_VERSION = 'v0.9'
+HACC_BANNER = f'''
+██╗  ██╗ █████╗  ██████╗ ██████╗
+██║  ██║██╔══██╗██╔════╝██╔════╝
+███████║███████║██║     ██║     
+██╔══██║██╔══██║██║     ██║     
+██║  ██║██║  ██║╚██████╗╚██████╗
+╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝ ╚═════╝ [green]{HACC_VERSION}'''
 
 
 
@@ -46,7 +54,8 @@ def main():
     else:
         logger.setLevel(LOGGER_INFO)
 
-    console.rule(style="color(5)")
+    console.print(Padding(HACC_BANNER, (0,0,0,1)))
+    console.rule(style='salmon1')
 
     try:
         ## Startup Progress Bar
@@ -79,14 +88,14 @@ def main():
 
         ## Only draw second horizontal line user was interactively asked for input
         if num_provided_args != num_validated_args:
-            console.rule(style="color(5)")
+            console.rule(style='salmon1')
 
         ## Call appropriate function for action
         globals()[valid_args.action](valid_args, config)
 
     ## cleanly exit without errors
     except KeyboardInterrupt:
-        console.print('Ctrl-c received, goodbye!')
+        console.print('[purple]Ctrl-c [white]received, goodbye!')
 
 
 
