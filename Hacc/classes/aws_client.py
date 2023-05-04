@@ -105,7 +105,6 @@ class AwsClient:
             if e.response['Error'] and e.response['Error']['Code'] in ['AccessDenied', 'AccessDeniedException']:
                 console.print(f'HACC is not authorized to perform required action {client_type} {api_name}, exiting')
             else:
-                console.log(e.response)
                 logger.debug(f'AWS client error: {e}')
             return False
 
