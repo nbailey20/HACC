@@ -157,7 +157,7 @@ class VaultInstaller(VaultEradicator):
         if not hacc_policy:
             console.print('[red]Error creating IAM user policy')
             console.print('Cleaning up Vault IAM component for future install attempt')
-            self.delete_iam_user_with_policy()
+            self.delete_iam_user_with_policy(username, policy_name)
             return False
 
         ## Create IAM access key for user
