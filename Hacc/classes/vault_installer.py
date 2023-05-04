@@ -38,6 +38,7 @@ class VaultInstaller(VaultEradicator):
 
     ## Creates new CMK and returns ID, False on fail
     def __create_cmk(self):
+        console.print('here we go')
         hacc_kms_res = self.aws_client.call(
                             'kms', 'create_key',
                             KeyUsage = 'ENCRYPT_DECRYPT',
