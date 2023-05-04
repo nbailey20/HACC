@@ -102,7 +102,7 @@ class AwsClient:
             return result
 
         except ClientError as e:
-            if e.response['ResponseMetadata']['HTTPStatusCode'] == 403:
+            if e.response['ResponseMetadata']['HTTPStatusCode'] == '403':
                 console.print(f'HACC is not authorized to perform required action {client_type} {api_name}, exiting')
             else:
                 logger.debug(f'AWS client error: {e}')
