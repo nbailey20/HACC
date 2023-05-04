@@ -174,6 +174,7 @@ def startup(progress, args, current_version):
     ## Ensure all required config vars for action exist
     required_config_task = progress.add_task("[steel_blue3]Confirming client config is valid for action...", total=1)
     if not required_config_set_for_action(args, config):
+        progress.stop()
         return None
     progress.update(required_config_task, advance=1)
     time.sleep(0.1)
@@ -181,6 +182,7 @@ def startup(progress, args, current_version):
     ## Ensure Vault is setup correctly for action
     vault_task = progress.add_task("[steel_blue3]Confirming vault components are setup for action...", total=1)
     if not vault_components_exist_for_action(args, config):
+        console.print('Vault components not setup, try [salmon1]hacc --install [white]first')
         return None
     progress.update(vault_task, advance=1)
     time.sleep(0.1)
