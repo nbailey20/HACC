@@ -4,6 +4,8 @@ import shutil
 import zipfile
 import urllib.request
 
+from console.hacc_console import console
+
 from versions.hacc_versions import check_for_upgrades
 
 SOURCE_DOWNLOAD = 'https://api.github.com/repos/nbailey20/HACC/zipball/refs/tags/'
@@ -39,59 +41,41 @@ def get_install_dir(os_type, new_version):
         return os.path.join('/usr', 'local', 'Hacc', new_version)
 
 
-def complete_upgrade(display, os_type, install_dir):
+def complete_upgrade(os_type, install_dir):
     if os_type == 'windows':
         from upgrade.windows_upgrade import build_executable, update_user_path
 
         client_entrypoint = build_executable(install_dir)
         if not client_entrypoint:
-            display.update(
-                display_type='text_append',
-                data={'text': 'ERROR building Windows executable from Python source, aborting.'}
-            )
+            console.print('[red]Error building Windows executable from Python source, aborting.')
             return False
 
-        path_updated = update_user_path(display, client_entrypoint)
+        path_updated = update_user_path(client_entrypoint)
         if not path_updated:
-            display.update(
-                display_type='text_append',
-                data={'text': f'ERROR updating user PATH with value {client_entrypoint}, manually set value to complete upgrade.'}
-            )
+            console.print(f'[red]Error updating user PATH with value {client_entrypoint}, manually set value to complete upgrade.')
 
     if os_type == 'linux':
         from upgrade.mac_linux_upgrade import update_bin_symlink
 
         symlink_created = update_bin_symlink(install_dir)
         if not symlink_created:
-            display.update(
-                display_type='text_append',
-                data={'text': f'ERROR updating symlink /usr/local/bin/hacc to point to {install_dir}, manual assistance required to complete upgrade.'}
-            )
+            console.print(f'[red]Error updating symlink /usr/local/bin/hacc to point to {install_dir}, manual assistance required to complete upgrade.')
     return True
 
 
-def upgrade(display, _, config):
-    display.update(
-        display_type='text_new',
-        data={'text': 'Upgrading HACC...'}
-    )
+def upgrade(_, config):
+    console.print('Upgrading HACC...')
 
     current_version = config['version']
-    new_version = check_for_upgrades(display, current_version)
+    new_version = check_for_upgrades(current_version)
     if not new_version:
-        display.update(
-            display_type='text_append',
-            data={'text': f'Current HACC version {current_version} is up to date.'}
-        )
+        console.print(f'Current HACC version {current_version} is up to date.')
         return
 
     ## Get OS type
     os_type = get_os_type()
     if not os_type:
-        display.update(
-            display_type='text_append',
-            data={'text': 'ERROR determining OS type, aborting.'}
-        )
+        console.print('[red]Error determining OS type, aborting.')
         return
 
     ## Download new version of client
@@ -101,10 +85,7 @@ def upgrade(display, _, config):
     try:
         urllib.request.urlretrieve(url, download_dest)
     except Exception as e:
-        display.update(
-            display_type='text_append',
-            data={'text': f'Failed to download new HACC version, aborting: {e}'}
-        )
+        console.print(f'[red]Error downloading new HACC version, aborting: {e}')
         return
 
     ## Unzip download file, clean up temporary download dir
@@ -114,64 +95,37 @@ def upgrade(display, _, config):
             zf.extractall(install_dir)
         shutil.rmtree(tempdir)
     except Exception as e:
-        display.update(
-            display_type='text_append',
-            data={'text': f'ERROR extracting new version sourcecode to installation directory {install_dir}, aborting: {e}'}
-        )
+        console.print(f'[red]Error extracting new version sourcecode to installation directory {install_dir}, aborting: {e}')
         return
 
     try:
         ## zipfile contains <hacc_setup_dir>/Hacc/, need to move files from both dirs to right place
         hacc_setup_dir = os.path.join(install_dir, os.listdir(install_dir)[0]) ## only thing in install directory
-        display.update(
-            display_type='text_append',
-            data={'text': f'Hacc setup dir {hacc_setup_dir}'}
-        )
+        console.print(f'Hacc setup dir {hacc_setup_dir}')
 
         for file_name in os.listdir(hacc_setup_dir):
             if file_name != 'Hacc':
-                display.update(
-                    display_type='text_append',
-                    data={'text': f'Moving setup file name {file_name}'}
-                )
+                console.print(f'Moving setup file name {file_name}')
                 shutil.move(os.path.join(hacc_setup_dir, file_name), install_dir)
 
         ## don't want additional Hacc directory in path, move its files up a level
         hacc_source_dir = os.path.join(hacc_setup_dir, 'Hacc')
-        display.update(
-            display_type='text_append',
-            data={'text': f'Moving setup file name {file_name}'}
-        )
+        console.print(f'Moving setup file name {file_name}')
 
         for file_name in os.listdir(hacc_source_dir):
-            display.update(
-                display_type='text_append',
-                data={'text': f'Source file name {file_name}'}
-            )
+            console.print(f'Source file name {file_name}')
             shutil.move(os.path.join(hacc_source_dir, file_name), install_dir)
         shutil.rmtree(hacc_setup_dir)
 
     except Exception as e:
-        display.update(
-            display_type='text_append',
-            data={'text': f'ERROR organizing files into expected path structure, aborting: {e}'}
-        )
+        console.print(f'[red]Error organizing files into expected path structure, aborting: {e}')
         return
 
     ## Complete upgrade with OS-dependent commands
     upgrade_success = complete_upgrade(os_type, install_dir)
     if not upgrade_success:
-        display.update(
-            display_type='text_append',
-            data={'text': 'Failed to install upgraded version of client, aborting.'}
-        )
+        console.print('[red]Failed to install upgraded version of client.')
     else:
-        display.update(
-            display_type='text_append',
-            data={'text': f'Successfully upgraded HACC software to version {new_version}'}
-        )
-        display.update(
-            display_type='text_append',
-            data={'text': 'Please restart your terminal for the upgrade to take effect'}
-        )
+        console.print(f'Successfully upgraded HACC software to version {new_version}')
+        console.print('You may need to restart your terminal for the upgrade to take effect')
     return

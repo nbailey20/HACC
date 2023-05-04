@@ -2,9 +2,10 @@ import os
 import time
 
 from console.hacc_console import console
+from classes.vault_components import VaultComponents
 
 from versions.hacc_versions import check_for_upgrades, check_for_old_versions, cleanup_old_versions
-from classes.vault_components import VaultComponents
+
 
 
 
@@ -114,13 +115,13 @@ def vault_components_exist_for_action(args, config):
         required = components.required()
 
         if len(active) == 0:
-            console.print('No Vault detected, install or configure before attempting this command.')
+            console.print('No Vault detected, execute [salmon1]hacc --install [white]or [salmon1]hacc --configure [white]before attempting this command.')
             return False
 
         elif len(active) != len(required):
             missing = [x for x in required if x not in active]
 
-            console.print('Vault is not fully setup, complete installation before attempting this command.')
+            console.print('Vault is not fully setup, complete installation with [salmon1]hacc --install [white]before attempting this command.')
             console.print(f'Active components: {active}')
             console.print(f'Missing components: {missing}')
             return False

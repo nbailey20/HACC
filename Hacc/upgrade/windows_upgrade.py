@@ -2,6 +2,8 @@ import os
 import subprocess
 import winreg
 
+from console.hacc_console import console
+
 
 ## Function that builds Windows HACC executable using pyinstaller
 ## Returns absolute path of executable if successful build, None otherwise
@@ -18,11 +20,8 @@ def build_executable(source_dir):
 
 ## Function to persistently set user PATH variable via Windows registry
 ## Returns True on success and False otherwise
-def set_user_path(display, value):
-    display.update(
-        display_type='text_append',
-        data={'text': f'Updating path to be: {value}'}
-    )
+def set_user_path(value):
+    console.print(f'Updating path to be: {value}')
     try:
         path_update_res = subprocess.run(
             ['setx', 'PATH', value],
@@ -51,12 +50,9 @@ def get_user_path():
 
 ## Function to update user path with newly built executable location by manipulating Windows registry
 ## Returns True if successful, False otherwise
-def update_user_path(display, executable_path):
+def update_user_path(executable_path):
     path_str = get_user_path()
-    display.update(
-        display_type='text_append',
-        data={'text': f'Current user path: {path_str}'}
-    )
+    console.print(f'Current user path: {path_str}')
 
     ## Make sure not to overwrite whole PATH string, only HACC
     path_list = path_str.split(';')
@@ -67,13 +63,10 @@ def update_user_path(display, executable_path):
             hacc_path_found = True
 
     if not hacc_path_found:
-        display.update(
-            display_type='text_append',
-            data={'text': 'ERROR: did not find any existing Hacc location in PATH'}
-        )
+        console.print('[red]Error finding existing Hacc location in environment PATH')
         return False
 
     updated_path_str = ';'.join(path_list)
-    if set_user_path(display, updated_path_str):
+    if set_user_path(updated_path_str):
         return True
     return False

@@ -25,7 +25,7 @@ def compare_hacc_versions(version_list, current_version, operation='newest'):
             try:
                 v_obj = version.parse(v)
             except:
-                console.print('ERROR parsing version from remote list.')
+                console.print('[red]Error parsing version from remote list.')
                 continue
 
             if v_obj > newest['obj']:
@@ -42,7 +42,7 @@ def compare_hacc_versions(version_list, current_version, operation='newest'):
             try:
                 v_obj = version.parse(v)
             except:
-                console.print(f'ERROR parsing local source folder version {v} while checking for older versions.')
+                console.print(f'[red]Error parsing local source folder version {v} while checking for older versions.')
                 continue
             if v_obj < current_version_obj:
                 older_versions.append(v)
@@ -70,18 +70,15 @@ def cleanup_old_versions(old_versions):
 
 ## Function to look for previously installed versions of HACC
 ## Returns list of previous versions found, empty if none
-def check_for_old_versions(display, current_version):
+def check_for_old_versions(current_version):
     hacc_dir = get_hacc_source_dir()
     try:
         versions = os.listdir(hacc_dir)
     except:
-        display.update(
-            display_type = 'text_append',
-            display_data = {'text': 'Could not list contents in HACC source directory, unable to check for old versions.'}
-        )
+        console.print('[red]Could not list contents in HACC source directory, unable to check for old versions.')
         return []
 
-    old_versions = compare_hacc_versions(display, versions, current_version, operation='older')
+    old_versions = compare_hacc_versions(versions, current_version, operation='older')
     return old_versions
 
 
@@ -92,7 +89,7 @@ def check_for_upgrades(current_version):
         all_version_data = requests.get('https://api.github.com/repos/nbailey20/HACC/tags').json()
         all_versions = [tag['name'] for tag in all_version_data]
     except Exception as e:
-        console.print(f'ERROR checking for potential upgrades: {e}')
+        console.print(f'[red]Error checking for potential upgrades: {e}')
         return None
 
     newer_version = compare_hacc_versions(all_versions, current_version)
