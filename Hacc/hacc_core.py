@@ -108,31 +108,30 @@ def required_config_set_for_action(args, config):
 
 
 ## Function to confirm all required Vault components for action are setup
-def vault_components_exist_for_action(args, config):
-    console.print('hi')
+def vault_components_exist_for_action(progress, args, config):
     if args.action in DATA_ACTIONS:
         components = VaultComponents(config)
         active = components.active()
         required = components.required()
 
         if len(active) == 0:
-            console.print('No Vault detected, execute [salmon1]hacc --install [white]or [salmon1]hacc --configure [white]before attempting this command.')
+            progress.console.print('No Vault detected, execute [salmon1]hacc --install [white]or [salmon1]hacc --configure [white]before attempting this command.')
             return False
 
         elif len(active) != len(required):
             missing = [x for x in required if x not in active]
 
-            console.print('Vault is not fully setup, complete installation with [salmon1]hacc --install [white]before attempting this command.')
-            console.print(f'Active components: {active}')
-            console.print(f'Missing components: {missing}')
+            progress.console.print('Vault is not fully setup, complete installation with [salmon1]hacc --install [white]before attempting this command.')
+            progress.console.print(f'Active components: {active}')
+            progress.console.print(f'Missing components: {missing}')
             return False
 
     ## If wipe flag provided, make sure enough components exist to do so
     elif args.action == 'eradicate' and args.wipe:
         components = VaultComponents(config)
         if not components.user or not components.cmk:
-            console.print('Missing Vault components needed for wipe (-w) flag')
-            console.print('If you are resuming a previous Vault eradication, try again without wipe flag.')
+            progress.console.print('Missing Vault components needed for wipe (-w) flag')
+            progress.console.print('If you are resuming a previous Vault eradication, try again without wipe flag.')
             return False
     return True
 
@@ -182,8 +181,7 @@ def startup(progress, args, current_version):
 
     ## Ensure Vault is setup correctly for action
     vault_task = progress.add_task("[steel_blue3]Confirming vault components are setup for action...", total=1)
-    if not vault_components_exist_for_action(args, config):
-        progress.console.print('Vault components not setup, try [salmon1]hacc --install [white]first')
+    if not vault_components_exist_for_action(progress, args, config):
         return None
     progress.update(vault_task, advance=1)
     time.sleep(0.1)
