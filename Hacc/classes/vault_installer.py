@@ -85,7 +85,7 @@ class VaultInstaller(VaultEradicator):
         ## If alias fails but key exists, clean up for future
         console.print('[red]Error creating alias for Vault key')
         console.print('Cleaning up Vault key component for future install attempt')
-        self.delete_cmk_with_alias()
+        self.delete_cmk_with_alias(kms_alias)
         return False
 
 
