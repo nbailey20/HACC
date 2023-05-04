@@ -63,8 +63,8 @@ def main():
             TextColumn('[progress.description]{task.description}'),
             BarColumn(),
             SpinnerColumn(spinner_name='point', finished_text='[purple]Done.'),
-            console=console
-       #     transient=True
+            console=console,
+            transient=True
         ) as progress:
 
             ## Ensure args are valid for action
