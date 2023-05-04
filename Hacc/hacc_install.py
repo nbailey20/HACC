@@ -21,7 +21,7 @@ def install(args, config):
         installer.create_cmk_with_alias(config['aws_hacc_kms_alias'])
 
     if not installer.user:
-        installer.create_user_with_policy(config['aws_hacc_uname'])
+        installer.create_user_with_policy(config['aws_hacc_uname'], config['aws_hacc_iam_policy'])
 
     if config['create_scp']:
         if not installer.scp:
