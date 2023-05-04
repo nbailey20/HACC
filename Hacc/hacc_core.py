@@ -109,6 +109,7 @@ def required_config_set_for_action(args, config):
 
 ## Function to confirm all required Vault components for action are setup
 def vault_components_exist_for_action(args, config):
+    console.print('hi')
     if args.action in DATA_ACTIONS:
         components = VaultComponents(config)
         active = components.active()
