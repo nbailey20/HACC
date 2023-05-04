@@ -71,8 +71,6 @@ def main():
             if not eval_args(progress, args):
                 return
 
-            console.print('oh no')
-
             ## Initialize client for provided args
             config = startup(progress, args, HACC_VERSION)
             if not config:
