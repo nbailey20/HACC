@@ -47,6 +47,8 @@ class VaultEradicator(VaultComponents):
 
 
     ## Returns True if delete successful or key doesn't exist
+    ## Optional kms_id argument takes precedence over self.cmk
+    ##    In case Vault installation fails and no alias is created
     ## Unsets cmk attribute of parent class
     ## Returns False if failed to delete key/alias
     def delete_cmk_with_alias(self, kms_alias):

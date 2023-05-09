@@ -75,11 +75,11 @@ class VaultInstaller(VaultEradicator):
         if not key_id:
             console.print('[red]Error creating new symmetric KMS key')
             return False
+        self.cmk = key_id
 
         ## Create new alias
         hacc_alias_res = self.__create_alias(kms_alias, key_id)
         if hacc_alias_res:
-            self.cmk = key_id
             return True
 
         ## If alias fails but key exists, clean up for future
