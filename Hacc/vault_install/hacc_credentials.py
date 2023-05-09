@@ -134,6 +134,7 @@ def delete_hacc_profile(profile_name):
         logger.debug('Could not find AWS client credential file')
         return False
 
+    config_file_contents = ''
     if os.path.exists(config_file_location):
         with open(config_file_location, 'r') as f:
             config_file_contents = f.readlines()
@@ -162,7 +163,7 @@ def delete_hacc_profile(profile_name):
         else:
             idx += 1
 
-    
+
     ## Find hacc profile lines in config file and remove
     start_profile = f'[profile {profile_name}]'
     deleting = False
@@ -189,9 +190,10 @@ def delete_hacc_profile(profile_name):
         with open(creds_file_location, 'w') as f:
             f.write(''.join(creds_file_contents))
             logger.debug(f'Successfully wrote updated AWS client credentials file to {creds_file_location}')
-        with open(config_file_location, 'w') as f:
-            f.write(''.join(config_file_contents))
-            logger.debug(f'Successfully wrote updated AWS client config file to {config_file_location}')
+        if os.path.exists(creds_file_location):
+            with open(config_file_location, 'w') as f:
+                f.write(''.join(config_file_contents))
+                logger.debug(f'Successfully wrote updated AWS client config file to {config_file_location}')
 
     except:
         logger.debug('Failed to write updated AWS client files')
