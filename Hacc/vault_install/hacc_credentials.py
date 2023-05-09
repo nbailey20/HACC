@@ -77,9 +77,9 @@ def set_hacc_secret_key(secret_access_key, profile_name):
 
 ## Adds a new profile to AWS credentials/config file
 ## Returns True if profile successfully saved, False otherwise
-def create_hacc_profile(access_key_id, secret_access_key):
-    access_key_set = set_hacc_access_key(access_key_id)
-    secret_key_set = set_hacc_secret_key(secret_access_key)
+def create_hacc_profile(access_key_id, secret_access_key, profile_name):
+    access_key_set = set_hacc_access_key(access_key_id, profile_name)
+    secret_key_set = set_hacc_secret_key(secret_access_key, profile_name)
     if access_key_set and secret_key_set:
         return True
     return False

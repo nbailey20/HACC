@@ -169,8 +169,8 @@ class VaultInstaller(VaultEradicator):
             self.delete_iam_user_with_policy(username, policy_name)
             return False
 
-        ## Create new HACC profile in local AWS credentials files
-        created_profile = create_hacc_profile(access_key, secret_key)
+        ## Create new HACC profile in local AWS credentials files, profile name is same as IAM user
+        created_profile = create_hacc_profile(access_key, secret_key, username)
         if not created_profile:
             console.print('[red]Error saving Vault user credentials')
             console.print('Cleaning up user without saved credentials')

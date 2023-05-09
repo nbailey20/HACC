@@ -118,15 +118,15 @@ class VaultEradicator(VaultComponents):
         if not delete_policy_res:
             console.print('[red]Error deleting IAM user policy')
 
-        ## Need local credential ID to delete AWS credential
-        aws_access_key = get_hacc_access_key()
+        ## Need local credential ID to delete AWS credential, local AWS profile name == IAM user name
+        aws_access_key = get_hacc_access_key(username)
         if aws_access_key:
             delete_aws_access_res = self.__delete_iam_access_key(username, aws_access_key)
             if not delete_aws_access_res:
                 console.print('[red]Error deleting Vault user access key')
 
         ## If AWS access key non-existent or deleted, remove local cred
-        delete_local_access_res = delete_hacc_profile()
+        delete_local_access_res = delete_hacc_profile(username)
         if not delete_local_access_res:
             console.print('[red]Error deleting local Vault credentials')
             console.print('AWS credentials/config files will need manual cleanup to remove deprecated profile')
