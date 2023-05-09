@@ -104,6 +104,8 @@ class AwsClient:
         except ClientError as e:
             if e.response['Error'] and e.response['Error']['Code'] in ['AccessDenied', 'AccessDeniedException']:
                 console.print(f'HACC is not authorized to perform required action {client_type} {api_name}, exiting')
+            elif e.response['Error'] and e.response['Error']['Code'] in ['NotFoundException']:
+                console.print(f'Resource not found, exiting')
             else:
                 logger.debug(f'AWS client error: {e}')
             return False

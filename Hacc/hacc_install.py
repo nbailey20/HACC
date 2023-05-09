@@ -29,9 +29,10 @@ def install(args, config):
 
     else:
         console.print('SCP disabled for Vault installation, skipping setup')
-
+    
     ## Determine how many resources were created during the install
     num_resources_created = len([x for x in [installer.cmk, installer.user, installer.scp] if x])
+    console.rule(style='salmon1')
     console.print(f'{num_resources_created}/{total_resources_to_create} Vault components ready')
 
     if num_resources_created != total_resources_to_create:

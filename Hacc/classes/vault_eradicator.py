@@ -33,7 +33,6 @@ class VaultEradicator(VaultComponents):
                                 'kms', 'delete_alias',
                                 AliasName = f'alias/{kms_alias}'
                             )
-        console.print(alias_delete_res)
         return alias_delete_res
 
 
