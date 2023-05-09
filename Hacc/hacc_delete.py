@@ -1,3 +1,12 @@
+import sys
+
+try:
+    from rich.panel import Panel
+    from rich.padding import Padding
+except:
+    print('Python module "rich" required for HACC. Install (pip install rich) and try again')
+    sys.exit()
+
 from console.hacc_console import console
 from classes.hacc_service import HaccService
 from classes.vault import Vault
@@ -19,7 +28,6 @@ def delete_all_creds(config):
 
 
 def delete(args, config):
-
     ## Wipe all Vault creds before eradication
     if args.wipe:
         console.print('Wiping all credentials from Vault...')
@@ -37,7 +45,12 @@ def delete(args, config):
         return
 
     svc_obj.push_to_vault()
-    console.print(f'Successfully deleted username [yellow]{user} [white]from service [steel_blue3]{service_name}.')
+    panel = Panel(
+        'Deleted [yellow]{user} [white]from [steel_blue3]{service_name}.',
+        title='[green]Success'
+        expand=False,
+    )
+    console.print(Padding(panel, (1,0,0,0)))
 
     if not bool(svc_obj.credentials):
         console.print(f'No more credentials for service [steel_blue3]{service_name}.')

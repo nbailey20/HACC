@@ -477,7 +477,7 @@ def validate_args_for_action(args, config):
     if action == 'search' or action == 'delete':
         vault = Vault(config)
         if len(vault.get_all_services()) == 0:
-            console.print('Vault is currently empty, add a service credential with [salmon1]hacc add')
+            console.print('Vault is currently empty, add a service credential with [salmon1]hacc --add')
             return False
 
         args.service = get_service_name_from_input(args.service, vault)

@@ -1,3 +1,13 @@
+import sys
+
+try:
+    from rich.prompt import Prompt
+    from rich.panel import Panel
+    from rich.padding import Padding
+except:
+    print('Python module "rich" required for HACC. Install (pip install rich) and try again')
+    sys.exit()
+
 from console.hacc_console import console
 from classes.vault import Vault
 from classes.hacc_service import HaccService
@@ -15,7 +25,12 @@ def add_credential_for_service(vault_obj, service_name, user, passwd):
         return
 
     service_obj.push_to_vault()
-    console.print(f'Successfully added new username [yellow]{user} [white]for service [steel_blue3]{service_name}.')
+    panel = Panel(
+        'Added [yellow]{user} [white]to [steel_blue3]{service_name}.',
+        title='[green]Success'
+        expand=False,
+    )
+    console.print(Padding(panel, (1,0,0,0)))
     return
 
 

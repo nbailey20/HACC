@@ -1,4 +1,14 @@
 import time
+import sys
+
+try:
+    from rich.prompt import Prompt
+    from rich.panel import Panel
+    from rich.padding import Padding
+except:
+    print('Python module "rich" required for HACC. Install (pip install rich) and try again')
+    sys.exit()
+
 
 from console.hacc_console import console
 from classes.vault_installer import VaultInstaller
@@ -40,7 +50,11 @@ def install(args, config):
         console.print('Retry to attempt to resume installation')
         return
 
-    console.print('Vault installation completed successfully.')
+    panel = Panel(
+        '[green]Vault installation completed successfully.',
+        expand=False,
+    )
+    console.print(Padding(panel, (1,0,0,0)))
 
     ## If import file provided, add credentials to new Vault
     if args.file:

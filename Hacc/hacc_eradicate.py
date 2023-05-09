@@ -3,6 +3,8 @@ import sys
 
 try:
     from rich.prompt import Prompt
+    from rich.panel import Panel
+    from rich.padding import Padding
 except:
     print('Python module "rich" required for HACC. Install (pip install rich) and try again')
     sys.exit()
@@ -58,6 +60,7 @@ def eradicate(args, config):
 
     ## Determine how many resources were destroyed during the eradication
     num_resources_remaining = len([x for x in [eradicator.cmk, eradicator.user, eradicator.scp] if x])
+    console.rule(style='salmon1')
     console.print(f'{num_resources_to_destroy-num_resources_remaining} resources eradicated!')
     console.print(f'{num_resources_remaining}/{num_components} Vault components remaining')
 
@@ -66,5 +69,9 @@ def eradicate(args, config):
         console.print('Retry to attempt to complete eradication')
         return
 
-    console.print('Successfully completed Vault eradication.')
+    panel = Panel(
+        '[green]Successfully completed Vault eradication.',
+        expand=False,
+    )
+    console.print(Padding(panel, (1,0,0,0)))
     return

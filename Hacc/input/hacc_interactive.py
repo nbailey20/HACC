@@ -86,7 +86,7 @@ def get_password_for_credential(user_requested_generate):
 
 ## Gets free-form user input for subarg
 def get_input_string_for_subarg(subarg, action):
-    subarg_val = Prompt.ask(f'Enter [green]{subarg} [white]for {action}', console=console)
+    subarg_val = Prompt.ask(f'Enter [green]{subarg} [white]to {action}', console=console)
 
     if not subarg_val:
         console.print(f'[red]Value for [green]{subarg} [red]not provided, exiting.')
