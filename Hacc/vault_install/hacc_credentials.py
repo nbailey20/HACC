@@ -126,16 +126,20 @@ def delete_hacc_profile(profile_name):
         config_file_location = os.environ['AWS_CONFIG_FILE']
         logger.debug(f'Updated config location to {config_file_location} from env var AWS_CONFIG_FILE')
 
-    try:
+    if os.path.exists(creds_file_location):
         with open(creds_file_location, 'r') as f:
             creds_file_contents = f.readlines()
             logger.debug('Read credential file contents')
+    else:
+        logger.debug('Could not find AWS client credential file')
+        return False
+
+    if os.path.exists(config_file_location):
         with open(config_file_location, 'r') as f:
             config_file_contents = f.readlines()
             logger.debug('Read config file contents')
-    except:
-        logger.debug('Failed to read AWS client files')
-        return False
+    else:
+        logger.debug('Could not find AWS client config file, continuing')
 
 
     ## Find hacc profile lines in credentials file and remove
