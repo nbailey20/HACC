@@ -63,7 +63,7 @@ class VaultEradicator(VaultComponents):
         self.__delete_alias(kms_alias)
         key_delete_res = self.__delete_cmk()
         if not key_delete_res:
-            console.print('[red]Error scheduling Vault key deletion for {self.cmk}')
+            console.print(f'[red]Error scheduling Vault key deletion for {self.cmk}')
             return False
 
         console.print('Successfully deleted Vault key')
