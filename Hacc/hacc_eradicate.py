@@ -41,9 +41,9 @@ def eradicate(args, config):
     ## Delete Vault
     console.print('Eradicating Vault...')
     eradicator = VaultEradicator(config)
-    total_resources_to_destroy = len([x for x in [eradicator.cmk, eradicator.user, eradicator.scp] if x])
-    # if not config['create_scp']:
-    #     total_resources_to_destroy -= 1
+
+    num_components = 3 if config['create_scp'] else 2
+    num_resources_to_destroy = len([x for x in [eradicator.cmk, eradicator.user, eradicator.scp] if x])
 
     if config['create_scp']:
         eradicator.delete_scp()
@@ -58,8 +58,8 @@ def eradicate(args, config):
 
     ## Determine how many resources were destroyed during the eradication
     num_resources_remaining = len([x for x in [eradicator.cmk, eradicator.user, eradicator.scp] if x])
-    console.print(f'{total_resources_to_destroy-num_resources_remaining} resources eradicated!')
-    console.print(f'{num_resources_remaining}/{total_resources_to_destroy} Vault components remaining')
+    console.print(f'{num_resources_to_destroy-num_resources_remaining} resources eradicated!')
+    console.print(f'{num_resources_remaining}/{num_components} Vault components remaining')
 
     if num_resources_remaining != 0:
         console.print('Vault eradication finished but not all resources successfully destroyed')
