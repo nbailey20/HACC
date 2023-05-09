@@ -1,7 +1,6 @@
 import sys
 
 try:
-    from rich.prompt import Prompt
     from rich.panel import Panel
     from rich.padding import Padding
 except:
@@ -27,7 +26,7 @@ def add_credential_for_service(vault_obj, service_name, user, passwd):
     service_obj.push_to_vault()
     panel = Panel(
         'Added [yellow]{user} [white]to [steel_blue3]{service_name}.',
-        title='[green]Success'
+        title='[green]Success',
         expand=False,
     )
     console.print(Padding(panel, (1,0,0,0)))
