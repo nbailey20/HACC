@@ -25,7 +25,7 @@ def add_credential_for_service(vault_obj, service_name, user, passwd):
 
     service_obj.push_to_vault()
     panel = Panel(
-        'Added [yellow]{user} [white]to [steel_blue3]{service_name}.',
+        f'Added [yellow]{user} [white]to [steel_blue3]{service_name}.',
         title='[green]Success',
         expand=False,
     )

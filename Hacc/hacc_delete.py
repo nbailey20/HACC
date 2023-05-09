@@ -46,7 +46,7 @@ def delete(args, config):
 
     svc_obj.push_to_vault()
     panel = Panel(
-        'Deleted [yellow]{user} [white]from [steel_blue3]{service_name}.',
+        f'Deleted [yellow]{user} [white]from [steel_blue3]{service_name}.',
         title='[green]Success',
         expand=False,
     )
