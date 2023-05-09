@@ -86,6 +86,7 @@ class VaultInstaller(VaultEradicator):
         console.print('[red]Error creating alias for Vault key')
         console.print('Cleaning up Vault key component for future install attempt')
         self.delete_cmk_with_alias(kms_alias)
+        self.cmk = None
         return False
 
 

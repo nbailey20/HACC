@@ -33,6 +33,7 @@ class VaultEradicator(VaultComponents):
                                 'kms', 'delete_alias',
                                 AliasName = f'alias/{kms_alias}'
                             )
+        console.print(alias_delete_res)
         return alias_delete_res
 
 
@@ -64,7 +65,6 @@ class VaultEradicator(VaultComponents):
         ## If we can't delete alias, leave CMK component for next time
         if not alias_delete_res:
             console.print('[red]Error deleting alias for Vault key')
-            return False
 
         key_delete_res = self.__delete_cmk()
         if not key_delete_res:
