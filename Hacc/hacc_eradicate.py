@@ -57,7 +57,7 @@ def eradicate(args, config):
 
 
     ## Determine how many resources were destroyed during the eradication
-    num_resources_remaining = len([x for x in [eradicator.cmk, eradicator.user, eradicator.scp] if x != None])
+    num_resources_remaining = len([x for x in [eradicator.cmk, eradicator.user, eradicator.scp] if x])
     console.print(f'{total_resources_to_destroy-num_resources_remaining} resources eradicated!')
     console.print(f'{num_resources_remaining}/{total_resources_to_destroy} Vault components remaining')
 
