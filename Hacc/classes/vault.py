@@ -1,9 +1,7 @@
-from classes.aws_client import AwsClient
 import json
-import logging
 
-logger=logging.getLogger()
-
+from logger.hacc_logger import logger
+from classes.aws_client import AwsClient
 
 
 ## Vault Object:

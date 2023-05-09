@@ -1,6 +1,15 @@
+import sys
 import re
 import json
 import os
+
+try:
+    from rich.panel import Panel
+except:
+    print('Python module "rich" required for HACC. Install (pip install rich) and try again')
+    sys.exit()
+
+from console.hacc_console import console
 
 from vault_install.hacc_credentials import get_hacc_access_key, get_hacc_secret_key, set_hacc_access_key, set_hacc_secret_key
 from configure.hacc_encryption import encrypt_config_data, decrypt_config_data
@@ -18,22 +27,22 @@ def get_configuration(val, config):
     profile_name = config['aws_hacc_uname']
 
     if val == 'all':
-        print(get_all_configuration(config))
+        console.print(get_all_configuration(config))
 
     elif val == 'aws_access_key_id':
-        print(get_hacc_access_key(profile_name))
+        console.print(get_hacc_access_key(profile_name))
 
     elif val == 'aws_secret_access_key':
-        print(get_hacc_secret_key(profile_name))
+        console.print(get_hacc_secret_key(profile_name))
 
     elif val in config and config[val] != '':
-        print(config[val])
+        console.print(config[val])
 
     elif val in config:
-        print(f'No value set for {val}')
+        console.print(f'No value set for {val}')
 
     else:
-        print(f'{val} is not a known HACC configuration variable. See hacc_vars_template for expected variables.')
+        console.print(f'{val} is not a known HACC configuration variable. See hacc.conf.template for expected variables.')
     return
 
 
@@ -51,15 +60,14 @@ def set_config_from_cli(inpt, config, config_location):
             credential_set = set_hacc_secret_key(param_val, profile_name)
 
         if not credential_set:
-            print(f'Error setting {param_name}, manual configuration of Vault AWS credentials required.')
+            console.print(f'[red]Error setting {param_name}, manual configuration of Vault AWS credentials required.')
         else:
-            print(f'Successfully set parameter {param_name} in AWS credentials file for profile {profile_name}.')
+            console.print(f'Successfully set parameter {param_name} in AWS credentials file for profile {profile_name}.')
         return
 
     ## If not credential variable, must be in config file
-    f = open(config_location, 'r')
-    config = f.readlines()
-    f.close()
+    with open(config_location, 'r') as f:
+        config = f.readlines()
 
     ## Update data locally, also check for commented config
     value_updated = False
@@ -73,14 +81,14 @@ def set_config_from_cli(inpt, config, config_location):
             value_updated = True
             break
     if not value_updated:
-        print(f'Variable {param_name} not known, cannot set value.')
+        console.print(f'Variable {param_name} not known, cannot set value.')
         return
 
     ## Write updated data to config file
-    f = open(config_location, 'w')
-    f.write(''.join(config))
-    f.close()
-    print(f'Updated {param_name}.')
+    with open(config_location, 'w') as f:
+        f.write(''.join(config))
+
+    console.print(f'Updated {param_name}.')
     return
 
 
@@ -92,7 +100,7 @@ def set_config_from_file(param, config, config_location):
         return
 
     if not param in config:
-        print(f'Variable {param} not found in imported configuration.')
+        console.print(f'Variable {param} not found in imported configuration.')
     else:
         cli_expr = f'{param}={config[param]}'
         set_config_from_cli(cli_expr, config, config_location)
@@ -109,29 +117,29 @@ def get_set_type(inpt, f_name):
 
 
 
-def import_configuration_file(f_name):
+def import_configuration_file(f_name, passwd):
     ## Read encrypted file
     try:
-        f = open(f_name, 'r')
-        enc_config = f.read()
-        f.close()
+        with open(f_name, 'r') as f:
+            enc_config = f.read()
     except:
-        print('Could not open file {f_name}.')
+        console.print(f'[red]Could not open file {f_name}.')
+        return
 
     ## Decrypt file
-    passwd = input('Enter password used to encrypt configuration file: ')
     config = decrypt_config_data(enc_config, passwd)
     try:
         config = json.loads(config)
         return config
     except:
-        print(f'Failed to decrypt configuration file {f_name}.')
+        console.print(f'[red]Failed to decrypt configuration file {f_name}.')
         return
 
 
 
 def export_configuration(f_name, config, generate_passwd=True):
-    print('Exporting HACC configuration as file...')
+    console.print(f'Exporting current HACC configuration as file {f_name}...')
+
     config_str = get_all_configuration(config)
     if generate_passwd:
         passwd = generate_password()
@@ -140,20 +148,19 @@ def export_configuration(f_name, config, generate_passwd=True):
 
     enc_config = encrypt_config_data(config_str, passwd)
     if not enc_config:
-        print('Could not encrypt configuration data.')
+        console.print('[red]Could not encrypt configuration data.')
         return
 
     try:
-        f = open(f_name, 'w')
-        f.write(enc_config)
-        f.close()
-        print(f'Created encrypted file {f_name} in {os.getcwd()}.')
+        with open(f_name, 'w') as f:
+            f.write(enc_config)
+        console.print(f'Created encrypted file {f_name} in {os.getcwd()}.')
+
         if generate_passwd:
-            print()
-            print('Password for future decryption:')
-            print(f'{passwd}')
+            console.print('[green]Password [white]for future decryption:')
+            console.print(Panel(f'[purple]{passwd}', expand=False))
     except:
-        print(f'Could not create configuration file {f_name}.')
+        console.print(f'Could not create configuration file {f_name}.')
     return
 
 
@@ -166,9 +173,12 @@ def configure(args, config):
             export_configuration(args.file, config)
 
     elif args.show:
+        console.print(f'Displaying HACC configuration for {args.show}...')
         get_configuration(args.show, config)
 
     elif args.set:
+        console.print('Setting HACC configuration...')
+
         ## Get configuration file location
         if 'USERPROFILE' in os.environ:
             hacc_config_location = os.environ['USERPROFILE'] + '\.hacc\hacc.conf'
@@ -179,14 +189,16 @@ def configure(args, config):
         set_type = get_set_type(args.set, args.file)
 
         if set_type == 'conflict':
-            print('Usage: "--set" accepts either command line assignment with "param=value" or an import file with -f, not both!')
+            console.print('Usage: [salmon1]--set [white]accepts either command line assignment with [salmon1]"param=value" [white]or an import file with [salmon1]--file, [white]not both!')
+
         elif set_type == 'cli':
             set_config_from_cli(args.set, config, hacc_config_location)
+
         elif set_type == 'file':
-            config = import_configuration_file(args.file)
+            config = import_configuration_file(args.file, args.password)
             if config:
                 set_config_from_file(args.set, config, hacc_config_location)
 
     else:
-        print('Usage: configure action requires "show", "set", or "export" argument')
+        console.print('Usage: [salmon1]hacc --configure [white]requires [salmon1]--show, --set, [white]or [salmon1]--export [white]argument')
     return

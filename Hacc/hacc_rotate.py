@@ -1,16 +1,14 @@
 import time
 
+from console.hacc_console import console
+
 from hacc_add import add
 from hacc_delete import delete
 
 
 def rotate(args, config):
     delete(args, config)
-
-    print()
-    print('Sleeping for 3 seconds to fully delete before updating...')
+    console.print('Sleeping for 3 seconds to fully delete before updating...')
     time.sleep(3)
-    print()
-
     add(args, config)
     return

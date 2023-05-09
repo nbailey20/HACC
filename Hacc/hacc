@@ -1,12 +1,28 @@
 #!/usr/bin/env python3
 
-## Entrypoint for HACC software
+## Entrypoint for HACC client
 ## Author: Nick Bailey
 
-import logging
+import sys
+import time
+
+try:
+    from rich.progress import Progress
+    from rich.progress import SpinnerColumn
+    from rich.progress import BarColumn
+    from rich.progress import TextColumn
+    from rich.padding import Padding
+except:
+    print('Python module "rich" required for HACC client. Install (pip install rich) and try again.')
+    sys.exit()
+
+from logger.hacc_logger import logger, LOGGER_DEBUG, LOGGER_INFO
+from console.hacc_console import console
 
 from hacc_core import startup
 from input.hacc_input import parse_args, eval_args, validate_args_for_action
+
+## Main action functions
 from hacc_search import search
 from hacc_add import add
 from hacc_delete import delete
@@ -18,60 +34,70 @@ from hacc_configure import configure
 from hacc_upgrade import upgrade
 
 
-HACC_VERSION = 'v0.8.2'
-
-
-## Configure logger
-logging.basicConfig()
-
-## suppress lots of noisy logs
-logging.getLogger('boto3').setLevel(logging.CRITICAL) 
-logging.getLogger('botocore').setLevel(logging.CRITICAL)
-logging.getLogger('nose').setLevel(logging.CRITICAL)
-logging.getLogger('urllib3').setLevel(logging.CRITICAL)
-
-logger=logging.getLogger()
-logger.handlers[0].setFormatter(logging.Formatter(
-    'DEBUG: %(message)s'
-))
+HACC_VERSION = 'v0.9'
+HACC_BANNER = f'''
+██╗  ██╗ █████╗  ██████╗ ██████╗
+██║  ██║██╔══██╗██╔════╝██╔════╝
+███████║███████║██║     ██║     
+██╔══██║██╔══██║██║     ██║     
+██║  ██║██║  ██║╚██████╗╚██████╗
+╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝ ╚═════╝ [green]{HACC_VERSION}'''
 
 
 
 def main():
-    print(f'HACC {HACC_VERSION}')
-    print()
+    args = parse_args()
+
+    ## Setting logging level
+    if args.debug:
+        logger.setLevel(LOGGER_DEBUG)
+    else:
+        logger.setLevel(LOGGER_INFO)
+
+    console.print(Padding(HACC_BANNER, (0,0,0,1)))
+    console.rule(style='salmon1')
 
     try:
-        args = parse_args()
-        ## Ensure args are valid for action
-        if not eval_args(args):
-            return
+        ## Startup Progress Bar
+        with Progress(
+            TextColumn('[progress.description]{task.description}'),
+            BarColumn(),
+            SpinnerColumn(spinner_name='point', finished_text='[purple]Done.'),
+            console=console,
+            transient=True
+        ) as progress:
 
-        ## Initialize client for provided args
-        config = startup(args, HACC_VERSION)
-        if not config:
-            return
+            ## Ensure args are valid for action
+            if not eval_args(progress, args):
+                return
 
-        ## Setting logging level
-        if args.debug:
-            logger.setLevel(logging.DEBUG)
-        else:
-            logger.setLevel(logging.INFO)
+            ## Initialize client for provided args
+            config = startup(progress, args, HACC_VERSION)
+            if not config:
+                return
 
-        logger.debug(f'Initial args provided: {args}')
+        console.print(f'Startup complete, performing {args.action}...\n')
 
         ## Validate input/gather any remaining args before passing to action
+        logger.debug(f'Initial args provided: {args}')
+        num_provided_args = len([arg for arg in vars(args) if getattr(args, arg) != None])
         valid_args = validate_args_for_action(args, config)
         if not valid_args:
-            return False
+            return
         logger.debug(f'Validated input args: {valid_args}')
+        num_validated_args = len([arg for arg in vars(valid_args) if getattr(valid_args, arg) != None])
+
+        ## Only draw second horizontal line user was interactively asked for input
+        if num_provided_args != num_validated_args:
+            console.rule(style='salmon1')
 
         ## Call appropriate function for action
         globals()[valid_args.action](valid_args, config)
-    
+
     ## cleanly exit without errors
     except KeyboardInterrupt:
-        print('\n\nReceived ctrl-c, exiting.')
+        console.print('[purple]Ctrl-c [white]received, goodbye!')
+
 
 
 if __name__ == '__main__':

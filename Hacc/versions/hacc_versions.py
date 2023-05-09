@@ -9,6 +9,8 @@ except:
     print('Python module "packaging" required for HACC client. Install (pip install packaging) and try again.')
     sys.exit()
 
+from console.hacc_console import console
+
 
 
 ## Function that takes in a list of Hacc versions + current version and returns either:
@@ -23,7 +25,7 @@ def compare_hacc_versions(version_list, current_version, operation='newest'):
             try:
                 v_obj = version.parse(v)
             except:
-                print('ERROR parsing version from remote list.')
+                console.print('[red]Error parsing version from remote list.')
                 continue
 
             if v_obj > newest['obj']:
@@ -40,7 +42,7 @@ def compare_hacc_versions(version_list, current_version, operation='newest'):
             try:
                 v_obj = version.parse(v)
             except:
-                print('ERROR parsing local source folder version.')
+                console.print(f'[red]Error parsing local source folder version {v} while checking for older versions.')
                 continue
             if v_obj < current_version_obj:
                 older_versions.append(v)
@@ -73,7 +75,7 @@ def check_for_old_versions(current_version):
     try:
         versions = os.listdir(hacc_dir)
     except:
-        print('Could not list contents in HACC source directory, unable to check for old versions.')
+        console.print('[red]Could not list contents in HACC source directory, unable to check for old versions.')
         return []
 
     old_versions = compare_hacc_versions(versions, current_version, operation='older')
@@ -87,7 +89,7 @@ def check_for_upgrades(current_version):
         all_version_data = requests.get('https://api.github.com/repos/nbailey20/HACC/tags').json()
         all_versions = [tag['name'] for tag in all_version_data]
     except Exception as e:
-        print(f'ERROR checking for potential upgrades: {e}')
+        console.print(f'[red]Error checking for potential upgrades: {e}')
         return None
 
     newer_version = compare_hacc_versions(all_versions, current_version)

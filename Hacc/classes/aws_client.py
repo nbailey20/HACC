@@ -1,5 +1,4 @@
 import sys
-import logging
 
 try:
     import boto3
@@ -8,8 +7,8 @@ except:
     print('Python module boto3 required for HACC client. Install (pip install boto3) and try again.')
     sys.exit()
 
-
-logger=logging.getLogger()
+from logger.hacc_logger import logger
+from console.hacc_console import console
 
 
 
@@ -93,7 +92,7 @@ class AwsClient:
         try:
             method_to_call = getattr(client, api_name)
         except:
-            print(f'API {api_name} not known for {client_type} client, exiting')
+            console.print(f'API {api_name} not known for {client_type} client, exiting')
             return False
 
         try:
@@ -103,12 +102,14 @@ class AwsClient:
             return result
 
         except ClientError as e:
-            if e.response['ResponseMetadata']['HTTPStatusCode'] == 403:
-                print(f'HACC is not authorized to perform {client_type} {api_name}, exiting')
+            if e.response['Error'] and e.response['Error']['Code'] in ['AccessDenied', 'AccessDeniedException']:
+                console.print(f'HACC is not authorized to perform required action {client_type} {api_name}, exiting')
+            elif e.response['Error'] and e.response['Error']['Code'] in ['NotFoundException', 'NoSuchEntity']:
+                logger.debug(f'Resource not found exception received from AWS client: {e}')
             else:
                 logger.debug(f'AWS client error: {e}')
             return False
 
         except Exception as e:
-            print(f'Unknown API error: {e}')
+            console.print(f'Unknown API error, exiting: {e}')
             return False

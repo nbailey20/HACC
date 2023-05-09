@@ -1,10 +1,7 @@
-import logging
 import sys
 
+from logger.hacc_logger import logger
 from classes.vault import Vault
-
-
-logger=logging.getLogger()
 
 
 ## HaccService Object:
@@ -23,7 +20,6 @@ logger=logging.getLogger()
 ##      user_exists
 ##      add_credential
 ##      remove_credential
-##      print_credential
 class HaccService:
 
     ## Pulls creds from Vault and updates self.credentials
@@ -124,21 +120,6 @@ class HaccService:
         else:
             return False
 
-  
-    ## Prints username, and optionally password for service
-    def print_credential(self, user, print_password=False):
-        if print_password:
-            password = self.get_credential(user)
-        print()
-        print('#############################')
-        print(f'Service {self.service_name}')
-        print(f'Username: {user}')
-        if print_password:
-            print(f'Password: {password}')
-        print('#############################')
-        print()
-
-
 
     ## Upon object init, pull existing service data if it exists
     ## Either provide config to initialize new vault, or existing vault object
@@ -152,4 +133,4 @@ class HaccService:
             
         else:
             self.credentials = {}
-            logger.debug('Did not find existing service in Vault, creating new')
+            logger.debug(f'Did not find existing service {service_name} in Vault, creating new')

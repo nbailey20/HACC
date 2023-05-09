@@ -1,51 +1,57 @@
+import sys
 from math import ceil
+
+try:
+    from rich.table import Table
+    from rich.padding import Padding
+    from rich.prompt import Prompt
+    from rich.panel import Panel
+except:
+    print('Python module "rich" required for HACC. Install (pip install rich) and try again')
+    sys.exit()
+
+from console.hacc_console import console, NUM_CHOICES_PER_TABLE
 from hacc_generate import generate_password
-
-NUM_CHOICES_PER_PAGE = 10
-
-## Prints single page of numbered choices 
-def print_input_choices(choices, page_num, total_pages):
-    start_idx = page_num * NUM_CHOICES_PER_PAGE
-
-    print()
-    print(f'__________Page {page_num+1} / {total_pages}__________')
-    print('##############################')
-
-    for idx in range(start_idx, min(len(choices), start_idx+NUM_CHOICES_PER_PAGE)):
-        print(f'[{idx+1}] {choices[idx]}')
-        
-    print('##############################')
-    print()
 
 
 ## Gets user input from paginated numbered list of acceptable choices
 ## User can provide choice number or prefix string to match against
-def get_input_with_choices(choices, choice_type):
-    num_choice_pages = ceil((len(choices)*1.0) / NUM_CHOICES_PER_PAGE)
-    input_val = None
+def get_input_with_choices(choices, choice_type, service=None):
+    total_pages = ceil((len(choices)*1.0) / NUM_CHOICES_PER_TABLE)
+    total_choices = len(choices)
 
-    for page_num in range(num_choice_pages-1):
-        print_input_choices(choices, page_num, num_choice_pages)
-        input_val = input(f'Select {choice_type} name/number from above options, or hit enter to display more: ')
-        if input_val:
-            break
-    
-    ## display final page if no choice yet
-    if not input_val:
-        print_input_choices(choices, num_choice_pages-1, num_choice_pages)
-        input_val = input(f'Select {choice_type} name/number from above options: ')
+    default_input = 'more...'
+    if total_pages == 1:
+        default_input = None
 
-    return input_val
+    ## Begin interactive loop
+    user_input = default_input
+    while user_input == default_input:
+        choice_idx = 0
+        for page_idx in range(total_pages):
+            table = Table(title=f'[purple]{page_idx+1}/{total_pages}')
+            table.add_column('[green]#', justify='center', style='salmon1')
+            column_color = 'steel_blue3' if choice_type == 'Service' else 'yellow'
+            table.add_column('[green]'+choice_type, justify='center', style=column_color)
 
+            for _ in range(min(NUM_CHOICES_PER_TABLE, total_choices-choice_idx)):
+                table.add_row(str(choice_idx+1), choices[choice_idx])
+                choice_idx += 1
+            console.print(Padding(table, (1, 0, 0, 0)))
 
-## Gets free-form user input for subarg
-def get_input_string_for_subarg(subarg, action):
-    subarg_val = input(f'Enter {subarg} for {action}: ')
+            default_input = 'more...'
+            if choice_idx == total_choices:
+                default_input = None
 
-    if not subarg_val:
-        print(f'Value for {subarg} not provided, exiting.')
-        return False
-    return subarg_val
+            if service:
+                user_input = Prompt.ask(f'Provide a {choice_type.lower()}/# for service [steel_blue3]{service}', default=default_input)
+            else:
+                user_input = Prompt.ask(f'Provide a {choice_type.lower()}/#', default=default_input)
+            
+            if user_input != default_input:
+                break
+    return user_input
+
 
 
 ## If user_requested_generate, generate password and return it
@@ -56,25 +62,33 @@ def get_password_for_credential(user_requested_generate):
     credential_password = None
 
     if not user_requested_generate:
-        gen_password = False if input('Would you like to generate a password (y/n)? ').lower() != 'y' else True
+        gen_password = False if Prompt.ask('Would you like to generate a [green]password?', default='y').lower() != 'y' else True
 
     if gen_password:
         need_passwd = True
         while need_passwd:
             proposed_password = generate_password()
-            print(f'Generated password: {proposed_password}')
-            if input('Use this password (y/n)? ').lower() == 'y':
+            console.print(Panel(f'[steel_blue3]Generated password: [purple]{proposed_password}', expand=False))
+            if Prompt.ask('Use this [green]password?', default='y').lower() == 'y':
                 credential_password = proposed_password
-                print()
                 break
-            print()
 
     else:
-        input_password = input(f'Enter password: ')
+        input_password = Prompt.ask(f'Enter [green]password')
         if not input_password:
-            print(f'Value for password not provided, exiting.')
+            console.print(f'[red]Value for [green]password [red]not provided, exiting.')
             return False
 
         credential_password = input_password
-        
     return credential_password
+
+
+
+## Gets free-form user input for subarg
+def get_input_string_for_subarg(subarg, action):
+    subarg_val = Prompt.ask(f'Enter [green]{subarg} [white]to {action}', console=console)
+
+    if not subarg_val:
+        console.print(f'[red]Value for [green]{subarg} [red]not provided, exiting.')
+        return False
+    return subarg_val

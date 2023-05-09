@@ -1,7 +1,12 @@
 import os
+import time
+
+from console.hacc_console import console
+from classes.vault_components import VaultComponents
 
 from versions.hacc_versions import check_for_upgrades, check_for_old_versions, cleanup_old_versions
-from classes.vault_components import VaultComponents
+
+
 
 
 MGMT_ACTIONS = ['install', 'eradicate'] ## configure is mgmt action but doesn't have any required vars
@@ -44,7 +49,7 @@ def get_config_params():
         hacc_vars = f.readlines()
         f.close()
     except:
-        print(f'Unable to read required configuration file {hacc_config_location}, aborting.')
+        console.print(f'Unable to read required configuration file {hacc_config_location}, aborting.')
         return False
 
     config = {}
@@ -95,7 +100,7 @@ def required_config_set_for_action(args, config):
     missing_vars = [item for sublist in missing_vars for item in sublist]
 
     for m in missing_vars:
-        print(f'Required configuration parameter {m} not set in hacc_vars.py, please set value with hacc configure --set {m}=... (or edit manually) and try again.')
+        console.print(f'Required configuration parameter {m} not set in hacc_vars.py, please set value with hacc configure --set {m}=... (or edit manually) and try again.')
 
     if len(missing_vars):
         return False
@@ -103,29 +108,30 @@ def required_config_set_for_action(args, config):
 
 
 ## Function to confirm all required Vault components for action are setup
-def vault_components_exist_for_action(args, config):
+def vault_components_exist_for_action(progress, args, config):
     if args.action in DATA_ACTIONS:
         components = VaultComponents(config)
         active = components.active()
         required = components.required()
 
         if len(active) == 0:
-            print('No Vault detected, install or configure before attempting this command.')
+            progress.console.print('No Vault detected, execute [salmon1]hacc --install [white]or [salmon1]hacc --configure [white]before attempting this command.')
             return False
 
         elif len(active) != len(required):
-            print('Vault is not fully setup, complete installation before attempting this command.')
-            print(f'Active components: {active}')
             missing = [x for x in required if x not in active]
-            print(f'Missing components: {missing}')
+
+            progress.console.print('Vault is not fully setup, complete installation with [salmon1]hacc --install [white]before attempting this command.')
+            progress.console.print(f'Active components: {active}')
+            progress.console.print(f'Missing components: {missing}')
             return False
 
     ## If wipe flag provided, make sure enough components exist to do so
     elif args.action == 'eradicate' and args.wipe:
         components = VaultComponents(config)
         if not components.user or not components.cmk:
-            print('Missing Vault components needed for wipe (-w) flag')
-            print('  If you are resuming a previous Vault eradication, try again without wipe flag.')
+            progress.console.print('Missing Vault components needed for wipe (-w) flag')
+            progress.console.print('If you are resuming a previous Vault eradication, try again without wipe flag.')
             return False
     return True
 
@@ -139,23 +145,46 @@ def vault_components_exist_for_action(args, config):
 ## 5. Confirms all required Vault components properly setup for action
 ##
 ## Returns configuration variable dict required by client, None if error
-def startup(args, current_version):
+def startup(progress, args, current_version):
+    ## Get all saved config vars from config file
+    get_config_task = progress.add_task("[steel_blue3]Retrieving client configuration...", total=1)
     config = get_config_params()
-    if not required_config_set_for_action(args, config):
-        return None
+    progress.update(get_config_task, advance=1)
+    time.sleep(0.1)
 
+    ## Check for upgrades automatically if indicated in config file
     if config['check_for_upgrades']:
+        upgrade_task = progress.add_task("[steel_blue3]Checking for available HACC upgrades...", total=1)
         new_version = check_for_upgrades(current_version)
         if new_version:
-            print(f'New HACC version {new_version} available for installation. Upgrade with hacc --upgrade')
+            console.print(f'New HACC version {new_version} available for installation. Upgrade with hacc --upgrade')
+        progress.update(upgrade_task, advance=1)
+        time.sleep(0.1)
 
+    ## Cleanup previous HACC installations automatically if indicated in config file
     if config['cleanup_old_versions']:
+        cleanup_task = progress.add_task("[steel_blue3]Cleaning up all previous HACC installations...", total=1)
         old_versions = check_for_old_versions(current_version)
         if old_versions:
+            console.print(f'Found previous versions: {old_versions}')
             cleanup_old_versions(old_versions)
+        progress.update(cleanup_task, advance=1)
+        time.sleep(0.1)
 
-    if not vault_components_exist_for_action(args, config):
+    ## Ensure all required config vars for action exist
+    required_config_task = progress.add_task("[steel_blue3]Confirming client config is valid for action...", total=1)
+    if not required_config_set_for_action(args, config):
+        progress.stop()
         return None
+    progress.update(required_config_task, advance=1)
+    time.sleep(0.1)
+
+    ## Ensure Vault is setup correctly for action
+    vault_task = progress.add_task("[steel_blue3]Confirming vault components are setup for action...", total=1)
+    if not vault_components_exist_for_action(progress, args, config):
+        return None
+    progress.update(vault_task, advance=1)
+    time.sleep(0.1)
 
     config['version'] = current_version
     return config

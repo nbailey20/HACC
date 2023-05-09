@@ -1,3 +1,13 @@
+import sys
+
+try:
+    from rich.panel import Panel
+    from rich.padding import Padding
+except:
+    print('Python module "rich" required for HACC. Install (pip install rich) and try again')
+    sys.exit()
+
+from console.hacc_console import console
 from classes.vault import Vault
 from classes.hacc_service import HaccService
 
@@ -7,14 +17,19 @@ def add_credential_for_service(vault_obj, service_name, user, passwd):
 
     ## empty dicts evaluate to False
     if not bool(service_obj.credentials):
-        print(f'Creating new service {service_name} in Vault')
+        console.print(f'Creating new service [steel_blue3]{service_name} [white]in Vault...')
 
     if not service_obj.add_credential(user, passwd):
-        print(f'  Username {user} already exists for service {service_name}')
+        console.print(f'Username [yellow]{user} [white]already exists for service [steel_blue3]{service_name}.')
         return
 
     service_obj.push_to_vault()
-    print(f'Successfully added new username {user} for service {service_name}.')
+    panel = Panel(
+        f'Added [yellow]{user} [white]to [steel_blue3]{service_name}.',
+        title='[green]Success',
+        expand=False,
+    )
+    console.print(Padding(panel, (1,0,0,0)))
     return
 
 
@@ -24,21 +39,21 @@ def add(args, config):
 
     ## Import credentials from provided filename
     if args.file:
-        print('Importing credentials from backup file...')
+        console.print(f'Importing credentials from file [green]{args.file}...')
         creds_list = vault.parse_import_file(args.file)
 
         if not creds_list:
-            print('Could not parse import file, provide valid file name created by Vault backup')
+            console.print(f'Could not parse import file [green]{args.file}, [white]provide valid file name created by Vault backup')
             return
 
         for cred in creds_list:
             add_credential_for_service(vault, cred['service'], cred['username'], cred['password'])
-        print('\nCredential import complete.')
+        console.print('Credential import complete.')
 
 
     ## Add single credential via CLI arguments
     else:
-        print('Adding new credential...')
+        console.print('Adding new credential...')
 
         service_name = args.service
         user = args.username

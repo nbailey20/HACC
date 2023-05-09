@@ -1,6 +1,8 @@
 import time
 
+from console.hacc_console import console
 from classes.vault_components import VaultComponents
+
 from vault_install.hacc_credentials import delete_hacc_profile, get_hacc_access_key
 
 
@@ -21,7 +23,7 @@ from vault_install.hacc_credentials import delete_hacc_profile, get_hacc_access_
 ##
 class VaultEradicator(VaultComponents):
     def __init__(self, config):
-        super().__init__()
+        super().__init__(config)
 
 
 
@@ -45,32 +47,26 @@ class VaultEradicator(VaultComponents):
 
 
     ## Returns True if delete successful or key doesn't exist
+    ## Optional kms_id argument takes precedence over self.cmk
+    ##    In case Vault installation fails and no alias is created
     ## Unsets cmk attribute of parent class
     ## Returns False if failed to delete key/alias
     def delete_cmk_with_alias(self, kms_alias):
-        print('Checking for existing Vault key')
+        console.print('Checking for existing Vault key')
 
         if not self.cmk:
-            print('No existing Vault key found')
+            console.print('No existing Vault key found')
             return True
 
-        print('Existing Vault key found, deleting...')
+        console.print('Existing Vault key found, deleting...')
 
-        alias_delete_res = self.__delete_alias(kms_alias)
-        ## If we can't delete alias, leave CMK component for next time
-        if not alias_delete_res:
-            print('Failed to delete alias for Vault key')
-            return False
-
+        self.__delete_alias(kms_alias)
         key_delete_res = self.__delete_cmk()
-
         if not key_delete_res:
-            print('Failed to schedule Vault key deletion')
-            print(f'  Vault key {self.cmk} will need to be manually deleted')
-            self.cmk = None
+            console.print(f'[red]Error scheduling Vault key deletion for {self.cmk}')
             return False
 
-        print('Successfully deleted Vault key')
+        console.print('Successfully deleted Vault key')
         self.cmk = None
         return True
 
@@ -109,40 +105,39 @@ class VaultEradicator(VaultComponents):
     ## Unsets user attribute of parent class
     ## Returns False if failed to delete user/policy
     def delete_iam_user_with_policy(self, username, policy_name):
-        print('Checking for Vault IAM user')
+        console.print('Checking for Vault IAM user')
 
         if not self.user:
-            print('No existing IAM user found')
+            console.print('No existing IAM user found')
             return True
-        print('Existing Vault user found, deleting...')
+
+        console.print('Existing Vault user found, deleting...')
 
         delete_policy_res = self.__delete_iam_policy(username, policy_name)
         ## If we can't delete policy, leave IAM component for next time
         if not delete_policy_res:
-            print('Failed to delete user policy')
-            return False
+            console.print('[red]Error deleting IAM user policy')
 
-        ## Need local credential ID to delete AWS credential
-        aws_access_key = get_hacc_access_key()
+        ## Need local credential ID to delete AWS credential, local AWS profile name == IAM user name
+        aws_access_key = get_hacc_access_key(username)
         if aws_access_key:
             delete_aws_access_res = self.__delete_iam_access_key(username, aws_access_key)
             if not delete_aws_access_res:
-                print('Failed to delete Vault user access key')
-                return False
+                console.print('[red]Error deleting Vault user access key')
 
         ## If AWS access key non-existent or deleted, remove local cred
-        delete_local_access_res = delete_hacc_profile()
+        delete_local_access_res = delete_hacc_profile(username)
         if not delete_local_access_res:
-            print('Failed to delete local Vault credentials')
-            print('  AWS credentials/config files will need manual cleanup to remove deprecated profile')
+            console.print('[red]Error deleting local Vault credentials')
+            console.print('AWS credentials/config files will need manual cleanup to remove deprecated profile')
 
         ## Delete user
         user_delete_res = self.__delete_iam_user(username)
         if not user_delete_res:
-            print('Failed to delete Vault IAM user')
+            console.print('[red]Error deleting Vault IAM user')
             return False
 
-        print('Successfully deleted Vault IAM user')
+        console.print('Successfully deleted Vault IAM user')
         self.user = None
         return True
 
@@ -170,29 +165,30 @@ class VaultEradicator(VaultComponents):
     ## Returns True if delete successful or SCP doesn't exist and unsets scp attribute
     ## Returns False if failed to delete SCP
     def delete_scp(self):
+        console.print('Checking for existing Vault SCP')
 
-        print('Checking for existing Vault SCP')
         if not self.scp:
-            print('No existing SCP found')
+            console.print('No existing SCP found')
             return True
 
+        console.print('Found Vault SCP, deleting...')
+
         ## Detach SCP from Vault account
-        print('Found Vault SCP, deleting...')
         detach_scp_res = self.__detach_org_policy(self.scp)
         if not detach_scp_res:
-            print('Failed to detach SCP from Vault account')
+            console.print('[red]Error detaching SCP from Vault account')
             return False
 
         ## Delete SCP from org
         delete_scp_res = self.__delete_org_policy(self.scp)
         if not delete_scp_res:
-            print('Failed to delete SCP from AWS organization')
-            print(f'  Unattached SCP {self.scp} will need manual cleanup')
+            console.print('[red]Error deleting SCP from AWS organization')
+            console.print(f'Unattached SCP {self.scp} needs manual cleanup')
             self.scp = None
             return False
 
         # Give SCP deletion time to take effect ('immediate' per AWS docs is not good enough :)
-        print('Successfully deleted SCP from Vault account, waiting 10 seconds to ensure completion')
+        console.print('Successfully deleted SCP from Vault account, waiting 10 seconds to ensure completion')
         self.scp = None
         time.sleep(10)
         return True
