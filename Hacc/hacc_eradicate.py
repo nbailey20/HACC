@@ -41,7 +41,9 @@ def eradicate(args, config):
     ## Delete Vault
     console.print('Eradicating Vault...')
     eradicator = VaultEradicator(config)
-    total_resources_to_destroy = len([x for x in [eradicator.cmk, eradicator.user, eradicator.scp] if x != None])
+    total_resources_to_destroy = len([x for x in [eradicator.cmk, eradicator.user, eradicator.scp] if x])
+    # if not config['create_scp']:
+    #     total_resources_to_destroy -= 1
 
     if config['create_scp']:
         eradicator.delete_scp()
