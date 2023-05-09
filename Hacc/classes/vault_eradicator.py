@@ -60,11 +60,7 @@ class VaultEradicator(VaultComponents):
 
         console.print('Existing Vault key found, deleting...')
 
-        alias_delete_res = self.__delete_alias(kms_alias)
-        ## If we can't delete alias, leave CMK component for next time
-        if not alias_delete_res:
-            console.print('[red]Error deleting alias for Vault key')
-
+        self.__delete_alias(kms_alias)
         key_delete_res = self.__delete_cmk()
         if not key_delete_res:
             console.print('[red]Error scheduling Vault key deletion')
@@ -122,7 +118,7 @@ class VaultEradicator(VaultComponents):
         delete_policy_res = self.__delete_iam_policy(username, policy_name)
         ## If we can't delete policy, leave IAM component for next time
         if not delete_policy_res:
-            console.print('[red]Error deleting IAM user policy')
+            console.print('[red]Error deleting IAM user policy, stopping user deletion.')
             return False
 
         ## Need local credential ID to delete AWS credential
@@ -130,7 +126,7 @@ class VaultEradicator(VaultComponents):
         if aws_access_key:
             delete_aws_access_res = self.__delete_iam_access_key(username, aws_access_key)
             if not delete_aws_access_res:
-                console.print('[red]Error deleting Vault user access key')
+                console.print('[red]Error deleting Vault user access key, stopping user deletion.')
                 return False
 
         ## If AWS access key non-existent or deleted, remove local cred
