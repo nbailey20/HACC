@@ -175,8 +175,8 @@ def delete_hacc_profile(profile_name):
             config_file_contents.pop(idx)
 
         ## reached start of next profile, done deleting
-        logger.debug(f'Finished deleting profile {profile_name} from AWS client config file')
         if config_file_contents[idx].startswith('[') and deleting:
+            logger.debug(f'Finished deleting profile {profile_name} from AWS client config file')
             break
 
         if deleting:

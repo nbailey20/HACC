@@ -36,7 +36,7 @@ sudo chown -R $USER /usr/local/Hacc
 sudo cp -r Hacc/* /usr/local/Hacc/${VERSION} && sudo ln -s /usr/local/Hacc/${VERSION}/hacc /usr/local/bin/hacc
 sudo chmod +x /usr/local/Hacc/${VERSION}/hacc
 if [[ $? == 0 ]]; then
-    echo "Installed client at /usr/local/bin/hacc, please start new terminal and test with 'hacc'"
+    echo "Installed client at /usr/local/bin/hacc, test with command 'hacc' (terminal restart may be needed)"
 else
     echo "Failed to install client in /usr/local/bin/hacc, aborting."
     exit 5
