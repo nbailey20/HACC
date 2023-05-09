@@ -1,6 +1,8 @@
 import subprocess
 import os
 
+from logger.hacc_logger import logger
+
 
 ## Returns True if existing AWS credentials/config file contains a profile for Vault
 ## Return False otherwise
@@ -12,6 +14,7 @@ def hacc_profile_exists(profile_name):
 
     ## Return code 255 if profile not found
     if vault_user_region.returncode != 0:
+        logger.debug(f'Subprocess returned error code {vault_user_region.returncode}, 255 means profile not found')
         return False
     return True
 
@@ -29,6 +32,7 @@ def get_hacc_access_key(profile_name):
 
     ## Return code 255 if credential not found
     if aws_access_key_obj.returncode != 0:
+        logger.debug(f'Subprocess returned error code {aws_access_key_obj.returncode}, 255 means credential not found')
         return False
     return aws_access_key
 
@@ -45,6 +49,7 @@ def get_hacc_secret_key(profile_name):
 
     ## Return code 255 if credential not found
     if aws_secret_key_obj.returncode != 0:
+        logger.debug(f'Subprocess returned error code {aws_secret_key_obj.returncode}, 255 means credential not found')
         return False
     return aws_secret_key
 
@@ -56,8 +61,9 @@ def set_hacc_access_key(access_key_id, profile_name):
                                     'aws_access_key_id', access_key_id,
                                     '--profile', profile_name
                                 ])
-    ## Return code 255 if credential not found
+    ## Return code 255 if cr not found
     if aws_access_key_obj.returncode != 0:
+        logger.debug(f'Subprocess returned error code {aws_access_key_obj.returncode}, 255 means profile not found')
         return False
     return True
 
@@ -71,6 +77,7 @@ def set_hacc_secret_key(secret_access_key, profile_name):
                                 ])
     ## Return code 255 if credential not found
     if aws_secret_key_obj.returncode != 0:
+        logger.debug(f'Subprocess returned error code {aws_secret_key_obj.returncode}, 255 means profile not found')
         return False
     return True
 
@@ -95,32 +102,39 @@ def delete_hacc_profile(profile_name):
 
     ## check for windows system
     if 'USERPROFILE' in os.environ:
+        logger.debug('Detected Windows environment')
         creds_file_location = os.environ['USERPROFILE'] + '\.aws\credentials'
         config_file_location = os.environ['USERPROFILE'] + '\.aws\config'
     ## check for linux/mac
     elif 'HOME' in os.environ:
+        logger.debug('Detected Linux environment')
         creds_file_location = os.environ['HOME'] + '/.aws/credentials'
         config_file_location = os.environ['HOME'] + '/.aws/config'
     else:
+        logger.debug(f'Could not identify OS type from: {os.environ}')
         return False
 
+    logger.debug(f'Default AWS client credential file location: {creds_file_location}')
+    logger.debug(f'Default AWS client config file location: {config_file_location}')
 
     ## Check if credentials or config files located in non-default location
     if 'AWS_SHARED_CREDENTIALS_FILE' in os.environ:
         creds_file_location = os.environ['AWS_SHARED_CREDENTIALS_FILE']
+        logger.debug(f'Updated credential location to {creds_file_location} from env var AWS_SHARED_CREDENTIALS_FILE')
 
     if 'AWS_CONFIG_FILE' in os.environ:
         config_file_location = os.environ['AWS_CONFIG_FILE']
+        logger.debug(f'Updated config location to {config_file_location} from env var AWS_CONFIG_FILE')
 
     try:
-        f = open(creds_file_location, 'r')
-        creds_file_contents = f.readlines()
-        f.close()
-
-        f = open(config_file_location, 'r')
-        config_file_contents = f.readlines()
-        f.close()
+        with open(creds_file_location, 'r') as f:
+            creds_file_contents = f.readlines()
+            logger.debug('Read credential file contents')
+        with open(config_file_location, 'r') as f:
+            config_file_contents = f.readlines()
+            logger.debug('Read config file contents')
     except:
+        logger.debug('Failed to read AWS client files')
         return False
 
 
@@ -130,10 +144,12 @@ def delete_hacc_profile(profile_name):
     idx = 0
     while idx < len(creds_file_contents):
         if creds_file_contents[idx].rstrip() == start_profile:
+            logger.debug(f'Found start of profile {profile_name} in AWS client credentials file')
             deleting = True
             creds_file_contents.pop(idx)
 
         ## reached start of next profile, done deleting
+        logger.debug(f'Finished deleting profile {profile_name} from AWS client credentials file')
         if creds_file_contents[idx].startswith('[') and deleting:
             break
 
@@ -149,10 +165,12 @@ def delete_hacc_profile(profile_name):
     idx = 0
     while idx < len(config_file_contents):
         if config_file_contents[idx].rstrip() == start_profile:
+            logger.debug(f'Found start of profile {profile_name} in AWS client config file')
             deleting = True
             config_file_contents.pop(idx)
 
         ## reached start of next profile, done deleting
+        logger.debug(f'Finished deleting profile {profile_name} from AWS client config file')
         if config_file_contents[idx].startswith('[') and deleting:
             break
 
@@ -164,14 +182,15 @@ def delete_hacc_profile(profile_name):
 
     ## Write updated content back to files
     try:
-        f = open(creds_file_location, 'w')
-        f.write(''.join(creds_file_contents))
-        f.close()
+        with open(creds_file_location, 'w') as f:
+            f.write(''.join(creds_file_contents))
+            logger.debug(f'Successfully wrote updated AWS client credentials file to {creds_file_location}')
+        with open(config_file_location, 'w') as f:
+            f.write(''.join(config_file_contents))
+            logger.debug(f'Successfully wrote updated AWS client config file to {config_file_location}')
 
-        f = open(config_file_location, 'w')
-        f.write(''.join(config_file_contents))
-        f.close()
     except:
+        logger.debug('Failed to write updated AWS client files')
         return False
 
     return True
