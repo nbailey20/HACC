@@ -44,7 +44,7 @@ def get_input_with_choices(choices, choice_type, service=None):
                 default_input = None
 
             if service:
-                user_input = Prompt.ask(f'Provide a {choice_type.lower()}/# for service {service}', default=default_input)
+                user_input = Prompt.ask(f'Provide a {choice_type.lower()}/# for service [steel_blue3]{service}', default=default_input)
             else:
                 user_input = Prompt.ask(f'Provide a {choice_type.lower()}/#', default=default_input)
             
