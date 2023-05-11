@@ -2,12 +2,69 @@
 
 HACC is an open-source credential manager command-line tool that uses your personal AWS account to securely store your secrets, so you don't have to wonder who's secretly selling your data behind the scenes!
 
-* Built with Python3
-* Credentials stored in AWS Parameter Store
+* Built in Python3 with Rich command-line output
+* Credentials securely stored in your own AWS-hosted "Vault" (SSM Parameter Store)
+* Credentials are organized by "service", i.e. gmail, amazon.com, github, etc
 * Encrypted with AWS KMS Customer-Managed Key so only you can decrypt
-* Can store up to 40MB of encrypted data
 
-Current Version: v0.9.0
+## v0.9.0
+
+## Installation
+
+### Prerequisites
+#### Required Python3 libraries
+* boto3
+* rich
+* packaging (to manage client upgrades)
+
+#### Required AWS IAM Permissions
+HACC will create an IAM user dedicated for credential management, however the client needs some AWS permissions to administrate the Vault. HACC will attempt to use whichever user is currently logged into AWS CLI when performing install/eradicate actions. If you want to create a dedicated Vault admin user for the client, the least-privilege required permissions are:
+
+* "iam:GetUser",
+* "iam:CreateUser",
+* "iam:PutUserPolicy",
+* "iam:CreateAccessKey",
+* "kms:CreateKey",
+* "kms:CreateAlias",
+* "kms:DescribeKey",
+* "kms:ScheduleKeyDeletion",
+* "kms:DeleteAlias",
+* "iam:DeleteUserPolicy",
+* "iam:DeleteAccessKey",
+* "iam:DeleteUser"
+
+### Brand-New Installation
+```
+git clone https://github.com/nbailey20/HACC.git
+cd HACC/
+```
+* Review/update configuration variables in Hacc/hacc.conf.template
+* Rename hacc.conf.template -> hacc.conf
+```
+./MAC_LINUX_SETUP.sh (n for new Vault)
+hacc --install
+```
+
+### Adding New Device to Existing Vault
+
+#### On A Device with Vault Configured
+```
+hacc --configure --export --file filename
+```
+* Save the encryption_password for exported configuration
+* Send encrypted_file to new device
+
+#### On New Device
+```
+git clone https://github.com/nbailey20/HACC.git
+cd HACC/
+./MAC_LINUX_SETUP.sh (y for existing Vault)
+hacc --configure --set all --file encrypted_file --password encryption_password
+```
+
+...and you're all set with your new Vault!
+
+
 
 ## Current Features
 
@@ -35,8 +92,6 @@ Current Version: v0.9.0
 
 ## hacc -h
 ```
-HACC v0.8.0
-
 usage: hacc [-h] [-i | -e | -a | -d | -r | -b | -c | --upgrade] [-u USERNAME] [-p PASSWORD] [-g] [-f FILE] [-w]
             [--export] [--set SET] [--show SHOW] [-v]
             [service]

@@ -195,6 +195,9 @@ def configure(args, config):
             set_config_from_cli(args.set, config, hacc_config_location)
 
         elif set_type == 'file':
+            if not args.password:
+                console.print('Usage: [salmon1]--set [config_value|all] --file <encrypted_config> [white]requires decryption key with [salmon1]--password abc123')
+                return
             config = import_configuration_file(args.file, args.password)
             if config:
                 set_config_from_file(args.set, config, hacc_config_location)
