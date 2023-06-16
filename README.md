@@ -71,7 +71,7 @@ hacc --configure --set all --file encrypted_file --password encryption_password
 ## Example Usage & Features
 
 #### Testing client after brand new install
-![No Vault detected](/usage_pictures/brand_new_install.jpg?raw=true)
+![No Vault detected](/usage_pics/brand_new_install.jpg?raw=true)
 
 
 * Add new credential to vault with username/password for a service
