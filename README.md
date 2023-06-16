@@ -10,12 +10,14 @@ HACC is an open-source credential manager command-line tool that uses your perso
 ## v0.9.0
 
 ##### Table of Contents  
-[Headers](#headers)  
-[Emphasis](#emphasis)  
-...snip...    
-<a name="headers"/>
-## Headers
-
+- [Installation](#installation)
+  - [Prerequisites](#prerequisites)
+  - [Brand-New Installation](#brand-new-installation)
+  - [Adding New Device to Existing Vault](#adding-new-device-to-existing-vault)
+- [Example Usage & Features](#example-usage--features)
+  - [Verifying Installation](#verifying-installation)
+  - [Adding Credentials](#adding-credentials)
+  - [Searching Credentials](#searching-credentials)
 
 
 
@@ -80,7 +82,7 @@ hacc --configure --set all --file encrypted_file --password encryption_password
 
 # Example Usage & Features
 
-## Brand New Installation
+## Verifying Installation
 
 ### Testing client after brand new install
 ![No Vault detected](/usage_pics/test_client_install.jpg?raw=true)
