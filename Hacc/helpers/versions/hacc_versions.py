@@ -9,7 +9,7 @@ except:
     print('Python module "packaging" required for HACC client. Install (pip install packaging) and try again.')
     sys.exit()
 
-from console.hacc_console import console
+from helpers.console.hacc_console import console
 
 
 

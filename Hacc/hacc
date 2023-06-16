@@ -4,7 +4,6 @@
 ## Author: Nick Bailey
 
 import sys
-import time
 
 try:
     from rich.progress import Progress
@@ -16,22 +15,21 @@ except:
     print('Python module "rich" required for HACC client. Install (pip install rich) and try again.')
     sys.exit()
 
-from logger.hacc_logger import logger, LOGGER_DEBUG, LOGGER_INFO
-from console.hacc_console import console
-
-from hacc_core import startup
-from input.hacc_input import parse_args, eval_args, validate_args_for_action
+from helpers.logger.hacc_logger import logger, LOGGER_DEBUG, LOGGER_INFO
+from helpers.console.hacc_console import console
+from helpers.core.hacc_core import startup
+from helpers.input.hacc_input import parse_args, eval_args, validate_args_for_action
 
 ## Main action functions
-from hacc_search import search
-from hacc_add import add
-from hacc_delete import delete
-from hacc_rotate import rotate
-from hacc_install import install
-from hacc_eradicate import eradicate
-from hacc_backup import backup
-from hacc_configure import configure
-from hacc_upgrade import upgrade
+from actions.hacc_search import search
+from actions.hacc_add import add
+from actions.hacc_delete import delete
+from actions.hacc_rotate import rotate
+from actions.hacc_install import install
+from actions.hacc_eradicate import eradicate
+from actions.hacc_backup import backup
+from actions.hacc_configure import configure
+from actions.hacc_upgrade import upgrade
 
 
 HACC_VERSION = 'v0.9'

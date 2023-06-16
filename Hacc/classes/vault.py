@@ -1,6 +1,7 @@
 import json
 
-from logger.hacc_logger import logger
+from helpers.logger.hacc_logger import logger
+
 from classes.aws_client import AwsClient
 
 

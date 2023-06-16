@@ -1,6 +1,6 @@
 import json
 
-from console.hacc_console import console
+from helpers.console.hacc_console import console
 from classes.hacc_service import HaccService
 from classes.vault import Vault
 

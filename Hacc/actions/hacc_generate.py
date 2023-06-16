@@ -1,6 +1,6 @@
 import secrets ## random library unsuitable to cryptographic purposes
 
-import wordlist
+import helpers.generate.dictionary as dictionary
 
 MAX_CHAR_SWAPS = 5 ## Max number of character substitions to make in password
 NUM_WORDS_IN_PASS = 4 ## XKCD-style passwords
@@ -52,12 +52,12 @@ def sub_chars(password, char_map, num_subs):
 ##  4 random words joined with some char subs
 def generate_password():
     pass_words = []
-    wordlist_len = len(wordlist.wordlist)
+    wordlist_len = len(dictionary.wordlist)
 
     for _ in range(NUM_WORDS_IN_PASS):
         ## get random line number for wordlist
         line_num = secrets.randbelow(wordlist_len)
-        pass_words.append(wordlist.wordlist[line_num])
+        pass_words.append(dictionary.wordlist[line_num])
 
     ## CamelCase words
     pass_words = [x[0].upper()+x[1:] for x in pass_words]

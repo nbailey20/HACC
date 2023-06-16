@@ -7,8 +7,8 @@ except:
     print('Python module boto3 required for HACC client. Install (pip install boto3) and try again.')
     sys.exit()
 
-from logger.hacc_logger import logger
-from console.hacc_console import console
+from helpers.logger.hacc_logger import logger
+from helpers.console.hacc_console import console
 
 
 

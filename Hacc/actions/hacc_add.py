@@ -7,7 +7,7 @@ except:
     print('Python module "rich" required for HACC. Install (pip install rich) and try again')
     sys.exit()
 
-from console.hacc_console import console
+from helpers.console.hacc_console import console
 from classes.vault import Vault
 from classes.hacc_service import HaccService
 

@@ -9,10 +9,11 @@ except:
     print('Python module "rich" required for HACC. Install (pip install rich) and try again')
     sys.exit()
 
-from console.hacc_console import console
+from helpers.console.hacc_console import console
+
 from classes.vault_installer import VaultInstaller
 
-from hacc_add import add
+from actions.hacc_add import add
 
 
 ## Setup IAM user, KMS CMK for Vault

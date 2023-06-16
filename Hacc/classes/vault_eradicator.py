@@ -1,9 +1,9 @@
 import time
 
-from console.hacc_console import console
-from classes.vault_components import VaultComponents
+from helpers.console.hacc_console import console
+from helpers.vault_install.hacc_credentials import delete_hacc_profile, get_hacc_access_key
 
-from vault_install.hacc_credentials import delete_hacc_profile, get_hacc_access_key
+from classes.vault_components import VaultComponents
 
 
 ## VaultEradicator Object:

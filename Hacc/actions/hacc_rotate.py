@@ -1,9 +1,9 @@
 import time
 
-from console.hacc_console import console
+from helpers.console.hacc_console import console
 
-from hacc_add import add
-from hacc_delete import delete
+from actions.hacc_add import add
+from actions.hacc_delete import delete
 
 
 def rotate(args, config):

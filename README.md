@@ -15,7 +15,7 @@ HACC is an open-source credential manager command-line tool that uses your perso
 #### Required Python3 libraries
 * boto3
 * rich
-* packaging (to manage client upgrades)
+* packaging (for managing client versions/upgrades)
 
 #### Required AWS IAM Permissions
 HACC will create an IAM user dedicated for credential management, however the client needs some AWS permissions to administrate the Vault. HACC will attempt to use whichever user is currently logged into AWS CLI when performing install/eradicate actions. If you want to create a dedicated Vault admin user for the client, the least-privilege required permissions are:
@@ -41,9 +41,10 @@ cd HACC/
 * Review/update configuration variables in Hacc/hacc.conf.template
 * Rename hacc.conf.template -> hacc.conf
 ```
-./MAC_LINUX_SETUP.sh (n for new Vault)
+./MAC_LINUX_SETUP.sh
 hacc --install
 ```
+Done!
 
 ### Adding New Device to Existing Vault
 
@@ -51,14 +52,15 @@ hacc --install
 ```
 hacc --configure --export --file filename
 ```
-* Save the encryption_password for exported configuration
+* An encrypted_file called filename will be created in the current directory
+* Save the encryption_password for exported configuration - the new device needs it in the next step!
 * Send encrypted_file to new device
 
 #### On New Device
 ```
 git clone https://github.com/nbailey20/HACC.git
 cd HACC/
-./MAC_LINUX_SETUP.sh (y for existing Vault)
+./MAC_LINUX_SETUP.sh (enter "existing")
 hacc --configure --set all --file encrypted_file --password encryption_password
 ```
 
@@ -66,7 +68,11 @@ hacc --configure --set all --file encrypted_file --password encryption_password
 
 
 
-## Current Features
+## Example Usage & Features
+
+#### Testing client after brand new install
+![No Vault detected](/usage_pictures/brand_new_install.jpg?raw=true)
+
 
 * Add new credential to vault with username/password for a service
 * Store multiple credentials per service

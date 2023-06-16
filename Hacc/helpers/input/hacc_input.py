@@ -2,13 +2,12 @@ import argparse
 import re
 import time
 
-from logger.hacc_logger import logger
-from console.hacc_console import console
+from helpers.logger.hacc_logger import logger
+from helpers.console.hacc_console import console
+from helpers.input.hacc_interactive import get_input_with_choices, get_password_for_credential, get_input_string_for_subarg
+
 from classes.vault import Vault
 from classes.hacc_service import HaccService
-
-from input.hacc_interactive import get_input_with_choices, get_password_for_credential, get_input_string_for_subarg
-from hacc_generate import generate_password
 
 
 ALLOWED_FLAGS = {

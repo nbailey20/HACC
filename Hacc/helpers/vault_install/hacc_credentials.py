@@ -1,7 +1,7 @@
 import subprocess
 import os
 
-from logger.hacc_logger import logger
+from helpers.logger.hacc_logger import logger
 
 
 ## Returns True if existing AWS credentials/config file contains a profile for Vault

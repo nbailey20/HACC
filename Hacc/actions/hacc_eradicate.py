@@ -9,11 +9,12 @@ except:
     print('Python module "rich" required for HACC. Install (pip install rich) and try again')
     sys.exit()
 
-from console.hacc_console import console
+from helpers.console.hacc_console import console
+
 from classes.vault import Vault
 from classes.vault_eradicator import VaultEradicator
 
-from hacc_delete import delete
+from actions.hacc_delete import delete
 
 
 def eradicate(args, config):

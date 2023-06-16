@@ -1,12 +1,10 @@
 import os
 import time
 
-from console.hacc_console import console
+from helpers.console.hacc_console import console
+from helpers.versions.hacc_versions import check_for_upgrades, check_for_old_versions, cleanup_old_versions
+
 from classes.vault_components import VaultComponents
-
-from versions.hacc_versions import check_for_upgrades, check_for_old_versions, cleanup_old_versions
-
-
 
 
 MGMT_ACTIONS = ['install', 'eradicate'] ## configure is mgmt action but doesn't have any required vars

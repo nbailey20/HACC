@@ -9,11 +9,11 @@ except:
     print('Python module "rich" required for HACC. Install (pip install rich) and try again')
     sys.exit()
 
-from console.hacc_console import console
+from helpers.console.hacc_console import console
+from helpers.vault_install.hacc_credentials import get_hacc_access_key, get_hacc_secret_key, set_hacc_access_key, set_hacc_secret_key
+from helpers.configure.hacc_encryption import encrypt_config_data, decrypt_config_data
 
-from vault_install.hacc_credentials import get_hacc_access_key, get_hacc_secret_key, set_hacc_access_key, set_hacc_secret_key
-from configure.hacc_encryption import encrypt_config_data, decrypt_config_data
-from hacc_generate import generate_password
+from actions.hacc_generate import generate_password
 
 
 def get_all_configuration(config):

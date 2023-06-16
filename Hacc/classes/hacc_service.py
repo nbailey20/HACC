@@ -1,6 +1,6 @@
 import sys
 
-from logger.hacc_logger import logger
+from helpers.logger.hacc_logger import logger
 from classes.vault import Vault
 
 

@@ -4,9 +4,8 @@ import shutil
 import zipfile
 import urllib.request
 
-from console.hacc_console import console
-
-from versions.hacc_versions import check_for_upgrades
+from helpers.console.hacc_console import console
+from helpers.versions.hacc_versions import check_for_upgrades
 
 SOURCE_DOWNLOAD = 'https://api.github.com/repos/nbailey20/HACC/zipball/refs/tags/'
 
@@ -43,7 +42,7 @@ def get_install_dir(os_type, new_version):
 
 def complete_upgrade(os_type, install_dir):
     if os_type == 'windows':
-        from upgrade.windows_upgrade import build_executable, update_user_path
+        from helpers.upgrade.windows_upgrade import build_executable, update_user_path
 
         client_entrypoint = build_executable(install_dir)
         if not client_entrypoint:
@@ -55,7 +54,7 @@ def complete_upgrade(os_type, install_dir):
             console.print(f'[red]Error updating user PATH with value {client_entrypoint}, manually set value to complete upgrade.')
 
     if os_type == 'linux':
-        from upgrade.mac_linux_upgrade import update_bin_symlink
+        from helpers.upgrade.mac_linux_upgrade import update_bin_symlink
 
         symlink_created = update_bin_symlink(install_dir)
         if not symlink_created:

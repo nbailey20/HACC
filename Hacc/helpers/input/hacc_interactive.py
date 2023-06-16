@@ -10,8 +10,9 @@ except:
     print('Python module "rich" required for HACC. Install (pip install rich) and try again')
     sys.exit()
 
-from console.hacc_console import console, NUM_CHOICES_PER_TABLE
-from hacc_generate import generate_password
+from helpers.console.hacc_console import console, NUM_CHOICES_PER_TABLE
+
+from actions.hacc_generate import generate_password
 
 
 ## Gets user input from paginated numbered list of acceptable choices
