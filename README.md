@@ -131,9 +131,9 @@ If multiple values match a provided prefix, further interactive input is needed 
 
 Note: service/username prefixes can be provided interactively or as CLI parameters, instead of typing out full values: 
 ```
-hacc t -u b
+hacc t -u bo
 ```
-(assuming you have one service starting with "t" and one username belonging to said service that starts with "b")
+(assuming you have one service starting with "t" and one username belonging to said service that starts with "bo")
 
 
 
