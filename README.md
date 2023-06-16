@@ -9,6 +9,16 @@ HACC is an open-source credential manager command-line tool that uses your perso
 
 ## v0.9.0
 
+##### Table of Contents  
+[Headers](#headers)  
+[Emphasis](#emphasis)  
+...snip...    
+<a name="headers"/>
+## Headers
+
+
+
+
 ## Installation
 
 ### Prerequisites
