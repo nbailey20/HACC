@@ -129,7 +129,11 @@ If multiple values match a provided prefix, further interactive input is needed 
 ### Retrieving credential for known service/username
 ![Service credential listing](/usage_pics/search_oneline.jpg?raw=true)
 
-Note: service/username prefixes can be provided interactively or as CLI parameters, instead of typing out full values: hacc t -u b (assuming you have one service starting with "t" and one username belonging to said service that starts with "b")
+Note: service/username prefixes can be provided interactively or as CLI parameters, instead of typing out full values: 
+```
+hacc t -u b
+```
+(assuming you have one service starting with "t" and one username belonging to said service that starts with "b")
 
 
 
