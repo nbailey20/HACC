@@ -21,15 +21,15 @@ HACC is an open-source credential manager command-line tool that uses your perso
 
 
 
-## Installation
+# Installation
 
-### Prerequisites
-#### Required Python3 libraries
+## Prerequisites
+### Required Python3 libraries
 * boto3
 * rich
 * packaging (for managing client versions/upgrades)
 
-#### Required AWS IAM Permissions
+### Required AWS IAM Permissions
 HACC will create an IAM user dedicated for credential management, however the client needs some AWS permissions to administrate the Vault. HACC will attempt to use whichever user is currently logged into AWS CLI when performing install/eradicate actions. If you want to create a dedicated Vault admin user for the client, the least-privilege required permissions are:
 
 * "iam:GetUser",
@@ -45,7 +45,7 @@ HACC will create an IAM user dedicated for credential management, however the cl
 * "iam:DeleteAccessKey",
 * "iam:DeleteUser"
 
-### Brand-New Installation
+## Brand-New Installation
 ```
 git clone https://github.com/nbailey20/HACC.git
 cd HACC/
@@ -58,9 +58,9 @@ hacc --install
 ```
 Done!
 
-### Adding New Device to Existing Vault
+## Adding New Device to Existing Vault
 
-#### On A Device with Vault Configured
+### On A Device with Vault Configured
 ```
 hacc --configure --export --file filename
 ```
@@ -68,7 +68,7 @@ hacc --configure --export --file filename
 * Save the encryption_password for exported configuration - the new device needs it in the next step!
 * Send encrypted_file to new device
 
-#### On New Device
+### On New Device
 ```
 git clone https://github.com/nbailey20/HACC.git
 cd HACC/
