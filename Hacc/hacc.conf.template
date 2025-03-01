@@ -4,7 +4,9 @@
 # Region where Vault should live
 aws_hacc_region = 'us-east-1'
 
-# IAM user name in member account for all Vault operations
+# Name of IAM user to create in Vault account for all Vault data operations
+# If create_scp is False, user will be created in account boto3 is currently authenticated to
+# If create_scp if True, user will be created in the same account as aws_member_role
 aws_hacc_uname = 'hacc-user'
 
 # IAM policy name to apply to above user
@@ -24,7 +26,13 @@ create_scp = 'False'
 ## Mandatory if create_scp == True, UNCOMMENT LINE BELOW
 # aws_hacc_scp = 'hacc-scp'
 
-# Cross account role for member (vault) account accessible via mgmt account creds
+# If create_scp is True, HACC will assume that boto3 is authenticated to the
+#  management account for the AWS organization. HACC will create an SCP in 
+#  the mgmt account, and expects that the Vault will be created in a different account.
+# HACC needs permission in this Vault (aka member) account to setup the Vault components,
+#  and expects a role to exist in the member account which can be assumed from the mgmt account
+#  with adequate permissions to manage a Vault
+# Provide role as an ARN
 ## Mandatory if create_scp == True, UNCOMMENT LINE BELOW
 # aws_member_role = ''
 

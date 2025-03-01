@@ -14,6 +14,13 @@ from console.hacc_console import console
 
 ## AwsClient Object:
 ##      Creates boto3 clients for interaction with Vault services
+## Arguments:
+##  config, dict:
+##      aws_hacc_region, str
+##      aws_hacc_uname, str
+##      aws_member_role, str
+##      create_scp, bool
+##  client_type, str [data|mgmt], default data
 ## Attributes:
 ##      ssm, boto3 client obj
 ##      kms, boto3 client obj
@@ -44,6 +51,8 @@ class AwsClient:
                                                 RoleArn=config['aws_member_role'],
                                                 RoleSessionName="HaccSession"
                                             )
+                if not assumed_role_object:
+                    raise ValueError("Could not assume aws_member_role")
                 role_creds = assumed_role_object['Credentials']
                 aws_access_key_id = role_creds['AccessKeyId']
                 aws_secret_access_key = role_creds['SecretAccessKey']
