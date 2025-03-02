@@ -18,8 +18,11 @@ from classes.aws_client import AwsClient
 ##      parse_import_file
 ##          
 class Vault:
-    def __init__(self, config):
-        self.aws_client = AwsClient(config, client_type='data')
+    def __init__(self, config, aws_client=None):
+        if aws_client:
+            self.aws_client = aws_client
+        else:
+            self.aws_client = AwsClient(config, client_type='data')
         self.kms_arn = self.get_kms_arn(config['aws_hacc_kms_alias'])
         self.param_path = config['aws_hacc_param_path']
 
@@ -73,10 +76,7 @@ class Vault:
     ## Returns KMS ARN used to encrypt Vault credentials
     ## Returns False if failure to get key
     def get_kms_arn(self, kms_alias):
-        kms_alias = kms_alias
-
         logger.debug(f'Retrieving Vault encryption key')
-
         try:
             hacc_kms_arn = self.aws_client.call(
                                 'kms', 'describe_key', 

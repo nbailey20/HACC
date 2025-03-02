@@ -62,14 +62,16 @@ class HaccService:
             param_string += f'{user}:{svc_creds[user]},'
 
         if not param_string:
-            self.vault.aws_client.call(
+            res = self.vault.aws_client.call(
                 'ssm', 'delete_parameter', 
                 Name=f'/{vault_path}/{self.service_name}'
             )
+            if not res:
+                return False
             logger.debug('Successfully removed service with no more credentials from Vault')
 
         else:
-            self.vault.aws_client.call(
+            res = self.vault.aws_client.call(
                 'ssm', 'put_parameter',
                 Name = f'/{vault_path}/{self.service_name}',
                 Value = param_string[:-1], ## remove final comma
@@ -79,7 +81,10 @@ class HaccService:
                 Tier = 'Standard',
                 DataType = 'text'
             )
+            if not res:
+                return False
             logger.debug('Successfully pushed updated credential data to Vault')
+        return True
 
 
     ## Returns list of all usernames associated with service

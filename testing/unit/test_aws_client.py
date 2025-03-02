@@ -2,10 +2,10 @@ import pytest
 
 from classes.aws_client import AwsClient
 
+
 class Session:
     def client(self, *args, **kwargs):
         return 1
-
 
 def call_res(_, client_type, api_name, **kwargs):
     if client_type == "sts" and api_name == "assume_role":
@@ -18,20 +18,6 @@ def call_res(_, client_type, api_name, **kwargs):
         return "fail"
     return "fail"
 
-
-@pytest.fixture(params=["scp", "no-scp"])
-def config(request):
-    c = {
-        "aws_hacc_region": "us-east-1",
-        "aws_hacc_uname": "test_user",
-        "create_scp": False,
-    }
-    if request.param == "scp":
-        c["create_scp"] = True
-        c["aws_member_role"] = "arn:aws:iam::00000:role/test_role"
-    return c
-
-
 ## Mocking boto3 and AwsClient.call functions
 @pytest.fixture(params=["data", "mgmt"])
 def client(request, config, mocker):
@@ -39,7 +25,6 @@ def client(request, config, mocker):
     mocker.patch("boto3.client", return_value=1)
     mocker.patch("boto3.session.Session", return_value=Session)
     return AwsClient(config, client_type=request.param)
-
 
 
 ## BEGIN TESTS
