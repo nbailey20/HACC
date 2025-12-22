@@ -6,21 +6,28 @@ import (
 )
 
 func TestState(t *testing.T) {
-	s, err := NewState("/hackyclient/test/state", "initial")
+	path := "/hackyclient/test/"
+	s, err := NewState("testName", "initialVal", path)
 	if err != nil {
 		t.Fatalf("Error creating state: %v", err)
 	}
 
 	name := s.GetName()
-	if name != "/hackyclient/test/state" {
-		t.Errorf("Expected name '/hackyclient/test/state', got '%s'", name)
+	if name != "testName" {
+		t.Errorf("Expected name 'testName', got '%s'", name)
 	}
-	value := s.GetValue()
-	if value != "initial" {
+	value, err := s.GetValue()
+	if err != nil {
+		t.Fatalf("Error retrieving state value: %s", err)
+	}
+	if value != "initialVal" {
 		t.Errorf("Expected value 'initial', got '%s'", value)
 	}
 	s.SetValue("updated")
-	value = s.GetValue()
+	value, err = s.GetValue()
+	if err != nil {
+		t.Fatalf("Error retrieving state value: %s", err)
+	}
 	if value != "updated" {
 		t.Errorf("Expected value 'updated', got '%s'", value)
 	}
@@ -30,12 +37,15 @@ func TestState(t *testing.T) {
 		t.Errorf("Error saving state: %v", err)
 	}
 
-	s2, err := NewState("/hackyclient/test/state", "")
+	s2, err := NewState("testName", "", path)
 	if err != nil {
 		t.Fatalf("Error creating state: %v", err)
 	}
 	s2.Load()
-	value = s2.GetValue()
+	value, err = s2.GetValue()
+	if err != nil {
+		t.Fatalf("Error retrieving state value: %s", err)
+	}
 	if value != "updated" {
 		t.Errorf("Expected value 'updated', got '%s'", value)
 	}
@@ -47,21 +57,22 @@ func TestState(t *testing.T) {
 }
 
 func TestService(t *testing.T) {
-	svc, err := NewService("/hackyclient/test/service", "initial")
+	path := "/hackytest/service/"
+	svc, err := NewService("testService", "initialVal", path)
 	if err != nil {
 		t.Fatalf("Error creating service: %v", err)
 	}
 	name := svc.GetName()
-	if name != "/hackyclient/test/service" {
-		t.Errorf("Expected name '/hackyclient/test/service', got '%s'", name)
+	if name != "testService" {
+		t.Errorf("Expected name 'testService', got '%s'", name)
 	}
 
 	value, err := svc.GetValue()
 	if err != nil {
 		t.Errorf("Error getting value: %v", err)
 	}
-	if value != "initial" {
-		t.Errorf("Expected value 'initial', got '%s'", value)
+	if value != "initialVal" {
+		t.Errorf("Expected value 'initialVal', got '%s'", value)
 	}
 
 	err = svc.SetValue("updated")
@@ -76,7 +87,7 @@ func TestService(t *testing.T) {
 		t.Errorf("Expected value 'updated', got '%s'", value)
 	}
 
-	svc2, err := NewService("/hackyclient/test/service", "")
+	svc2, err := NewService("testService", "", path)
 	if err != nil {
 		t.Fatalf("Error creating service: %v", err)
 	}
@@ -87,7 +98,6 @@ func TestService(t *testing.T) {
 	if value != "updated" {
 		t.Errorf("Expected value 'updated', got '%s'", value)
 	}
-
 	err = svc2.Delete()
 	if err != nil {
 		t.Errorf("Error deleting service: %v", err)
@@ -103,11 +113,11 @@ func TestVault(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Error creating vault: %v", err)
 	}
-	err = vault.Add("/hackyclient/test/service1", "value1")
+	err = vault.Add("service1", "value1")
 	if err != nil {
 		t.Fatalf("Error adding service1: %v", err)
 	}
-	err = vault.Add("/hackyclient/test/service2", "value2")
+	err = vault.Add("service2", "value2")
 	if err != nil {
 		t.Fatalf("Error adding service2: %v", err)
 	}
@@ -115,14 +125,14 @@ func TestVault(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Error finding services: %v", err)
 	}
-	value, err := vault.Get("/hackyclient/test/service1")
+	value, err := vault.Get("service1")
 	if err != nil {
 		t.Fatalf("Error getting service1: %v", err)
 	}
 	if value != "value1" {
 		t.Errorf("Expected value 'value1' for service1, got '%s'", value)
 	}
-	value, err = vault.Get("/hackyclient/test/service2")
+	value, err = vault.Get("service2")
 	if err != nil {
 		t.Fatalf("Error getting service2: %v", err)
 	}
@@ -130,11 +140,11 @@ func TestVault(t *testing.T) {
 		t.Errorf("Expected value 'value2' for service2, got '%s'", value)
 	}
 
-	err = vault.Replace("/hackyclient/test/service1", "newvalue1")
+	err = vault.Replace("service1", "newvalue1")
 	if err != nil {
 		t.Fatalf("Error replacing service1: %v", err)
 	}
-	value, err = vault.Get("/hackyclient/test/service1")
+	value, err = vault.Get("service1")
 	if err != nil {
 		t.Fatalf("Error getting service1: %v", err)
 	}
@@ -147,7 +157,7 @@ func TestVault(t *testing.T) {
 		t.Errorf("Expected 2 services, got %d", len(value2))
 	}
 
-	err = vault.Delete("/hackyclient/test/service1")
+	err = vault.Delete("service1")
 	if err != nil {
 		t.Fatalf("Error deleting service1: %v", err)
 	}
@@ -162,7 +172,7 @@ func TestVault(t *testing.T) {
 		t.Errorf("Expected 1 services, got %d", len(value3))
 	}
 
-	err = vault.Delete("/hackyclient/test/service2")
+	err = vault.Delete("service2")
 	if err != nil {
 		t.Fatalf("Error deleting service2: %v", err)
 	}
