@@ -20,73 +20,6 @@ type model struct {
 	state       State
 }
 
-func NewModel(cli CLIInput, vault Vault) *model {
-	switch cli.Action {
-	case "get":
-		if cli.Name != "" {
-			return &model{
-				vault:       vault,
-				serviceName: cli.Name,
-				page:        0,
-				pageSize:    pageSize,
-				cursor:      0,
-				message:     "",
-				showSecret:  true,
-				state:       &DetailState{},
-			}
-		}
-		return &model{
-			vault:       vault,
-			serviceName: "",
-			page:        0,
-			pageSize:    pageSize,
-			cursor:      0,
-			message:     "",
-			showSecret:  true,
-			state:       &WelcomeState{},
-		}
-	case "add":
-		vault.Add(cli.Name, cli.Value)
-		return &model{
-			vault:       vault,
-			serviceName: cli.Name,
-			page:        0,
-			pageSize:    pageSize,
-			cursor:      0,
-			message:     "Added the following service to the vault:\n",
-			showSecret:  false,
-			state:       &DetailState{},
-		}
-	case "delete":
-		err := vault.Delete(cli.Name)
-		msg := fmt.Sprintf("Service %s deleted successfully.", cli.Name)
-		if err != nil {
-			msg = fmt.Sprintf("Error deleting service %s: %v\n", cli.Name, err)
-		}
-		return &model{
-			vault:       vault,
-			serviceName: "",
-			page:        0,
-			pageSize:    pageSize,
-			cursor:      0,
-			message:     msg,
-			showSecret:  false,
-			state:       &MessageState{},
-		}
-	default:
-		return &model{
-			vault:       vault,
-			serviceName: "",
-			page:        0,
-			pageSize:    pageSize,
-			cursor:      0,
-			message:     "",
-			showSecret:  false,
-			state:       &WelcomeState{},
-		}
-	}
-}
-
 func (m model) Init() tea.Cmd {
 	return nil
 }
@@ -130,6 +63,8 @@ func (m model) View() string {
 		return m.DetailView()
 	case *MessageState:
 		return m.MessageView()
+	case *EndState:
+		return m.EndView()
 	default:
 		fmt.Println("Unknown state type")
 		return "Unknown state"
@@ -138,6 +73,66 @@ func (m model) View() string {
 
 func (m model) WelcomeView() string {
 	return "Welcome to the Credential Vault!\nPress any key to continue..."
+}
+
+func (m model) DetailView() string {
+	if m.serviceName == "" {
+		return "Error: service name should not be empty in DetailView"
+	}
+
+	msg := ""
+	inside_s := ""
+	style := lipgloss.NewStyle().
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(lipgloss.Color("62")). // purple-ish
+		Padding(0, 0)
+
+	inside_s += m.message + "\n"
+	inside_s += fmt.Sprintf("Service: %s\n\n", m.serviceName)
+	if m.showSecret {
+		value, err := m.vault.Get(m.serviceName)
+		if err != nil {
+			return fmt.Sprintf("Error retrieving secret: %v", err)
+		}
+		inside_s += fmt.Sprintf("Secret: %s\n", value)
+	} else {
+		inside_s += "Secret: [hidden]\n"
+	}
+
+	msg += style.Render(inside_s)
+
+	footer := lipgloss.NewStyle().Italic(true).Foreground(lipgloss.Color("244")).Render(
+		"\nUse Backspace to view all credentials. Press ESC or ctlr-c to quit.\n",
+	)
+	msg += footer
+
+	return msg
+}
+
+func (m model) MessageView() string {
+	msg := ""
+	style := lipgloss.NewStyle().
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(lipgloss.Color("62")). // purple-ish
+		Padding(0, 0)
+
+	msg += style.Render(m.message)
+
+	footer := lipgloss.NewStyle().Italic(true).Foreground(lipgloss.Color("244")).Render(
+		"\nUse Backspace to view all credentials. Press ESC or ctlr-c to quit.\n",
+	)
+	msg += footer
+
+	return msg
+}
+
+func (m model) EndView() string {
+	// we're going to quit after this view is displayed, so no footer instructions
+	style := lipgloss.NewStyle().
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(lipgloss.Color("62")). // purple-ish
+		Padding(0, 0)
+	return style.Render(m.message)
 }
 
 func (m model) ListView() string {
@@ -195,40 +190,4 @@ func (m model) ListView() string {
 	)
 	b += footer
 	return b
-}
-
-func (m model) DetailView() string {
-	if m.serviceName == "" {
-		return "Error: service name should not be empty in DetailView"
-	}
-
-	s := m.message + "\n"
-	s += fmt.Sprintf("Service: %s\n\n", m.serviceName)
-	if m.showSecret {
-		value, err := m.vault.Get(m.serviceName)
-		if err != nil {
-			return fmt.Sprintf("Error retrieving secret: %v", err)
-		}
-		s += fmt.Sprintf("Secret: %s\n", value)
-	} else {
-		s += "Secret: [hidden]\n"
-	}
-	return s
-}
-
-func (m model) MessageView() string {
-	msg := ""
-	style := lipgloss.NewStyle().
-		Border(lipgloss.RoundedBorder()).
-		BorderForeground(lipgloss.Color("62")). // purple-ish
-		Padding(0, 0)
-
-	msg += style.Render(m.message)
-
-	footer := lipgloss.NewStyle().Italic(true).Foreground(lipgloss.Color("244")).Render(
-		"\nUse Backspace to view all credentials. Press ESC or ctlr-c to quit.\n",
-	)
-	msg += footer
-
-	return msg
 }

@@ -93,18 +93,46 @@ func NumLastPageItems(totalItems, pageSize int) int {
 }
 
 // ///////////////////////////////////////////////////////////////////////////
-// WelcomeState struct and Update method to implement State
+// Concrete State structs and Update methods
 // ////////////////////////////////////////////////////////////////////////
 type WelcomeState struct{}
 
 func (s WelcomeState) Update(m model, e Event) (model, tea.Cmd) {
+	if len(m.vault.services) == 0 {
+		m.message = "No credentials are stored in the Vault yet! Add one to get started."
+		m.state = &EndState{}
+		return m, nil
+	}
 	m.state = &ListState{}
 	return m, nil
 }
 
-// ///////////////////////////////////////////////////////////////////////////
-// ListState struct and Update method to implement State
-// ////////////////////////////////////////////////////////////////////////
+type DetailState struct{}
+
+func (s DetailState) Update(m model, e Event) (model, tea.Cmd) {
+	switch e.(type) {
+	case BackEvent:
+		return Back(m), nil
+	}
+	return m, nil
+}
+
+type MessageState struct{}
+
+func (s MessageState) Update(m model, e Event) (model, tea.Cmd) {
+	switch e.(type) {
+	case BackEvent:
+		return Back(m), nil
+	}
+	return m, nil
+}
+
+type EndState struct{}
+
+func (s EndState) Update(m model, e Event) (model, tea.Cmd) {
+	return m, tea.Quit
+}
+
 type ListState struct{}
 
 func (s ListState) Update(m model, e Event) (model, tea.Cmd) {
@@ -153,32 +181,6 @@ func (s ListState) Update(m model, e Event) (model, tea.Cmd) {
 		m.state = &DetailState{}
 		return m, nil
 
-	}
-	return m, nil
-}
-
-// ///////////////////////////////////////////////////////////////////////////
-// DetailState struct and Update method to implement State
-// ////////////////////////////////////////////////////////////////////////
-type DetailState struct{}
-
-func (s DetailState) Update(m model, e Event) (model, tea.Cmd) {
-	switch e.(type) {
-	case BackEvent:
-		return Back(m), nil
-	}
-	return m, nil
-}
-
-// ///////////////////////////////////////////////////////////////////////////
-// MessageState struct and Update method to implement State
-// ////////////////////////////////////////////////////////////////////////
-type MessageState struct{}
-
-func (s MessageState) Update(m model, e Event) (model, tea.Cmd) {
-	switch e.(type) {
-	case BackEvent:
-		return Back(m), nil
 	}
 	return m, nil
 }

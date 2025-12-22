@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"sort"
+	"strings"
 	"sync"
 )
 
@@ -45,11 +46,14 @@ func (s *state) GetName() string {
 }
 
 // Lazy backend fetching, don't pull the value before its needed
-func (s *state) GetValue() string {
+func (s *state) GetValue() (string, error) {
 	if !s.loaded {
-		s.Load()
+		err := s.Load()
+		if err != nil {
+			return "", err
+		}
 	}
-	return s.Value
+	return s.Value, nil
 }
 
 func (s *state) SetValue(value string) {
@@ -112,11 +116,7 @@ func (s *Service) GetName() string {
 }
 
 func (s *Service) GetValue() (string, error) {
-	err := s.state.Load()
-	if err != nil {
-		return "", err
-	}
-	return s.state.GetValue(), nil
+	return s.state.GetValue()
 
 }
 
@@ -207,6 +207,7 @@ func (v *Vault) ListServices() []string {
 
 func (v *Vault) FindServices() error {
 	ssmClient := NewSsmClient()
+	// returns parameters with encrypted values
 	parameters, err := ssmClient.GetAllParametersByPath(v.ssmPath)
 	if err != nil {
 		return err
@@ -219,15 +220,20 @@ func (v *Vault) FindServices() error {
 
 	for name, value := range parameters {
 		wg.Add(1)
+		displayName := strings.TrimPrefix(name, v.ssmPath)
 		go func(name, value string) {
 			defer wg.Done()
-			service, err := NewService(name, value, v.ssmPath)
+			service, err := NewService(
+				displayName,
+				"", // pull existing (unencrypted) value, don't overwrite with encrypted value!
+				v.ssmPath,
+			)
 			if err != nil {
 				errors <- err
 				return
 			}
 			mu.Lock()
-			v.services[name] = service
+			v.services[displayName] = service
 			mu.Unlock()
 		}(name, value)
 	}

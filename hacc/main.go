@@ -21,11 +21,11 @@ func main() {
 		return
 	}
 
-	// For testing, add some services
-	for i := 1; i <= 10; i++ {
-		name := fmt.Sprintf("service%d", i)
-		vault.Add(name, fmt.Sprintf("value%d", i))
-	}
+	// // For testing, add some services
+	// for i := 1; i <= 10; i++ {
+	// 	name := fmt.Sprintf("service%d", i)
+	// 	vault.Add(name, fmt.Sprintf("value%d", i))
+	// }
 
 	// Pass Vault to Bubbletea model for MVC-like displays
 	model := NewModel(input, *vault)
@@ -34,9 +34,9 @@ func main() {
 		fmt.Println("Error starting program:", err)
 	}
 
-	// Clean up test services
-	for i := 1; i <= 10; i++ {
-		name := fmt.Sprintf("service%d", i)
-		vault.Delete(name)
-	}
+	// // Clean up test services
+	// for i := 1; i <= 10; i++ {
+	// 	name := fmt.Sprintf("service%d", i)
+	// 	vault.Delete(name)
+	// }
 }

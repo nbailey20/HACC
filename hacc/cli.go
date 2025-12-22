@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 )
 
 type CLIInput struct {
@@ -25,8 +26,69 @@ func parseInput(fs *flag.FlagSet, args []string) CLIInput {
 	}
 }
 
-// func main() {
-// 	fs := flag.NewFlagSet("main", flag.ExitOnError)
-// 	input := parseInput(fs, os.Args[1:]) // Pass the command-line arguments
-// 	fmt.Printf("Action: %s, Name: %s, Value: %s\n", input.Action, input.Name, input.Value)
-// }
+func NewModel(cli CLIInput, vault Vault) *model {
+	switch cli.Action {
+	case "get":
+		if cli.Name != "" {
+			return &model{
+				vault:       vault,
+				serviceName: cli.Name,
+				page:        0,
+				pageSize:    pageSize,
+				cursor:      0,
+				message:     "",
+				showSecret:  true,
+				state:       &DetailState{},
+			}
+		}
+		return &model{
+			vault:       vault,
+			serviceName: "",
+			page:        0,
+			pageSize:    pageSize,
+			cursor:      0,
+			message:     "",
+			showSecret:  true,
+			state:       &WelcomeState{},
+		}
+	case "add":
+		vault.Add(cli.Name, cli.Value)
+		return &model{
+			vault:       vault,
+			serviceName: cli.Name,
+			page:        0,
+			pageSize:    pageSize,
+			cursor:      0,
+			message:     fmt.Sprintf("Successfully saved credential for %s", cli.Name),
+			showSecret:  false,
+			state:       &EndState{},
+		}
+	case "delete":
+		err := vault.Delete(cli.Name)
+		msg := fmt.Sprintf("Service %s deleted successfully.", cli.Name)
+		if err != nil {
+			msg = fmt.Sprintf("Error deleting service %s: %v\n", cli.Name, err)
+		}
+		return &model{
+			vault:       vault,
+			serviceName: "",
+			page:        0,
+			pageSize:    pageSize,
+			cursor:      0,
+			message:     msg,
+			showSecret:  false,
+			state:       &EndState{},
+		}
+	default:
+		return &model{
+			vault:       vault,
+			serviceName: "",
+			page:        0,
+			pageSize:    pageSize,
+			cursor:      0,
+			message:     "",
+			showSecret:  false,
+			state:       &WelcomeState{},
+		}
+	}
+}
