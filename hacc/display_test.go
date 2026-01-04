@@ -23,8 +23,10 @@ func TestDisplay(t *testing.T) {
 
 	// Add services to the vault
 	for i := 1; i <= 5; i++ {
-		name := fmt.Sprintf("/hackyclient/test/display/service%d", i)
-		err := vault.Add(name, fmt.Sprintf("value%d", i))
+		serviceName := fmt.Sprintf("service%d", i)
+		userName := fmt.Sprintf("user%d", i)
+		value := fmt.Sprintf("value%d", i)
+		err := vault.Add(serviceName, userName, value)
 		if err != nil {
 			t.Fatalf("Error adding service: %v", err)
 		}
@@ -33,8 +35,8 @@ func TestDisplay(t *testing.T) {
 	// Simulate displaying the list view
 	view := model.ListView()
 	expectedLines := []string{
-		fmt.Sprintf("%s %-5d %-25s", ">", 1, "/hackyclient/test/display/service1"),
-		fmt.Sprintf("%s %-5d %-25s", " ", 2, "/hackyclient/test/display/service2"),
+		fmt.Sprintf("%s %-5d %-25s", ">", 1, "service1"),
+		fmt.Sprintf("%s %-5d %-25s", " ", 2, "service2"),
 	}
 	for _, line := range expectedLines {
 		if !strings.Contains(view, line) {
@@ -45,20 +47,21 @@ func TestDisplay(t *testing.T) {
 	// Simulate navigating down
 	model.cursor = 1
 	view = model.ListView()
-	if !strings.Contains(view, fmt.Sprintf("%s %-5d %-25s", ">", 2, "/hackyclient/test/display/service2")) {
+	if !strings.Contains(view, fmt.Sprintf("%s %-5d %-25s", ">", 2, "service2")) {
 		t.Errorf("Expected cursor on service2, got:\n%s", view)
 	}
 	// Simulate page change
 	model.page = 1
 	view = model.ListView()
-	if !strings.Contains(view, fmt.Sprintf("%s %-5d %-25s", ">", 2, "/hackyclient/test/display/service4")) {
+	if !strings.Contains(view, fmt.Sprintf("%s %-5d %-25s", ">", 2, "service4")) {
 		t.Errorf("Expected cursor on service4 on page 2, got:\n%s", view)
 	}
 
 	// Delete the services after test
 	for i := 1; i <= 5; i++ {
-		name := fmt.Sprintf("/hackyclient/test/display/service%d", i)
-		err := vault.Delete(name)
+		serviceName := fmt.Sprintf("service%d", i)
+		userName := fmt.Sprintf("user%d", i)
+		err := vault.Delete(serviceName, userName)
 		if err != nil {
 			t.Fatalf("Error deleting service: %v", err)
 		}

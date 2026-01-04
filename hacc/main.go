@@ -11,8 +11,23 @@ import (
 var ssmPath = "/hackyclient/data/"
 
 func main() {
+	// Parse the command-line arguments
 	fs := flag.NewFlagSet("main", flag.ExitOnError)
-	input := parseInput(fs, os.Args[1:]) // Parse the command-line arguments
+	input, err := parseInput(fs, os.Args[1:])
+	if err != nil {
+		fmt.Printf("Error parsing input: %v\n", err)
+		return
+	}
+
+	// Normalize input into raw CLI command
+	rawCli := normalizeInput(input)
+
+	// Validate raw command into final CLI command
+	cli, err := validateCommand(rawCli)
+	if err != nil {
+		fmt.Printf("Invalid input: %v\n", err)
+		return
+	}
 
 	// Create backend Vault
 	vault, err := NewVault(nil, ssmPath)
@@ -21,22 +36,13 @@ func main() {
 		return
 	}
 
-	// // For testing, add some services
-	// for i := 1; i <= 10; i++ {
-	// 	name := fmt.Sprintf("service%d", i)
-	// 	vault.Add(name, fmt.Sprintf("value%d", i))
-	// }
+	// Auto-complete command where possible given vault data
+	cli = autoCompleteCommand(cli, vault)
 
 	// Pass Vault to Bubbletea model for MVC-like displays
-	model := NewModel(input, *vault)
+	model := NewModel(cli, *vault)
 	p := tea.NewProgram(model)
 	if _, err := p.Run(); err != nil {
 		fmt.Println("Error starting program:", err)
 	}
-
-	// // Clean up test services
-	// for i := 1; i <= 10; i++ {
-	// 	name := fmt.Sprintf("service%d", i)
-	// 	vault.Delete(name)
-	// }
 }

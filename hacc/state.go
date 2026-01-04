@@ -19,7 +19,7 @@ type NumberEvent struct {
 }
 
 // ///////////////////////////////////////////////////////////////////////////
-// State interface and common functions
+// State interface and common functions for UI
 // //////////////////////////////////////////////////////////////////////
 type State interface {
 	Update(m model, e Event) (model, tea.Cmd)
@@ -175,7 +175,7 @@ func (s ListState) Update(m model, e Event) (model, tea.Cmd) {
 			return m, nil
 		}
 		// Get the selected service name
-		services := m.vault.ListServices()
+		services := m.vault.ListServices(m.serviceName)
 		selectedService := services[m.page*m.pageSize+m.cursor]
 		m.serviceName = selectedService
 		m.state = &DetailState{}

@@ -9,17 +9,6 @@ import (
 
 var pageSize = 5
 
-type model struct {
-	vault       Vault
-	serviceName string
-	page        int
-	pageSize    int
-	cursor      int
-	message     string
-	showSecret  bool
-	state       State
-}
-
 func (m model) Init() tea.Cmd {
 	return nil
 }
@@ -90,7 +79,7 @@ func (m model) DetailView() string {
 	inside_s += m.message + "\n"
 	inside_s += fmt.Sprintf("Service: %s\n\n", m.serviceName)
 	if m.showSecret {
-		value, err := m.vault.Get(m.serviceName)
+		value, err := m.vault.Get(m.serviceName, m.username)
 		if err != nil {
 			return fmt.Sprintf("Error retrieving secret: %v", err)
 		}
@@ -139,7 +128,7 @@ func (m model) ListView() string {
 	if m.serviceName != "" {
 		return fmt.Sprintf("Error: service name should be empty in ListView, got %s", m.serviceName)
 	}
-	services := m.vault.ListServices()
+	services := m.vault.ListServices(m.serviceName)
 	displayed_services := services[m.page*m.pageSize : min((m.page+1)*m.pageSize, len(services))]
 
 	var b string

@@ -65,13 +65,14 @@ func (c *ssmClient) DeleteParameter(name string) error {
 func (c *ssmClient) GetAllParametersByPath(path string) (map[string]string, error) {
 	params := make(map[string]string)
 	paginator := ssm.NewGetParametersByPathPaginator(c.Ssm, &ssm.GetParametersByPathInput{
-		Path: aws.String(path),
+		Path:      aws.String(path),
+		Recursive: aws.Bool(true),
 	})
 
 	for paginator.HasMorePages() {
 		page, err := paginator.NextPage(context.TODO())
 		if err != nil {
-			log.Fatalf("failed to get parameters by path, %v", err)
+			log.Fatalf("failed to get parameters by path for %s, %v", path, err)
 		}
 		for _, param := range page.Parameters {
 			params[*param.Name] = *param.Value
