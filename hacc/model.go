@@ -27,7 +27,7 @@ func NewModel(cli CLICommand, vault Vault) *model {
 				cursor:      0,
 				message:     "",
 				showSecret:  true,
-				state:       &DetailState{},
+				state:       &CredentialState{},
 			}
 		}
 		return &model{

@@ -73,7 +73,7 @@ func CursorNumber(m model, n int) model {
 }
 
 func Back(m model) model {
-	m.state = &ListState{}
+	m.state = &ServiceListState{}
 	m.serviceName = ""
 	return m
 }
@@ -103,13 +103,13 @@ func (s WelcomeState) Update(m model, e Event) (model, tea.Cmd) {
 		m.state = &EndState{}
 		return m, nil
 	}
-	m.state = &ListState{}
+	m.state = &ServiceListState{}
 	return m, nil
 }
 
-type DetailState struct{}
+type CredentialState struct{}
 
-func (s DetailState) Update(m model, e Event) (model, tea.Cmd) {
+func (s CredentialState) Update(m model, e Event) (model, tea.Cmd) {
 	switch e.(type) {
 	case BackEvent:
 		return Back(m), nil
@@ -133,9 +133,9 @@ func (s EndState) Update(m model, e Event) (model, tea.Cmd) {
 	return m, tea.Quit
 }
 
-type ListState struct{}
+type ServiceListState struct{}
 
-func (s ListState) Update(m model, e Event) (model, tea.Cmd) {
+func (s ServiceListState) Update(m model, e Event) (model, tea.Cmd) {
 	switch e.(type) {
 	case UpEvent:
 		return CursorUp(m), nil
@@ -178,9 +178,63 @@ func (s ListState) Update(m model, e Event) (model, tea.Cmd) {
 		services := m.vault.ListServices(m.serviceName)
 		selectedService := services[m.page*m.pageSize+m.cursor]
 		m.serviceName = selectedService
-		m.state = &DetailState{}
+		m.state = &UsernameListState{}
 		return m, nil
 
+	}
+	return m, nil
+}
+
+type UsernameListState struct{}
+
+func (s UsernameListState) Update(m model, e Event) (model, tea.Cmd) {
+	service := m.vault.services[m.serviceName]
+	switch e.(type) {
+	case BackEvent:
+		return Back(m), nil
+	case UpEvent:
+		return CursorUp(m), nil
+	case DownEvent:
+		return CursorDown(m), nil
+	case LeftEvent:
+		if m.page > 0 {
+			m.page--
+			return m, nil
+		} else {
+			// Wrap around to last page and adjust cursor if needed
+			m.page = NumPages(len(service.GetUsers("")), m.pageSize) - 1
+			if m.cursor >= NumLastPageItems(len(service.GetUsers("")), m.pageSize) {
+				m.cursor = NumLastPageItems(len(service.GetUsers("")), m.pageSize) - 1
+			}
+		}
+		return m, nil
+	case RightEvent:
+		if m.page < NumPages(len(service.GetUsers("")), m.pageSize)-1 {
+			m.page++
+		} else {
+			// wrap around to first page
+			m.page = 0
+		}
+		if m.page == NumPages(len(service.GetUsers("")), m.pageSize)-1 {
+			// Adjust cursor for less-than-full last page
+			if m.cursor >= NumLastPageItems(len(service.GetUsers("")), m.pageSize) {
+				m.cursor = NumLastPageItems(len(service.GetUsers("")), m.pageSize) - 1
+			}
+		}
+		return m, nil
+	case NumberEvent:
+		return CursorNumber(m, e.(NumberEvent).Number), nil
+	case EnterEvent:
+		if len(m.vault.services) == 0 {
+			m.message = "No services available to copy."
+			return m, nil
+		}
+		// Get the selected service name
+		users := service.GetUsers("")
+		selectedUser := users[m.page*m.pageSize+m.cursor]
+		m.username = selectedUser
+		m.state = &CredentialState{}
+		return m, nil
 	}
 	return m, nil
 }

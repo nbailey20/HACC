@@ -37,9 +37,10 @@ func main() {
 	}
 
 	// Auto-complete command where possible given vault data
+	// purely for enhancing UX and less typing
 	cli = autoCompleteCommand(cli, vault)
 
-	// Pass Vault to Bubbletea model for MVC-like displays
+	// Pass Vault to Bubbletea model for MVC-like displays (interactive mode)
 	model := NewModel(cli, *vault)
 	p := tea.NewProgram(model)
 	if _, err := p.Run(); err != nil {

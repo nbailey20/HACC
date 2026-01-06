@@ -18,7 +18,7 @@ func TestDisplay(t *testing.T) {
 		vault:      *vault,
 		pageSize:   2,
 		showSecret: false,
-		state:      &ListState{},
+		state:      &ServiceListState{},
 	}
 
 	// Add services to the vault
@@ -33,7 +33,7 @@ func TestDisplay(t *testing.T) {
 	}
 
 	// Simulate displaying the list view
-	view := model.ListView()
+	view := model.ServiceListView()
 	expectedLines := []string{
 		fmt.Sprintf("%s %-5d %-25s", ">", 1, "service1"),
 		fmt.Sprintf("%s %-5d %-25s", " ", 2, "service2"),
@@ -46,13 +46,13 @@ func TestDisplay(t *testing.T) {
 
 	// Simulate navigating down
 	model.cursor = 1
-	view = model.ListView()
+	view = model.ServiceListView()
 	if !strings.Contains(view, fmt.Sprintf("%s %-5d %-25s", ">", 2, "service2")) {
 		t.Errorf("Expected cursor on service2, got:\n%s", view)
 	}
 	// Simulate page change
 	model.page = 1
-	view = model.ListView()
+	view = model.ServiceListView()
 	if !strings.Contains(view, fmt.Sprintf("%s %-5d %-25s", ">", 2, "service4")) {
 		t.Errorf("Expected cursor on service4 on page 2, got:\n%s", view)
 	}
