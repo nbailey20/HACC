@@ -17,7 +17,7 @@ type BackEvent struct{}
 type NumberEvent struct {
 	Number int
 }
-type AnyEvent struct{}
+type RuneEvent struct{}
 
 // //////////////////////////////////////////////////////////////////////////
 // Bubbletea Model main Update method
@@ -46,7 +46,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				n := int(msg.Runes[0] - '0')
 				return m.state.Update(m, NumberEvent{Number: n})
 			}
-			return m.state.Update(m, AnyEvent{})
+			return m.state.Update(m, RuneEvent{})
 		}
 	}
 	return m, nil
