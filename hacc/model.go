@@ -1,6 +1,10 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+
+	tea "github.com/charmbracelet/bubbletea"
+)
 
 type model struct {
 	vault       Vault
@@ -12,6 +16,10 @@ type model struct {
 	message     string
 	showSecret  bool
 	state       State
+}
+
+func (m model) Init() tea.Cmd {
+	return nil
 }
 
 func NewModel(cli CLICommand, vault Vault) *model {

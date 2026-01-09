@@ -3,44 +3,13 @@ package main
 import (
 	"fmt"
 
-	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 )
 
+// Number of items to show per page in lists
+// The Update function allows single digits for list row selection,
+// so pageSize > 9 will cause issues with elements beyond row 9.
 var pageSize = 5
-
-func (m model) Init() tea.Cmd {
-	return nil
-}
-
-func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	switch msg := msg.(type) {
-	case tea.KeyMsg:
-		switch msg.Type {
-		case tea.KeyCtrlC, tea.KeyEsc:
-			return m, tea.Quit
-		case tea.KeyUp:
-			return m.state.Update(m, UpEvent{})
-		case tea.KeyDown:
-			return m.state.Update(m, DownEvent{})
-		case tea.KeyLeft:
-			return m.state.Update(m, LeftEvent{})
-		case tea.KeyRight:
-			return m.state.Update(m, RightEvent{})
-		case tea.KeyEnter:
-			return m.state.Update(m, EnterEvent{})
-		case tea.KeyBackspace:
-			return m.state.Update(m, BackEvent{})
-		case tea.KeyRunes:
-			// Numbers (and other printable characters)
-			if len(msg.Runes) == 1 && msg.Runes[0] >= '0' && msg.Runes[0] <= '9' {
-				n := int(msg.Runes[0] - '0')
-				return m.state.Update(m, NumberEvent{Number: n})
-			}
-		}
-	}
-	return m, nil
-}
 
 func (m model) View() string {
 	switch m.state.(type) {
