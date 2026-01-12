@@ -5,17 +5,19 @@ import (
 	"strings"
 	"testing"
 
+	vault "github.com/nbailey20/hacc/hacc/vault"
+
 	tea "github.com/charmbracelet/bubbletea"
 )
 
 func TestDisplay(t *testing.T) {
-	vault, err := NewVault(nil, "/hackyclient/test/display")
+	testVault, err := vault.NewVault(nil, "/hackyclient/test/display")
 	if err != nil {
 		t.Fatalf("Error creating vault: %v", err)
 	}
 
 	model := model{
-		vault:      *vault,
+		vault:      *testVault,
 		pageSize:   2,
 		showSecret: false,
 		state:      &ServiceListState{},
@@ -26,7 +28,7 @@ func TestDisplay(t *testing.T) {
 		serviceName := fmt.Sprintf("service%d", i)
 		userName := fmt.Sprintf("user%d", i)
 		value := fmt.Sprintf("value%d", i)
-		err := vault.Add(serviceName, userName, value)
+		err := testVault.Add(serviceName, userName, value)
 		if err != nil {
 			t.Fatalf("Error adding service: %v", err)
 		}
@@ -61,7 +63,7 @@ func TestDisplay(t *testing.T) {
 	for i := 1; i <= 5; i++ {
 		serviceName := fmt.Sprintf("service%d", i)
 		userName := fmt.Sprintf("user%d", i)
-		err := vault.Delete(serviceName, userName)
+		err := testVault.Delete(serviceName, userName)
 		if err != nil {
 			t.Fatalf("Error deleting service: %v", err)
 		}

@@ -156,7 +156,7 @@ func (m model) UsernameListView() string {
 	if m.serviceName == "" {
 		return "Error: service name should not be empty in UsernameListView"
 	}
-	service, ok := m.vault.services[m.serviceName]
+	service, ok := m.vault.Services[m.serviceName]
 	if !ok {
 		return fmt.Sprintf("Error retrieving service %s: not found", m.serviceName)
 	}

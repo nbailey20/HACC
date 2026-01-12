@@ -3,11 +3,14 @@ package main
 import (
 	"fmt"
 
+	cli "github.com/nbailey20/hacc/hacc/cli"
+	vault "github.com/nbailey20/hacc/hacc/vault"
+
 	tea "github.com/charmbracelet/bubbletea"
 )
 
 type model struct {
-	vault       Vault
+	vault       vault.Vault
 	serviceName string
 	username    string
 	page        int
@@ -22,14 +25,14 @@ func (m model) Init() tea.Cmd {
 	return nil
 }
 
-func NewModel(cli CLICommand, vault Vault) *model {
-	switch cli.action {
+func NewModel(cli cli.CLICommand, vault vault.Vault) *model {
+	switch cli.Action {
 	case "search":
-		if cli.service != "" {
+		if cli.Service != "" {
 			return &model{
 				vault:       vault,
-				serviceName: cli.service,
-				username:    cli.username,
+				serviceName: cli.Service,
+				username:    cli.Username,
 				page:        0,
 				pageSize:    pageSize,
 				cursor:      0,
@@ -49,28 +52,28 @@ func NewModel(cli CLICommand, vault Vault) *model {
 			state:       &WelcomeState{},
 		}
 	case "add":
-		vault.Add(cli.service, cli.username, cli.password)
+		vault.Add(cli.Service, cli.Username, cli.Password)
 		return &model{
 			vault:       vault,
-			serviceName: cli.service,
-			username:    cli.username,
+			serviceName: cli.Service,
+			username:    cli.Username,
 			page:        0,
 			pageSize:    pageSize,
 			cursor:      0,
-			message:     fmt.Sprintf("Successfully saved credential for %s", cli.service),
+			message:     fmt.Sprintf("Successfully saved credential for %s", cli.Service),
 			showSecret:  false,
 			state:       &EndState{},
 		}
 	case "delete":
-		err := vault.Delete(cli.service, cli.username)
-		msg := fmt.Sprintf("Service %s deleted successfully.", cli.service)
+		err := vault.Delete(cli.Service, cli.Username)
+		msg := fmt.Sprintf("Service %s deleted successfully.", cli.Service)
 		if err != nil {
-			msg = fmt.Sprintf("Error deleting username %s in service %s: %v\n", cli.username, cli.service, err)
+			msg = fmt.Sprintf("Error deleting username %s in service %s: %v\n", cli.Username, cli.Service, err)
 		}
 		return &model{
 			vault:       vault,
 			serviceName: "",
-			username:    cli.username,
+			username:    cli.Username,
 			page:        0,
 			pageSize:    pageSize,
 			cursor:      0,
@@ -82,7 +85,7 @@ func NewModel(cli CLICommand, vault Vault) *model {
 		return &model{
 			vault:       vault,
 			serviceName: "",
-			username:    cli.username,
+			username:    cli.Username,
 			page:        0,
 			pageSize:    pageSize,
 			cursor:      0,

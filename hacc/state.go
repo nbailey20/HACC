@@ -123,8 +123,8 @@ func CursorNumber(m model, n int) model {
 		return m
 	}
 	// Consider less-than-full last page
-	if m.page == NumPages(len(m.vault.services), m.pageSize)-1 {
-		if n >= NumLastPageItems(len(m.vault.services), m.pageSize) {
+	if m.page == NumPages(len(m.vault.Services), m.pageSize)-1 {
+		if n >= NumLastPageItems(len(m.vault.Services), m.pageSize) {
 			return m
 		}
 	}
@@ -182,7 +182,7 @@ func NumLastPageItems(totalItems, pageSize int) int {
 type WelcomeState struct{}
 
 func (s WelcomeState) Update(m model, e Event) (model, tea.Cmd) {
-	if len(m.vault.services) == 0 {
+	if len(m.vault.Services) == 0 {
 		m.message = "No credentials are stored in the Vault yet! Add one to get started."
 		m.state = &EndState{}
 		return m, nil
@@ -239,9 +239,9 @@ func (s ServiceListState) Update(m model, e Event) (model, tea.Cmd) {
 	return updateListState(
 		m,
 		e,
-		len(m.vault.services),
+		len(m.vault.Services),
 		func(m model) (model, tea.Cmd) {
-			if len(m.vault.services) == 0 {
+			if len(m.vault.Services) == 0 {
 				m.message = "No services available to copy."
 				return m, nil
 			}
@@ -266,14 +266,14 @@ func (s UsernameListState) Update(m model, e Event) (model, tea.Cmd) {
 	return updateListState(
 		m,
 		e,
-		len(m.vault.services[m.serviceName].GetUsers("")),
+		len(m.vault.Services[m.serviceName].GetUsers("")),
 		func(m model) (model, tea.Cmd) {
-			if len(m.vault.services) == 0 {
+			if len(m.vault.Services) == 0 {
 				m.message = "No services available to copy."
 				return m, nil
 			}
 			// Get the selected service name
-			service := m.vault.services[m.serviceName]
+			service := m.vault.Services[m.serviceName]
 			users := service.GetUsers("")
 			selectedUser := users[m.page*m.pageSize+m.cursor]
 			m.username = selectedUser
