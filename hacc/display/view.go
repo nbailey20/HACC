@@ -1,4 +1,4 @@
-package main
+package display
 
 import (
 	"fmt"
@@ -32,7 +32,29 @@ func (m model) View() string {
 }
 
 func (m model) WelcomeView() string {
-	return "Welcome to the Credential Vault!\nPress any key to continue..."
+	var (
+		bannerStyle = lipgloss.NewStyle().
+				Foreground((lipgloss.Color("117"))) // light blue 117
+		versionStyle = lipgloss.NewStyle().
+				Foreground(lipgloss.Color("42")). // green
+				Bold(true)
+		footerStyle = lipgloss.NewStyle().
+				Foreground(lipgloss.Color("141")). // light purple
+				Bold(true)
+	)
+	msg := bannerStyle.Render(
+		`
+██╗  ██╗ █████╗  ██████╗ ██████╗
+██║  ██║██╔══██╗██╔════╝██╔════╝
+███████║███████║██║     ██║
+██╔══██║██╔══██║██║     ██║
+██║  ██║██║  ██║╚██████╗╚██████╗
+╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝ ╚═════╝ `+
+			versionStyle.Render("v2.0"),
+	) + "\n" +
+		footerStyle.Render("Press any key to continue...")
+
+	return msg
 }
 
 func (m model) CredentialView() string {
@@ -49,6 +71,7 @@ func (m model) CredentialView() string {
 
 	inside_s += m.message + "\n"
 	inside_s += fmt.Sprintf("Service: %s\n\n", m.serviceName)
+	inside_s += fmt.Sprintf("Username: %s\n\n", m.username)
 	if m.showSecret {
 		value, err := m.vault.Get(m.serviceName, m.username)
 		if err != nil {
@@ -90,33 +113,49 @@ func (m model) EndView() string {
 	// we're going to quit after this view is displayed, so no footer instructions
 	style := lipgloss.NewStyle().
 		Border(lipgloss.RoundedBorder()).
-		BorderForeground(lipgloss.Color("62")). // purple-ish
+		BorderForeground(lipgloss.Color("141")). // light purple
 		Padding(0, 0)
-	return style.Render(m.message)
+	successfulStyle := lipgloss.NewStyle().
+		Foreground(lipgloss.Color("42"))
+	// errorStyle := lipgloss.NewStyle().
+	// 	Foreground(lipgloss.Color("196"))
+
+	// errorStyle.Render("Error")
+	return style.Render(successfulStyle.Render("Successfully")+" saved credential for gmail") + "\n"
+	// return style.Render(errorStyle.Render("Error")+" saving credential for gmail") + "\n"
+	// return style.Render(m.message) + "\n"
 }
 
 func (m model) ServiceListView() string {
-	if m.serviceName != "" {
-		return fmt.Sprintf("Error: service name should be empty in ServiceListView, got %s", m.serviceName)
-	}
 	services := m.vault.ListServices(m.serviceName)
 	displayed_services := services[m.page*m.pageSize : min((m.page+1)*m.pageSize, len(services))]
 
 	var b string
 
 	// ---- TITLE ----
-	tableWidth := 5 + 25 + 15 + 5 // Row + Name + Secret + spacing/padding
+	// 	titleText := `
+	// _  _ ____ _  _ _    ___
+	// |  | |__| |  | |     |
+	//  \/  |  | |__| |___  |
+	// `
+	// 	titleText := `
+	// ██  ██  ▄▄▄  ▄▄ ▄▄ ▄▄   ▄▄▄▄▄▄
+	// ██▄▄██ ██▀██ ██ ██ ██     ██
+	//  ▀██▀  ██▀██ ▀███▀ ██▄▄▄  ██
+	// `
+	titleText := "Credential Vault"
+
+	tableWidth := 5 + 25 + 3 // Row + Name + Secret + spacing/padding
 	title := lipgloss.NewStyle().
-		Bold(true).
-		Underline(true).
-		Foreground(lipgloss.Color("39")). // cyan
-		Width(tableWidth).                // match table width
+		Bold(true).                       // Underline(true).
+		Foreground(lipgloss.Color("42")). // green
 		Align(lipgloss.Center).
-		Render("CREDENTIAL VAULT")
-	b += "\n" + title + "\n"
+		Width(tableWidth).
+		Render(titleText)
+	// b += title + "\n"
 
 	tableHeader := fmt.Sprintf("%-5s %-25s", "Row", "Name")
-	headerStyle := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("226")) // yellow
+	headerStyle := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("185")) // yellow
 	tableContent := headerStyle.Render(tableHeader) + "\n"
 
 	for i, serviceName := range displayed_services {
@@ -125,29 +164,36 @@ func (m model) ServiceListView() string {
 		if i == m.cursor {
 			cursor = ">"
 			rowStyle = lipgloss.NewStyle().
-				Background(lipgloss.Color("57")). // bright blue
-				Foreground(lipgloss.Color("15")). // white
-				Bold(true)
+				Background(lipgloss.Color("117")).Bold(true) // light blue
+			// Foreground(lipgloss.Color("15"))   // white
+			// Bold(true)
 		} else if i%2 == 0 {
-			rowStyle = lipgloss.NewStyle().Background(lipgloss.Color("235"))
+			rowStyle = lipgloss.NewStyle().Background(lipgloss.Color("235")).Foreground(lipgloss.Color("117"))
 		} else {
-			rowStyle = lipgloss.NewStyle().Background(lipgloss.Color("236"))
+			rowStyle = lipgloss.NewStyle().Background(lipgloss.Color("236")).Foreground(lipgloss.Color("117"))
 		}
 
 		line := fmt.Sprintf("%s %-5d %-25s", cursor, i+1, serviceName)
 		tableContent += rowStyle.Render(line) + "\n"
 	}
 
+	tableContent += "\n" + title
+
 	// Wrap table with border and optionally center
 	tableStyle := lipgloss.NewStyle().
 		Border(lipgloss.NormalBorder()).
-		Padding(0, 1)
+		BorderForeground(lipgloss.Color("141")). // light purple
+		Padding(0, 1).MarginLeft(4)
 	b += tableStyle.Render(tableContent)
 
 	// ---- FOOTER ----
-	footer := lipgloss.NewStyle().Italic(true).Foreground(lipgloss.Color("244")).Render(
-		"\nUse ↑/↓ or type row number, press Enter to view. Press ESC or ctlr-c to quit.\n",
-	)
+	footer := lipgloss.NewStyle().
+		Italic(true).
+		Foreground(lipgloss.Color("244")).
+		Align(lipgloss.Center).
+		Render(
+			"\nNavigate with ↑/↓ or 0-9, use Enter to select.\nPress ESC or ctlr-c to quit.\n",
+		)
 	b += footer
 	return b
 }

@@ -77,13 +77,41 @@ func TestParse(t *testing.T) {
 	require.Error(t, err)
 
 	// Test case 8: hacc add delete -u testUser -g
+	// technically works for a service called "delete"
 	cmd, err = Parse([]string{
 		"add",
 		"delete",
 		"-u", "testUser",
 		"-g",
 	}, true)
-	require.Error(t, err)
+	require.NoError(t, err)
+
+	// Test case 9: hacc d delete -u testUser
+	// technically works for a service called "delete"
+	cmd, err = Parse([]string{
+		"d",
+		"delete",
+		"-u", "testUser",
+	}, true)
+	require.NoError(t, err)
+
+	// Test case 10: hacc search delete
+	// technically works for a service called "delete"
+	// can't call hacc delete, have to use the implied search keyword
+	cmd, err = Parse([]string{
+		"search",
+		"delete",
+	}, true)
+	require.NoError(t, err)
+
+	// Test case 11: hacc rotate gmail -u test123 -p 567
+	cmd, err = Parse([]string{
+		"rotate",
+		"gmail",
+		"-u", "test123",
+		"-p", "567",
+	}, true)
+	require.NoError(t, err)
 }
 
 func TestEqualStringSets(t *testing.T) {
@@ -132,11 +160,11 @@ func TestValidateCommand(t *testing.T) {
 		t.Errorf("Expected no error for valid input, got %v", err)
 	}
 
-	// Test case 5: Invalid input, multiple actions not allowed
-	// command = CLICommand{Action: []string{"add", "delete"}, Service: "myservice", Username: "user1"}
-	// if _, err := ValidateCommand(command); err == nil {
-	// 	t.Errorf("Expected error for multiple actions, got nil")
-	// }
+	// Test case 5: no search input
+	command = CLICommand{Action: SearchAction{}}
+	if err := ValidateCommand(command); err != nil {
+		t.Errorf("Expected no error for valid input, got %v", err)
+	}
 
 	// Test case 6: Invalid input combination with too many options
 	command = CLICommand{Action: AddAction{}, Service: "myservice", Username: "user1", Password: "pass1", Generate: true}

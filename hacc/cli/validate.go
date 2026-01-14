@@ -25,17 +25,17 @@ var SubArgs = []FlagDef{
 	{Short: "", Long: "show", Help: "Show client configuration parameter", Kind: "string"},
 }
 
-var AllowedInputCombinations = map[CLIAction][][]string{
-	InstallAction{}: {
+var AllowedInputCombinations = map[ActionKind][][]string{
+	ActionInstall: {
 		// {},
 		// {"file"},
 	},
-	EradicateAction{}: {
+	ActionEradicate: {
 		// {},
 		// {"wipe"},
 		// {"upgrade"},
 	},
-	AddAction{}: {
+	ActionAdd: {
 		// {},
 		// {"service"},
 		// {"username"},
@@ -50,13 +50,13 @@ var AllowedInputCombinations = map[CLIAction][][]string{
 		{"service", "username", "password"},
 		// {"service", "username", "generate"},
 	},
-	DeleteAction{}: {
+	ActionDelete: {
 		// {},
 		// {"service"},
 		// {"username"},
 		{"service", "username"},
 	},
-	RotateAction{}: {
+	ActionRotate: {
 		//{},
 		//{"service"},
 		//{"username"},
@@ -71,24 +71,24 @@ var AllowedInputCombinations = map[CLIAction][][]string{
 		// {"service", "username", "generate"},
 	},
 
-	SearchAction{}: {
+	ActionSearch: {
 		{},
 		// {"username"},
 		{"service"},
 		{"service", "username"},
 	},
-	BackupAction{}: {
+	ActionBackup: {
 		//{},
 		//{"file"},
 	},
-	ConfigureAction{}: {
+	ActionConfigure: {
 		// {"show"},
 		// {"set"},
 		//{"export"},
 		// {"set", "file", "password"},
 		// {"export", "file"},
 	},
-	UpgradeAction{}: {
+	ActionUpgrade: {
 		// {},
 	},
 }
@@ -104,10 +104,13 @@ func uppercaseFirst(s string) string {
 
 func ValidateCommand(command CLICommand) error {
 	// ensure a valid action is specified
-	actionName := command.Action
-	allowedCombinations, exists := AllowedInputCombinations[actionName]
+	if command.Action == nil {
+		return fmt.Errorf("No action")
+	}
+	actionType := command.Action.Kind()
+	allowedCombinations, exists := AllowedInputCombinations[actionType]
 	if !exists {
-		return fmt.Errorf("Unknown action: %s", actionName)
+		return fmt.Errorf("Unknown action")
 	}
 
 	// determine which subargs are provided

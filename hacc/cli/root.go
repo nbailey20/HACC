@@ -9,9 +9,30 @@ import (
 func preprocessArgs(args []string) []string {
 	// hacc add gmail -u test -g is supported by default
 	// also support: hacc gmail add -u test -g
-	// don't forget shorthand: hacc gmail a -u test -g
-	if len(args) > 1 && isVerb(args[1]) {
+	// hacc gmail a -u test -g
+	// hacc gmail -u test
+	if len(args) <= 1 {
+		return args
+	}
+	// shouldn't happen unless user does like 'hacc add delete'
+	if isVerb(args[0]) && isVerb(args[1]) {
+		return args
+	}
+	if isVerb(args[1]) {
 		args[0], args[1] = args[1], args[0]
+		return args
+	}
+	// Check if none of the args are verbs
+	hasVerb := false
+	for _, arg := range args {
+		if isVerb(arg) {
+			hasVerb = true
+			break
+		}
+	}
+	// If no verbs found, prepend "search"
+	if !hasVerb && len(args) > 1 {
+		args = append([]string{"search"}, args...)
 	}
 	return args
 }
@@ -48,6 +69,7 @@ func Parse(args []string, quiet bool) (CLICommand, error) {
 	var cliCommand CLICommand
 	rootCmd := NewRootCommand(&cliCommand)
 	rootCmd.SetArgs(args)
+	rootCmd.CompletionOptions.DisableDefaultCmd = true
 
 	// don't print usage instructions during tests
 	if quiet {
@@ -55,7 +77,8 @@ func Parse(args []string, quiet bool) (CLICommand, error) {
 		rootCmd.SilenceErrors = true
 	}
 
-	if err := rootCmd.Execute(); err != nil {
+	err := rootCmd.Execute()
+	if err != nil {
 		return CLICommand{}, err
 	}
 

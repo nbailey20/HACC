@@ -1,4 +1,4 @@
-package main
+package display
 
 import (
 	tea "github.com/charmbracelet/bubbletea"
