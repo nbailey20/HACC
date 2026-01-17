@@ -34,11 +34,15 @@ func TestDisplay(t *testing.T) {
 		}
 	}
 
-	// Simulate displaying the list view
+	// Check for expected footer
 	view := model.ServiceListView()
 	expectedLines := []string{
-		fmt.Sprintf("%s %-5d %-25s", ">", 1, "service1"),
-		fmt.Sprintf("%s %-5d %-25s", " ", 2, "service2"),
+		"│ # │ Service  │",
+		"│ 1 │service1  │",
+		"│ 2 │ service2 │",
+		"1 / 3",
+		"←→↑↓ / 1-9: navigate   Enter: select",
+		"Backspace: back        Esc / ^C: quit",
 	}
 	for _, line := range expectedLines {
 		if !strings.Contains(view, line) {
@@ -49,14 +53,28 @@ func TestDisplay(t *testing.T) {
 	// Simulate navigating down
 	model.cursor = 1
 	view = model.ServiceListView()
-	if !strings.Contains(view, fmt.Sprintf("%s %-5d %-25s", ">", 2, "service2")) {
-		t.Errorf("Expected cursor on service2, got:\n%s", view)
+	expectedLines = []string{
+		"│ 1 │ service1 │",
+		"│ 2 │service2  │",
+		"1 / 3",
+	}
+	for _, line := range expectedLines {
+		if !strings.Contains(view, line) {
+			t.Errorf("Expected line '%s' in view, got:\n%s", line, view)
+		}
 	}
 	// Simulate page change
 	model.page = 1
 	view = model.ServiceListView()
-	if !strings.Contains(view, fmt.Sprintf("%s %-5d %-25s", ">", 2, "service4")) {
-		t.Errorf("Expected cursor on service4 on page 2, got:\n%s", view)
+	expectedLines = []string{
+		"│ 1 │ service3 │",
+		"│ 2 │service4  │",
+		"2 / 3",
+	}
+	for _, line := range expectedLines {
+		if !strings.Contains(view, line) {
+			t.Errorf("Expected line '%s' in view, got:\n%s", line, view)
+		}
 	}
 
 	// Delete the services after test

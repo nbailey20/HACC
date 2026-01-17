@@ -119,12 +119,12 @@ func CursorDown(m model, numItems int) model {
 }
 
 func CursorNumber(m model, n int) model {
-	if n < 0 || n > m.pageSize {
+	if n < 1 || n > m.pageSize {
 		return m
 	}
 	// Consider less-than-full last page
 	if m.page == NumPages(len(m.vault.Services), m.pageSize)-1 {
-		if n >= NumLastPageItems(len(m.vault.Services), m.pageSize) {
+		if n > NumLastPageItems(len(m.vault.Services), m.pageSize) {
 			return m
 		}
 	}

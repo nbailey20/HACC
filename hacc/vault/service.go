@@ -2,6 +2,7 @@ package vault
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 )
 
@@ -65,6 +66,7 @@ func (s *Service) GetUsers(prefix string) []string {
 			users = append(users, username)
 		}
 	}
+	sort.Strings(users)
 	return users
 }
 

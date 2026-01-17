@@ -127,7 +127,6 @@ func listTable(header string, rows [][]string, pageNum int, totalPages int, curs
 	outerBorderStyle := lipgloss.NewStyle().
 		Border(lipgloss.Border{}). // invisible border to align pageText with table // BorderForeground(lipgloss.Color("141")). // light purple
 		Padding(0, 1).
-		MarginLeft(4).
 		Align(lipgloss.Center)
 	pageText := lipgloss.NewStyle().
 		Bold(true).
