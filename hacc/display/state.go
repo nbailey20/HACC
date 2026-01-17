@@ -183,8 +183,7 @@ type WelcomeState struct{}
 
 func (s WelcomeState) Update(m model, e Event) (model, tea.Cmd) {
 	if len(m.vault.Services) == 0 {
-		m.message = "No credentials are stored in the Vault yet! Add one to get started."
-		m.state = &EndState{}
+		m.state = &EmptyState{}
 		return m, nil
 	}
 	// Any key event moves to service list
@@ -194,6 +193,18 @@ func (s WelcomeState) Update(m model, e Event) (model, tea.Cmd) {
 
 // Pressing back from welcome state quits the program
 func (s WelcomeState) Back(m model) (model, tea.Cmd) {
+	return m, tea.Quit
+}
+
+type EndState struct{}
+
+func (s EndState) Update(m model, e Event) (model, tea.Cmd) {
+	return m, tea.Quit
+}
+
+type EmptyState struct{}
+
+func (s EmptyState) Update(m model, e Event) (model, tea.Cmd) {
 	return m, tea.Quit
 }
 
@@ -212,27 +223,6 @@ func (s CredentialState) Back(m model) (model, tea.Cmd) {
 	return m, nil
 }
 
-type MessageState struct{}
-
-func (s MessageState) Update(m model, e Event) (model, tea.Cmd) {
-	switch e.(type) {
-	case BackEvent:
-		return s.Back(m)
-	}
-	return m, nil
-}
-
-func (s MessageState) Back(m model) (model, tea.Cmd) {
-	m.state = &ServiceListState{}
-	return m, nil
-}
-
-type EndState struct{}
-
-func (s EndState) Update(m model, e Event) (model, tea.Cmd) {
-	return m, tea.Quit
-}
-
 type ServiceListState struct{}
 
 func (s ServiceListState) Update(m model, e Event) (model, tea.Cmd) {
@@ -242,7 +232,7 @@ func (s ServiceListState) Update(m model, e Event) (model, tea.Cmd) {
 		len(m.vault.Services),
 		func(m model) (model, tea.Cmd) {
 			if len(m.vault.Services) == 0 {
-				m.message = "No services available to copy."
+				m.state = &EmptyState{}
 				return m, nil
 			}
 			// Get the selected service name
@@ -268,10 +258,6 @@ func (s UsernameListState) Update(m model, e Event) (model, tea.Cmd) {
 		e,
 		len(m.vault.Services[m.serviceName].GetUsers("")),
 		func(m model) (model, tea.Cmd) {
-			if len(m.vault.Services) == 0 {
-				m.message = "No services available to copy."
-				return m, nil
-			}
 			// Get the selected service name
 			service := m.vault.Services[m.serviceName]
 			users := service.GetUsers("")
