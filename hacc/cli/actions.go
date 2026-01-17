@@ -101,7 +101,7 @@ func addRotateCommand(root *cobra.Command, cliCommand *CLICommand) {
 
 	var rotateCmd = &cobra.Command{
 		Use:     "rotate SERVICE",
-		Aliases: []string{"d"},
+		Aliases: []string{"r"},
 		Short:   "rotate a credential for a service",
 		Args:    cobra.ExactArgs(1),
 
@@ -117,19 +117,4 @@ func addRotateCommand(root *cobra.Command, cliCommand *CLICommand) {
 	rotateCmd.Flags().StringVarP(&rotateUsername, "username", "u", "", "Username")
 	rotateCmd.Flags().StringVarP(&rotatePassword, "password", "p", "", "Password")
 	root.AddCommand(rotateCmd)
-}
-
-func addHelpCommand(root *cobra.Command, cliCommand *CLICommand) {
-	var helpCmd = &cobra.Command{
-		Use:     "help SERVICE",
-		Aliases: []string{"d"},
-		Short:   "help a credential for a service",
-		Args:    cobra.ExactArgs(1),
-
-		RunE: func(cmd *cobra.Command, args []string) error {
-			cliCommand.Action = HelpAction{}
-			return nil
-		},
-	}
-	root.AddCommand(helpCmd)
 }

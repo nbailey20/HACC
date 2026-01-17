@@ -10,19 +10,21 @@ import (
 type model struct {
 	vault       vault.Vault
 	state       State
-	action      string
+	initialCmd  tea.Cmd
+	action      cli.CLIAction
 	serviceName string
 	username    string
+	password    string
 	page        int
 	pageSize    int
 	cursor      int
 	showSecret  bool
 	endSuccess  bool
-	// endMessage  string
+	endError    error
 }
 
 func (m model) Init() tea.Cmd {
-	return nil
+	return m.initialCmd
 }
 
 func searchModelState(service string, user string, vault vault.Vault) State {
@@ -41,91 +43,53 @@ func searchModelState(service string, user string, vault vault.Vault) State {
 	return &ServiceListState{}
 }
 
-func NewModel(cmd cli.CLICommand, vault vault.Vault) *model {
+func initialState(cmd cli.CLICommand, vault vault.Vault) State {
 	switch cmd.Action.(type) {
 	case cli.SearchAction:
-		return &model{
-			vault:       vault,
-			state:       searchModelState(cmd.Service, cmd.Username, vault),
-			serviceName: cmd.Service,
-			action:      "search",
-			username:    cmd.Username,
-			page:        0,
-			pageSize:    pageSize,
-			cursor:      0,
-			showSecret:  true,
-		}
+		return searchModelState(cmd.Service, cmd.Username, vault)
 	case cli.AddAction:
-		successResult := true
-		err := vault.Add(cmd.Service, cmd.Username, cmd.Password)
-		// msg := fmt.Sprintf("Successfully saved credential for %s", cmd.Service)
-		if err != nil {
-			successResult = false
-			// msg = fmt.Sprintf("Error saving username %s in service %s: %v\n", cmd.Username, cmd.Service, err)
+		if cmd.Generate {
+			return &ConfirmState{}
 		}
-		return &model{
-			vault:       vault,
-			state:       &EndState{},
-			action:      "add",
-			serviceName: cmd.Service,
-			username:    cmd.Username,
-			page:        0,
-			pageSize:    pageSize,
-			cursor:      0,
-			showSecret:  false,
-			endSuccess:  successResult,
-		}
+		return &EndState{}
 	case cli.DeleteAction:
-		successResult := true
-		err := vault.Delete(cmd.Service, cmd.Username)
-		// msg := fmt.Sprintf("Service %s deleted successfully.", cmd.Service)
-		if err != nil {
-			successResult = false
-			// msg = fmt.Sprintf("Error deleting username %s in service %s: %v\n", cmd.Username, cmd.Service, err)
-		}
-		return &model{
-			vault:       vault,
-			state:       &EndState{},
-			action:      "delete",
-			serviceName: cmd.Service,
-			username:    "", // user no longer exists after deletion
-			page:        0,
-			pageSize:    pageSize,
-			cursor:      0,
-			showSecret:  false,
-			endSuccess:  successResult,
-		}
+		return &EndState{}
 	case cli.RotateAction:
-		successResult := true
-		err := vault.Replace(cmd.Service, cmd.Username, cmd.Password)
-		// msg := fmt.Sprintf("Service %s rotated successfully.", cmd.Service)
-		if err != nil {
-			successResult = false
-			// msg = fmt.Sprintf("Error rotating username %s in service %s: %v\n", cmd.Username, cmd.Service, err)
-		}
-		return &model{
-			vault:       vault,
-			state:       &EndState{},
-			action:      "rotate",
-			serviceName: cmd.Service,
-			username:    cmd.Username,
-			page:        0,
-			pageSize:    pageSize,
-			cursor:      0,
-			endSuccess:  successResult,
-			showSecret:  false,
-		}
+		return &EndState{}
 	default:
-		return &model{
-			vault:       vault,
-			state:       &WelcomeState{},
-			action:      "",
-			serviceName: "",
-			username:    cmd.Username,
-			page:        0,
-			pageSize:    pageSize,
-			cursor:      0,
-			showSecret:  false,
+		return &WelcomeState{}
+	}
+}
+
+func initialCmd(cmd cli.CLICommand, vault vault.Vault) tea.Cmd {
+	switch cmd.Action.(type) {
+	case cli.AddAction:
+		if cmd.Generate {
+			return generatePasswordCmd()
 		}
+		return addCredentialCmd(vault, cmd.Service, cmd.Username, cmd.Password)
+	case cli.DeleteAction:
+		return deleteCredentialCmd(vault, cmd.Service, cmd.Username)
+	case cli.RotateAction:
+		return rotateCredentialCmd(vault, cmd.Service, cmd.Username, cmd.Password)
+	default:
+		return nil
+	}
+}
+
+func NewModel(cmd cli.CLICommand, vault vault.Vault) *model {
+	return &model{
+		vault:       vault,
+		state:       initialState(cmd, vault),
+		serviceName: cmd.Service,
+		initialCmd:  initialCmd(cmd, vault),
+		action:      cmd.Action,
+		username:    cmd.Username,
+		password:    cmd.Password,
+		page:        0,
+		pageSize:    pageSize,
+		cursor:      0,
+		showSecret:  false,
+		endSuccess:  true,
 	}
 }

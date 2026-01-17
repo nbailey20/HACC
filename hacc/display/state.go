@@ -2,6 +2,7 @@ package display
 
 import (
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/nbailey20/hacc/hacc/cli"
 )
 
 type Event interface{}
@@ -17,7 +18,9 @@ type BackEvent struct{}
 type NumberEvent struct {
 	Number int
 }
-type RuneEvent struct{}
+type RuneEvent struct {
+	Rune rune
+}
 
 // //////////////////////////////////////////////////////////////////////////
 // Bubbletea Model main Update method
@@ -46,8 +49,19 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				n := int(msg.Runes[0] - '0')
 				return m.state.Update(m, NumberEvent{Number: n})
 			}
-			return m.state.Update(m, RuneEvent{})
+			return m.state.Update(m, RuneEvent{Rune: msg.Runes[0]})
 		}
+	case PasswordGeneratedMsg:
+		m.password = msg.Password
+	case AddFailedMsg:
+		m.endSuccess = false
+		m.endError = msg.Error
+	case DeleteFailedMsg:
+		m.endSuccess = false
+		m.endError = msg.Error
+	case RotateFailedMsg:
+		m.endSuccess = false
+		m.endError = msg.Error
 	}
 	return m, nil
 }
@@ -199,7 +213,25 @@ func (s WelcomeState) Back(m model) (model, tea.Cmd) {
 type EndState struct{}
 
 func (s EndState) Update(m model, e Event) (model, tea.Cmd) {
-	return m, tea.Quit
+	switch e.(type) {
+	case BackEvent:
+		return s.Back(m)
+	}
+	return m, nil
+}
+
+func (s EndState) Back(m model) (model, tea.Cmd) {
+	m.action = cli.SearchAction{}
+	m.state = &UsernameListState{}
+	// if the last user in a service was just deleted,
+	// update model and go back to the other services
+	if !m.vault.HasService(m.serviceName) {
+		m.serviceName = ""
+		m.username = ""
+		m.password = ""
+		m.state = &ServiceListState{}
+	}
+	return m, nil
 }
 
 type EmptyState struct{}
@@ -221,6 +253,30 @@ func (s CredentialState) Update(m model, e Event) (model, tea.Cmd) {
 func (s CredentialState) Back(m model) (model, tea.Cmd) {
 	m.state = &UsernameListState{}
 	return m, nil
+}
+
+type ConfirmState struct{}
+
+func (s ConfirmState) Update(m model, e Event) (model, tea.Cmd) {
+	switch e.(type) {
+	case EnterEvent:
+		m.state = &EndState{}
+		return m, addCredentialCmd(m.vault, m.serviceName, m.username, m.password)
+	case RuneEvent:
+		if e.(RuneEvent).Rune == 'y' {
+			m.state = &EndState{}
+			return m, addCredentialCmd(m.vault, m.serviceName, m.username, m.password)
+		}
+		if e.(RuneEvent).Rune == 'n' {
+			return m, generatePasswordCmd()
+		}
+		return m, nil
+	case PasswordGeneratedMsg:
+		m.password = e.(PasswordGeneratedMsg).Password
+		return m, nil
+	default:
+		return m, nil
+	}
 }
 
 type ServiceListState struct{}

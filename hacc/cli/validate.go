@@ -48,7 +48,7 @@ var AllowedInputCombinations = map[ActionKind][][]string{
 		// {"username", "password"},
 		// {"username", "generate"},
 		{"service", "username", "password"},
-		// {"service", "username", "generate"},
+		{"service", "username", "generate"},
 	},
 	ActionDelete: {
 		// {},
@@ -68,7 +68,7 @@ var AllowedInputCombinations = map[ActionKind][][]string{
 		// {"username", "password"},
 		// {"username", "generate"},
 		{"service", "username", "password"},
-		// {"service", "username", "generate"},
+		{"service", "username", "generate"},
 	},
 
 	ActionSearch: {

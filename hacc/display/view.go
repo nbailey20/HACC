@@ -8,6 +8,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/lipgloss/table"
 	"github.com/charmbracelet/x/term"
+	"github.com/nbailey20/hacc/hacc/cli"
 )
 
 // Number of items to show per page in lists
@@ -25,6 +26,8 @@ func (m model) View() string {
 		return m.UsernameListView()
 	case *CredentialState:
 		return m.CredentialView()
+	case *ConfirmState:
+		return m.ConfirmView()
 	case *EndState:
 		return m.EndView()
 	case *EmptyState:
@@ -87,11 +90,13 @@ func credBox(service string, content string) string {
 	bottomRight := "┘"
 	horizontal := "─"
 	vertical := "│"
+	space := " "
 
 	titleWidth := lipgloss.Width(service)
-	contentWidth := lipgloss.Width(content)
+	contentWidth := max(lipgloss.Width(content), titleWidth)
 	leftLineWidth := (contentWidth - titleWidth) / 2
 	rightLineWidth := contentWidth - titleWidth - leftLineWidth
+	contentPadding := max(0, (contentWidth-lipgloss.Width(content))/2)
 
 	// build the box
 	topContent := topLeft +
@@ -99,8 +104,14 @@ func credBox(service string, content string) string {
 		service +
 		strings.Repeat(horizontal, rightLineWidth) +
 		topRight
-	middleContent := vertical + content + vertical
-	bottomContent := bottomLeft + strings.Repeat(horizontal, contentWidth) + bottomRight
+	middleContent := vertical +
+		strings.Repeat(space, contentPadding) +
+		content +
+		strings.Repeat(space, contentPadding) +
+		vertical
+	bottomContent := bottomLeft +
+		strings.Repeat(horizontal, contentWidth) +
+		bottomRight
 
 	boxStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("141")) // light purple
 	return boxStyle.Render(topContent + "\n" + middleContent + "\n" + bottomContent)
@@ -125,7 +136,7 @@ func listTable(header string, rows [][]string, pageNum int, totalPages int, curs
 		Foreground(lipgloss.Color("117")). // light blue
 		Padding(0, 1)
 	outerBorderStyle := lipgloss.NewStyle().
-		Border(lipgloss.Border{}). // invisible border to align pageText with table // BorderForeground(lipgloss.Color("141")). // light purple
+		Border(lipgloss.Border{}). // invisible border to align pageText with table
 		Padding(0, 1).
 		Align(lipgloss.Center)
 	pageText := lipgloss.NewStyle().
@@ -183,16 +194,20 @@ func (m model) EndView() string {
 	if !m.endSuccess {
 		result = errorText
 	}
-	switch m.action {
-	case "add":
-		result += "adding username " + m.username + " for " + m.serviceName + ".\n"
-	case "delete":
-		result += "deleting username " + m.username + " for " + m.serviceName + ".\n"
-	case "rotate":
-		result += "rotating username " + m.username + " for " + m.serviceName + ".\n"
+	switch m.action.Kind() {
+	case cli.ActionAdd:
+		result += "adding username " + m.username + " for " + m.serviceName + "."
+	case cli.ActionDelete:
+		result += "deleting username " + m.username + " for " + m.serviceName + "."
+	case cli.ActionRotate:
+		result += "rotating username " + m.username + " for " + m.serviceName + "."
+	}
+
+	if !m.endSuccess {
+		result += fmt.Sprintf(" %v", m.endError)
 	}
 	// we're going to quit after this view is displayed, so no footer instructions
-	return header() + style.Render(result) + "\n"
+	return header() + addFooter(style.Render(result))
 }
 
 func (m model) CredentialView() string {
@@ -200,20 +215,35 @@ func (m model) CredentialView() string {
 		return "Error: service name should not be empty in CredentialView"
 	}
 
-	service := lipgloss.NewStyle().Foreground(lipgloss.Color("185")).Render(" gmail ") // yellow
-	credTextStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("117"))             // light blue
+	service := lipgloss.NewStyle().Foreground(lipgloss.Color("185")).Render(" " + m.serviceName + " ") // yellow
+	credTextStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("117"))                             // light blue
 	user := credTextStyle.Render(m.username)
 	rawPass, err := m.vault.Get(m.serviceName, m.username)
 	pass := credTextStyle.Render(rawPass)
 	if err != nil {
 		pass = credTextStyle.Render(fmt.Sprintf("%v", err))
-		// return fmt.Sprintf("Error retrieving secret: %v", err)
 	}
 	spacer := lipgloss.NewStyle().Foreground(lipgloss.Color("160")).Render(" │ ") //red
 	content := user + spacer + pass
 	paddedContent := lipgloss.NewStyle().Padding(0, 1).Render(content)
 
 	return header() + "\n" + addFooter(credBox(service, paddedContent))
+}
+
+func (m model) ConfirmView() string {
+	footerStyle := lipgloss.NewStyle().
+		Foreground(lipgloss.Color("141")). // light purple
+		Bold(true)
+
+	service := lipgloss.NewStyle().Foreground(lipgloss.Color("185")).Render(" " + m.serviceName + " ") // yellow
+	credTextStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("117"))                             // light blue
+	user := credTextStyle.Render(m.username)
+	pass := credTextStyle.Render(m.password)
+	spacer := lipgloss.NewStyle().Foreground(lipgloss.Color("160")).Render(" │ ") //red
+	content := user + spacer + pass
+	paddedContent := lipgloss.NewStyle().Padding(0, 1).Render(content)
+
+	return header() + credBox(service, paddedContent) + "\n" + footerStyle.Render("Use this password? y/n (default y)")
 }
 
 func (m model) ServiceListView() string {
