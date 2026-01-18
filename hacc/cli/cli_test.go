@@ -130,6 +130,31 @@ func TestEqualStringSets(t *testing.T) {
 	}
 }
 
+func TestParseAddWithFile(t *testing.T) {
+	// Test case 1: hacc add -f backup.json (no service arg)
+	cmd, err := Parse([]string{
+		"add",
+		"-f", "backup.json",
+	}, true)
+	require.NoError(t, err)
+
+	_, ok := cmd.Action.(AddAction)
+	require.True(t, ok)
+	require.Equal(t, "backup.json", cmd.File)
+	require.Equal(t, "", cmd.Service)
+
+	// Test case 2: hacc a -f backup.json (alias)
+	cmd, err = Parse([]string{
+		"a",
+		"-f", "backup.json",
+	}, true)
+	require.NoError(t, err)
+
+	_, ok = cmd.Action.(AddAction)
+	require.True(t, ok)
+	require.Equal(t, "backup.json", cmd.File)
+}
+
 func TestValidateCommand(t *testing.T) {
 	// Test case 1: Valid add input
 	command := CLICommand{

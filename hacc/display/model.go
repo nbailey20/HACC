@@ -56,6 +56,8 @@ func initialState(cmd cli.CLICommand, vault vault.Vault) State {
 		return &EndState{}
 	case cli.RotateAction:
 		return &EndState{}
+	case cli.BackupAction:
+		return &EndState{}
 	default:
 		return &WelcomeState{}
 	}
@@ -64,6 +66,9 @@ func initialState(cmd cli.CLICommand, vault vault.Vault) State {
 func initialCmd(cmd cli.CLICommand, vault vault.Vault) tea.Cmd {
 	switch cmd.Action.(type) {
 	case cli.AddAction:
+		if cmd.File != "" {
+			return addMultiCredentialCmd(vault, cmd.File)
+		}
 		if cmd.Generate {
 			return generatePasswordCmd()
 		}
@@ -72,6 +77,8 @@ func initialCmd(cmd cli.CLICommand, vault vault.Vault) tea.Cmd {
 		return deleteCredentialCmd(vault, cmd.Service, cmd.Username)
 	case cli.RotateAction:
 		return rotateCredentialCmd(vault, cmd.Service, cmd.Username, cmd.Password)
+	case cli.BackupAction:
+		return backupCredentialCmd(vault, cmd.File, cmd.Service, cmd.Username)
 	default:
 		return nil
 	}

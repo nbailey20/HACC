@@ -2,10 +2,12 @@ package display
 
 import (
 	"fmt"
+	"os"
 	"strings"
 	"testing"
 
 	vault "github.com/nbailey20/hacc/hacc/vault"
+	"github.com/stretchr/testify/require"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -95,4 +97,76 @@ func TestDisplay(t *testing.T) {
 	if _, ok := msg.(tea.QuitMsg); !ok {
 		t.Errorf("expected tea.QuitMsg, got %T", msg)
 	}
+}
+
+func TestAddMultiCredential(t *testing.T) {
+	// Create a temporary vault
+	testVault, err := vault.NewVault(nil, "/hackyclient/test/multi/")
+	require.NoError(t, err)
+
+	// Create a temporary JSON file with multiple credentials
+	tmpFile, err := os.CreateTemp("", "backup*.json")
+	require.NoError(t, err)
+	defer os.Remove(tmpFile.Name())
+
+	testData := `{"creds_list":[{"service":"github","username":"user1","password":"pass1"},{"service":"gitlab","username":"user2","password":"pass2"}]}`
+	_, err = tmpFile.WriteString(testData)
+	require.NoError(t, err)
+	tmpFile.Close()
+
+	// Test case 1: Successfully add multiple credentials
+	addMultiCmd := addMultiCredentialCmd(*testVault, tmpFile.Name())
+	msg := addMultiCmd()
+
+	// Should return AddFailedMsg with no error if all succeed
+	failMsg, ok := msg.(AddFailedMsg)
+	require.True(t, ok)
+	require.NoError(t, failMsg.Error)
+
+	// Verify credentials were added
+	cred1, err := testVault.Get("github", "user1")
+	require.NoError(t, err)
+	require.Equal(t, "pass1", cred1)
+
+	cred2, err := testVault.Get("gitlab", "user2")
+	require.NoError(t, err)
+	require.Equal(t, "pass2", cred2)
+
+	// Clean up
+	testVault.Delete("github", "user1")
+	testVault.Delete("gitlab", "user2")
+}
+
+func TestAddMultiCredentialFileNotFound(t *testing.T) {
+	testVault, err := vault.NewVault(nil, "/hackyclient/test/multi/")
+	require.NoError(t, err)
+
+	// Test case: File doesn't exist
+	addMultiCmd := addMultiCredentialCmd(*testVault, "nonexistent.json")
+	msg := addMultiCmd()
+
+	failMsg, ok := msg.(AddFailedMsg)
+	require.True(t, ok)
+	require.Error(t, failMsg.Error)
+}
+
+func TestAddMultiCredentialInvalidJson(t *testing.T) {
+	testVault, err := vault.NewVault(nil, "/hackyclient/test/multi/")
+	require.NoError(t, err)
+
+	// Create a temporary file with invalid JSON
+	tmpFile, err := os.CreateTemp("", "backup*.json")
+	require.NoError(t, err)
+	defer os.Remove(tmpFile.Name())
+
+	tmpFile.WriteString("invalid json {")
+	tmpFile.Close()
+
+	// Test case: Invalid JSON
+	addMultiCmd := addMultiCredentialCmd(*testVault, tmpFile.Name())
+	msg := addMultiCmd()
+
+	failMsg, ok := msg.(AddFailedMsg)
+	require.True(t, ok)
+	require.Error(t, failMsg.Error)
 }

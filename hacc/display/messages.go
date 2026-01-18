@@ -19,3 +19,7 @@ type PasswordGeneratedMsg struct {
 type PasswordGenerationErrorMsg struct {
 	Error error
 }
+
+type BackupErrorMsg struct {
+	Error error
+}
