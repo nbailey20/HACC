@@ -15,3 +15,7 @@ type RotateFailedMsg struct {
 type PasswordGeneratedMsg struct {
 	Password string
 }
+
+type PasswordGenerationErrorMsg struct {
+	Error error
+}

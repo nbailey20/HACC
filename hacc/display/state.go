@@ -62,6 +62,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case RotateFailedMsg:
 		m.endSuccess = false
 		m.endError = msg.Error
+	case PasswordGenerationErrorMsg:
+		m.endSuccess = false
+		m.endError = msg.Error
 	}
 	return m, nil
 }

@@ -199,49 +199,49 @@ func TestAutoCompleteCommand(t *testing.T) {
 	}
 
 	// Test case 1: Exact service match
-	command := CLICommand{Service: "serv1Name"}
+	command := CLICommand{Service: "serv1Name", Action: SearchAction{}}
 	updatedCommand := AutoCompleteCommand(command, vault)
 	if updatedCommand.Service != "serv1Name" {
 		t.Errorf("Expected service to be 'serv1Name', got %v", updatedCommand.Service)
 	}
 
 	// Test case 2: Single partial service match
-	command = CLICommand{Service: "serv1"}
+	command = CLICommand{Service: "serv1", Action: SearchAction{}}
 	updatedCommand = AutoCompleteCommand(command, vault)
 	if updatedCommand.Service != "serv1Name" {
 		t.Errorf("Expected service to be autocompleted to 'serv1Name', got %v", updatedCommand.Service)
 	}
 
 	// Test case 3: Multiple partial service matches
-	command = CLICommand{Service: "serv"}
+	command = CLICommand{Service: "serv", Action: SearchAction{}}
 	updatedCommand = AutoCompleteCommand(command, vault)
 	if updatedCommand.Service != "serv" {
 		t.Errorf("Expected service to remain 'serv' due to multiple matches, got %v", updatedCommand.Service)
 	}
 
 	// Test case 4: No service match
-	command = CLICommand{Service: "unknown"}
+	command = CLICommand{Service: "unknown", Action: SearchAction{}}
 	updatedCommand = AutoCompleteCommand(command, vault)
 	if updatedCommand.Service != "unknown" {
 		t.Errorf("Expected service to remain 'unknown' due to no match, got %v", updatedCommand.Service)
 	}
 
 	// Test case 5: Single partial username match
-	command = CLICommand{Service: "serv2Name", Username: "u"}
+	command = CLICommand{Service: "serv2Name", Username: "u", Action: SearchAction{}}
 	updatedCommand = AutoCompleteCommand(command, vault)
 	if updatedCommand.Username != "user2" {
 		t.Errorf("Expected username to be autocompleted to 'user2', got %v", updatedCommand.Username)
 	}
 
 	// Test case 6: Multiple partial username matches
-	command = CLICommand{Service: "serv1Name", Username: "user1"}
+	command = CLICommand{Service: "serv1Name", Username: "user1", Action: SearchAction{}}
 	updatedCommand = AutoCompleteCommand(command, vault)
 	if updatedCommand.Username != "user1" {
 		t.Errorf("Expected username to remain 'user1' due to multiple matches, got %v", updatedCommand.Username)
 	}
 
 	// Test case 7: No username match
-	command = CLICommand{Service: "serv1Name", Username: "unknown"}
+	command = CLICommand{Service: "serv1Name", Username: "unknown", Action: SearchAction{}}
 	updatedCommand = AutoCompleteCommand(command, vault)
 	if updatedCommand.Username != "unknown" {
 		t.Errorf("Expected username to remain 'unknown' due to no match, got %v", updatedCommand.Username)
