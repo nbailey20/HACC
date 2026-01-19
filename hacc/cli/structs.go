@@ -52,14 +52,18 @@ type HelpAction struct{}
 func (HelpAction) Kind() ActionKind { return ActionHelp }
 
 type CLICommand struct {
-	Action   CLIAction
-	Service  string
-	Username string
-	Password string
-	Generate bool
-	File     string
-	Wipe     bool
-	Export   bool
-	Set      string
-	Show     string
+	Action     CLIAction
+	Service    string
+	Username   string
+	Password   string
+	Generate   bool
+	File       string
+	Wipe       bool
+	Export     bool
+	Set        string
+	Show       string
+	MinSpecial int
+	MinNum     int
+	MinLen     int
+	MaxLen     int
 }

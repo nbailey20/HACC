@@ -11,9 +11,21 @@ type passSubResult struct {
 	password string
 }
 
-func GeneratePassword() string {
-	maxCharSwaps := 5   // Max number of character substitutions in password
-	numWordsInPass := 4 // XKCD-style passwords
+type password struct {
+	numDigit   int
+	numSpecial int
+	value      string
+}
+
+func GeneratePassword(
+	minNum int,
+	minSpecial int,
+	minLen int,
+	maxLen int,
+) string {
+	maxCharSwaps := max(5, minNum+minSpecial+5) // Max number of character substitutions in password
+	numWordsInPass := 4                         // XKCD-style passwords
+	maxAttempts := 5000                         // Try this many times to generate passwords which meet the min/max requirements
 	digitCharMap := map[rune]rune{
 		'b': '6',
 		'e': '3',
@@ -26,14 +38,25 @@ func GeneratePassword() string {
 		'i': '!',
 		's': '$',
 	}
-
-	return randomWordsWithSwaps(
-		numWordsInPass,
-		maxCharSwaps,
-		digitCharMap,
-		specialCharMap,
-	)
-	// Perform random character substitions in given password
+	var result string
+	for range maxAttempts {
+		generated := randomWordsWithSwaps(
+			numWordsInPass,
+			maxCharSwaps,
+			digitCharMap,
+			specialCharMap,
+		)
+		// if the generated password doesn't meet our requirements,
+		// keep trying until we get one that does
+		if generated.numDigit >= minNum &&
+			generated.numSpecial >= minSpecial &&
+			len(generated.value) >= minLen &&
+			len(generated.value) <= maxLen {
+			result = generated.value
+			break
+		}
+	}
+	return result
 }
 
 func randomWordsWithSwaps(
@@ -41,8 +64,9 @@ func randomWordsWithSwaps(
 	maxSwaps int,
 	digitCharMap map[rune]rune,
 	specialCharMap map[rune]rune,
-) string {
+) password {
 	var words []string
+	var result password
 	wordListSize := len(wordList)
 
 	for range numWords {
@@ -57,7 +81,7 @@ func randomWordsWithSwaps(
 		words[idx] = strings.ToUpper(word[:1]) + word[1:]
 	}
 
-	password := strings.Join(words, "")
+	rawPassword := strings.Join(words, "")
 
 	// Swap random # of letters with special/digit chars
 	maxNum := big.NewInt(int64(maxSwaps))
@@ -70,18 +94,22 @@ func randomWordsWithSwaps(
 	numDigitSwaps := int(numDigitSwaps64.Int64())
 	numSpecialSwaps := numCharSwaps - numDigitSwaps
 
-	subResult := subChars(&password, digitCharMap, numDigitSwaps)
+	numSubPassword := subChars(&rawPassword, digitCharMap, numDigitSwaps)
+	result.numDigit = numSubPassword.subsMade
 	// If not enough digit subs available, try to make extra special subs
-	if subResult.subsMade < numDigitSwaps {
-		numSpecialSwaps += numDigitSwaps - subResult.subsMade
+	if numSubPassword.subsMade < numDigitSwaps {
+		numSpecialSwaps += numDigitSwaps - numSubPassword.subsMade
 	}
 
 	// If not enough special subs available, oh well
-	return subChars(
-		&subResult.password,
+	specialSubPassword := subChars(
+		&numSubPassword.password,
 		specialCharMap,
 		numSpecialSwaps,
-	).password
+	)
+	result.numSpecial = specialSubPassword.subsMade
+	result.value = specialSubPassword.password
+	return result
 }
 
 func subChars(

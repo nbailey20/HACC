@@ -46,8 +46,12 @@ func addAddCommand(root *cobra.Command, cliCommand *CLICommand) {
 	var (
 		addUsername string
 		addPassword string
-		addGenerate bool
 		addFile     string
+		addGenerate bool
+		minSpecial  int
+		minNum      int
+		minLen      int
+		maxLen      int
 	)
 
 	addCmd := &cobra.Command{
@@ -69,16 +73,24 @@ func addAddCommand(root *cobra.Command, cliCommand *CLICommand) {
 			cliCommand.Action = AddAction{}
 			cliCommand.Username = addUsername
 			cliCommand.Password = addPassword
-			cliCommand.Generate = addGenerate
 			cliCommand.File = addFile
+			cliCommand.Generate = addGenerate
+			cliCommand.MinSpecial = minSpecial
+			cliCommand.MinNum = minNum
+			cliCommand.MinLen = minLen
+			cliCommand.MaxLen = maxLen
 			return nil
 		},
 	}
 
 	addCmd.Flags().StringVarP(&addUsername, "username", "u", "", "Username")
 	addCmd.Flags().StringVarP(&addPassword, "password", "p", "", "Password")
-	addCmd.Flags().BoolVarP(&addGenerate, "generate", "g", false, "Generate password")
 	addCmd.Flags().StringVarP(&addFile, "file", "f", "", "Backup file name to import")
+	addCmd.Flags().BoolVarP(&addGenerate, "generate", "g", false, "Generate password")
+	addCmd.Flags().IntVarP(&minSpecial, "min-special", "", 0, "Minimum number of special characters required when generating a password")
+	addCmd.Flags().IntVarP(&minNum, "min-num", "", 0, "Minimum number of number characters required when generating a password")
+	addCmd.Flags().IntVarP(&minLen, "min-len", "", 0, "Minimum length of password to generate")
+	addCmd.Flags().IntVarP(&maxLen, "max-len", "", 30, "Maximum length of password to generate")
 	root.AddCommand(addCmd)
 }
 

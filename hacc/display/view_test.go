@@ -118,10 +118,9 @@ func TestAddMultiCredential(t *testing.T) {
 	addMultiCmd := addMultiCredentialCmd(*testVault, tmpFile.Name())
 	msg := addMultiCmd()
 
-	// Should return AddFailedMsg with no error if all succeed
-	failMsg, ok := msg.(AddFailedMsg)
+	// Should return AddSuccessMsg with no error if all succeed
+	_, ok := msg.(AddSuccessMsg)
 	require.True(t, ok)
-	require.NoError(t, failMsg.Error)
 
 	// Verify credentials were added
 	cred1, err := testVault.Get("github", "user1")

@@ -267,7 +267,12 @@ func (s ConfirmState) Update(m model, e Event) (model, tea.Cmd) {
 			return m, addCredentialCmd(m.vault, m.serviceName, m.username, m.password)
 		}
 		if e.(RuneEvent).Rune == 'n' {
-			return m, generatePasswordCmd()
+			return m, generatePasswordCmd(
+				m.minPassDigits,
+				m.minPassSpecials,
+				m.minPassLen,
+				m.maxPassLen,
+			)
 		}
 		return m, nil
 	case PasswordGeneratedMsg:

@@ -8,20 +8,24 @@ import (
 )
 
 type model struct {
-	vault       vault.Vault
-	state       State
-	initialCmd  tea.Cmd
-	action      cli.CLIAction
-	serviceName string
-	username    string
-	password    string
-	page        int
-	pageSize    int
-	cursor      int
-	showSecret  bool
-	endSuccess  bool
-	endMessage  string
-	endError    error
+	vault           vault.Vault
+	state           State
+	initialCmd      tea.Cmd
+	action          cli.CLIAction
+	serviceName     string
+	username        string
+	password        string
+	minPassDigits   int
+	minPassSpecials int
+	minPassLen      int
+	maxPassLen      int
+	page            int
+	pageSize        int
+	cursor          int
+	showSecret      bool
+	endSuccess      bool
+	endMessage      string
+	endError        error
 }
 
 func (m model) Init() tea.Cmd {
@@ -67,34 +71,13 @@ func initialState(cmd cli.CLICommand, vault vault.Vault) State {
 func initialCmd(cmd cli.CLICommand, vault vault.Vault) tea.Cmd {
 	switch cmd.Action.(type) {
 	case cli.AddAction:
-		return addCmd(
-			vault,
-			cmd.Service,
-			cmd.Username,
-			cmd.Password,
-			cmd.Generate,
-			cmd.File,
-		)
+		return addCmd(vault, cmd)
 	case cli.DeleteAction:
-		return deleteCmd(
-			vault,
-			cmd.Service,
-			cmd.Username,
-		)
+		return deleteCmd(vault, cmd)
 	case cli.RotateAction:
-		return rotateCmd(
-			vault,
-			cmd.Service,
-			cmd.Username,
-			cmd.Password,
-		)
+		return rotateCmd(vault, cmd)
 	case cli.BackupAction:
-		return backupCmd(
-			vault,
-			cmd.File,
-			cmd.Service,
-			cmd.Username,
-		)
+		return backupCmd(vault, cmd)
 	default:
 		return nil
 	}

@@ -6,25 +6,24 @@ import (
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/nbailey20/hacc/hacc/cli"
 	"github.com/nbailey20/hacc/hacc/helpers"
 	"github.com/nbailey20/hacc/hacc/vault"
 )
 
-func addCmd(
-	vault vault.Vault,
-	service string,
-	user string,
-	pass string,
-	generate bool,
-	file string,
-) tea.Cmd {
-	if file != "" {
-		return addMultiCredentialCmd(vault, file)
+func addCmd(vault vault.Vault, cmd cli.CLICommand) tea.Cmd {
+	if cmd.File != "" {
+		return addMultiCredentialCmd(vault, cmd.File)
 	}
-	if generate {
-		return generatePasswordCmd()
+	if cmd.Generate {
+		return generatePasswordCmd(
+			cmd.MinNum,
+			cmd.MinSpecial,
+			cmd.MinLen,
+			cmd.MaxLen,
+		)
 	}
-	return addCredentialCmd(vault, service, user, pass)
+	return addCredentialCmd(vault, cmd.Service, cmd.Username, cmd.Password)
 }
 
 func addCredentialCmd(
@@ -56,10 +55,7 @@ func addCredentialCmd(
 	}
 }
 
-func addMultiCredentialCmd(
-	vault vault.Vault,
-	file string,
-) tea.Cmd {
+func addMultiCredentialCmd(vault vault.Vault, file string) tea.Cmd {
 	return func() tea.Msg {
 		data, err := helpers.ReadJsonFile(file)
 		if err != nil {
@@ -112,20 +108,16 @@ func addMultiCredentialCmd(
 	}
 }
 
-func deleteCmd(
-	vault vault.Vault,
-	service string,
-	user string,
-) tea.Cmd {
+func deleteCmd(vault vault.Vault, cmd cli.CLICommand) tea.Cmd {
 	return func() tea.Msg {
-		if err := vault.Delete(service, user); err != nil {
+		if err := vault.Delete(cmd.Service, cmd.Username); err != nil {
 			return DeleteErrorMsg{
 				Error: err,
 				Display: fmt.Sprintf(
 					"%s to delete user %s from service %s.",
 					failed,
-					user,
-					service,
+					cmd.Username,
+					cmd.Service,
 				),
 			}
 		}
@@ -133,29 +125,23 @@ func deleteCmd(
 			Display: fmt.Sprintf(
 				"%s deleted user %s from service %s.",
 				successfully,
-				user,
-				service,
+				cmd.Username,
+				cmd.Service,
 			),
 		}
 	}
 }
 
-func rotateCmd(
-	vault vault.Vault,
-
-	service string,
-	user string,
-	pass string,
-) tea.Cmd {
+func rotateCmd(vault vault.Vault, cmd cli.CLICommand) tea.Cmd {
 	return func() tea.Msg {
-		if err := vault.Replace(service, user, pass); err != nil {
+		if err := vault.Replace(cmd.Service, cmd.Username, cmd.Password); err != nil {
 			return RotateErrorMsg{
 				Error: err,
 				Display: fmt.Sprintf(
 					"%s to rotate user %s in service %s.",
 					failed,
-					user,
-					service,
+					cmd.Username,
+					cmd.Service,
 				),
 			}
 		}
@@ -163,38 +149,33 @@ func rotateCmd(
 			Display: fmt.Sprintf(
 				"%s rotated user %s in service %s.",
 				successfully,
-				user,
-				service,
+				cmd.Username,
+				cmd.Service,
 			),
 		}
 	}
 }
 
-func backupCmd(
-	vault vault.Vault,
-	fileName string,
-	service string,
-	user string,
-) tea.Cmd {
+func backupCmd(vault vault.Vault, cmd cli.CLICommand) tea.Cmd {
 	return func() tea.Msg {
 		var jsonData = map[string][]map[string]string{"creds_list": {}}
 		var display string
 		var backupErr error
 		switch {
-		case user != "" && service != "":
+		case cmd.Username != "" && cmd.Service != "":
 			var serviceJson map[string]string
 			serviceJson, display, backupErr = backupUserCmd(
 				vault,
-				service,
-				user,
+				cmd.Service,
+				cmd.Username,
 			)
 			jsonData["creds_list"] = []map[string]string{serviceJson}
-		case service != "":
+		case cmd.Service != "":
 			var userDisplays []string
 			var userErrors []error
 			jsonData["creds_list"], userDisplays, userErrors = backupServiceCmd(
 				vault,
-				service,
+				cmd.Service,
 			)
 			display = strings.Join(userDisplays, "\n")
 			backupErr = errors.Join(userErrors...)
@@ -208,14 +189,14 @@ func backupCmd(
 			backupErr = errors.Join(serviceErrors...)
 		}
 
-		writeErr := helpers.WriteJsonFile(fileName, jsonData)
+		writeErr := helpers.WriteJsonFile(cmd.File, jsonData)
 		if writeErr != nil {
 			return BackupErrorMsg{
 				Error: writeErr,
 				Display: fmt.Sprintf(
 					"%s to write credentials to file %s.",
 					failed,
-					fileName,
+					cmd.File,
 				),
 			}
 		}
@@ -226,7 +207,7 @@ func backupCmd(
 					"%s\n\n%s to backup one or more credentials to file %s.",
 					display,
 					failed,
-					fileName,
+					cmd.File,
 				),
 			}
 		}
@@ -235,7 +216,7 @@ func backupCmd(
 				"%s\n\n%s completed backup to file %s.",
 				display,
 				successfully,
-				fileName,
+				cmd.File,
 			),
 		}
 
@@ -316,8 +297,20 @@ func backupUserCmd(
 	}, successDisplay, nil
 }
 
-func generatePasswordCmd() tea.Cmd {
+func generatePasswordCmd(
+	minNum int,
+	minSpecial int,
+	minLen int,
+	maxLen int,
+) tea.Cmd {
 	return func() tea.Msg {
-		return PasswordGeneratedMsg{Password: helpers.GeneratePassword()}
+		return PasswordGeneratedMsg{
+			Password: helpers.GeneratePassword(
+				minNum,
+				minSpecial,
+				minLen,
+				maxLen,
+			),
+		}
 	}
 }
