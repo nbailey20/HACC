@@ -268,8 +268,8 @@ func (s ConfirmState) Update(m model, e Event) (model, tea.Cmd) {
 		}
 		if e.(RuneEvent).Rune == 'n' {
 			return m, generatePasswordCmd(
-				m.minPassDigits,
-				m.minPassSpecials,
+				m.digitsInPass,
+				m.specialsInPass,
 				m.minPassLen,
 				m.maxPassLen,
 			)

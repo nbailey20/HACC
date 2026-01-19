@@ -3,14 +3,14 @@ package cli
 import (
 	"fmt"
 	"reflect"
-	"unicode"
+	"strings"
 )
 
 type FlagDef struct {
 	Short string
 	Long  string
 	Help  string
-	Kind  string // "bool" or "string"
+	Kind  string // "bool", "int", or "string"
 }
 
 var SubArgs = []FlagDef{
@@ -23,6 +23,10 @@ var SubArgs = []FlagDef{
 	{Short: "", Long: "export", Help: "Export existing client configuration as encrypted file", Kind: "bool"},
 	{Short: "", Long: "set", Help: "Set client configuration parameter", Kind: "string"},
 	{Short: "", Long: "show", Help: "Show client configuration parameter", Kind: "string"},
+	{Short: "", Long: "min-num", Help: "Minimum number of number characters required when generating a password", Kind: "int"},
+	{Short: "", Long: "min-special", Help: "Minimum number of special characters required when generating a password", Kind: "int"},
+	{Short: "", Long: "min-len", Help: "Minimum length of password to generate", Kind: "int"},
+	{Short: "", Long: "max-len", Help: "Maximum length of password to generate (default 30)", Kind: "int"},
 }
 
 var AllowedInputCombinations = map[ActionKind][][]string{
@@ -33,12 +37,26 @@ var AllowedInputCombinations = map[ActionKind][][]string{
 	ActionEradicate: {
 		// {},
 		// {"wipe"},
-		// {"upgrade"},
 	},
 	ActionAdd: {
 		{"file"},
 		{"service", "username", "password"},
 		{"service", "username", "generate"},
+		{"service", "username", "generate", "min-special"},
+		{"service", "username", "generate", "min-num"},
+		{"service", "username", "generate", "min-len"},
+		{"service", "username", "generate", "max-len"},
+		{"service", "username", "generate", "min-special", "min-num"},
+		{"service", "username", "generate", "min-special", "min-len"},
+		{"service", "username", "generate", "min-special", "max-len"},
+		{"service", "username", "generate", "min-num", "min-len"},
+		{"service", "username", "generate", "min-num", "max-len"},
+		{"service", "username", "generate", "min-len", "max-len"},
+		{"service", "username", "generate", "min-special", "min-num", "min-len"},
+		{"service", "username", "generate", "min-special", "min-num", "max-len"},
+		{"service", "username", "generate", "min-special", "min-len", "max-len"},
+		{"service", "username", "generate", "min-num", "min-len", "max-len"},
+		{"service", "username", "generate", "min-special", "min-num", "min-len", "max-len"},
 	},
 	ActionDelete: {
 		{"service", "username"},
@@ -69,13 +87,22 @@ var AllowedInputCombinations = map[ActionKind][][]string{
 	},
 }
 
-func uppercaseFirst(s string) string {
+// CLI args are lowercase dash-separated, e.g. min-len
+// command struct attributes are CamelCase, convert
+func dashToCamel(s string) string {
 	if s == "" {
-		return ""
+		return s
 	}
-	runes := []rune(s)
-	runes[0] = unicode.ToUpper(runes[0])
-	return string(runes)
+
+	parts := strings.Split(s, "-")
+	for i, p := range parts {
+		if p == "" {
+			continue
+		}
+		parts[i] = strings.ToUpper(p[:1]) + p[1:]
+	}
+
+	return strings.Join(parts, "")
 }
 
 func ValidateCommand(command CLICommand) error {
@@ -92,15 +119,18 @@ func ValidateCommand(command CLICommand) error {
 	// determine which subargs are provided
 	var providedSubargs []string
 	for _, subArg := range SubArgs {
+		v := reflect.ValueOf(command).FieldByName(dashToCamel(subArg.Long))
 		switch subArg.Kind {
 		case "bool":
-			v := reflect.ValueOf(command).FieldByName(uppercaseFirst(subArg.Long))
 			if v.IsValid() && v.Bool() {
 				providedSubargs = append(providedSubargs, subArg.Long)
 			}
 		case "string":
-			v := reflect.ValueOf(command).FieldByName(uppercaseFirst(subArg.Long))
 			if v.IsValid() && v.String() != "" {
+				providedSubargs = append(providedSubargs, subArg.Long)
+			}
+		case "int":
+			if v.IsValid() && v.Int() != 0 {
 				providedSubargs = append(providedSubargs, subArg.Long)
 			}
 		}

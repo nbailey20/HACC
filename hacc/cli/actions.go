@@ -44,14 +44,14 @@ func addSearchCommand(root *cobra.Command, cliCommand *CLICommand) {
 
 func addAddCommand(root *cobra.Command, cliCommand *CLICommand) {
 	var (
-		addUsername string
-		addPassword string
-		addFile     string
-		addGenerate bool
-		minSpecial  int
-		minNum      int
-		minLen      int
-		maxLen      int
+		addUsername    string
+		addPassword    string
+		addFile        string
+		addGenerate    bool
+		digitsInPass   string
+		specialsInPass string
+		minLen         int
+		maxLen         int
 	)
 
 	addCmd := &cobra.Command{
@@ -75,8 +75,8 @@ func addAddCommand(root *cobra.Command, cliCommand *CLICommand) {
 			cliCommand.Password = addPassword
 			cliCommand.File = addFile
 			cliCommand.Generate = addGenerate
-			cliCommand.MinSpecial = minSpecial
-			cliCommand.MinNum = minNum
+			cliCommand.SpecialsInPass = specialsInPass
+			cliCommand.DigitsInPass = digitsInPass
 			cliCommand.MinLen = minLen
 			cliCommand.MaxLen = maxLen
 			return nil
@@ -87,10 +87,10 @@ func addAddCommand(root *cobra.Command, cliCommand *CLICommand) {
 	addCmd.Flags().StringVarP(&addPassword, "password", "p", "", "Password")
 	addCmd.Flags().StringVarP(&addFile, "file", "f", "", "Backup file name to import")
 	addCmd.Flags().BoolVarP(&addGenerate, "generate", "g", false, "Generate password")
-	addCmd.Flags().IntVarP(&minSpecial, "min-special", "", 0, "Minimum number of special characters required when generating a password")
-	addCmd.Flags().IntVarP(&minNum, "min-num", "", 0, "Minimum number of number characters required when generating a password")
+	addCmd.Flags().StringVarP(&specialsInPass, "specials", "", "any", "Digit requirement when generating a password: any|required|forbidden")
+	addCmd.Flags().StringVarP(&digitsInPass, "digits", "", "any", "Special character requirement when generating a password: any|required|forbidden")
 	addCmd.Flags().IntVarP(&minLen, "min-len", "", 0, "Minimum length of password to generate")
-	addCmd.Flags().IntVarP(&maxLen, "max-len", "", 30, "Maximum length of password to generate")
+	addCmd.Flags().IntVarP(&maxLen, "max-len", "", 0, "Maximum length of password to generate")
 	root.AddCommand(addCmd)
 }
 

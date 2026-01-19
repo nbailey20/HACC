@@ -17,8 +17,8 @@ func addCmd(vault vault.Vault, cmd cli.CLICommand) tea.Cmd {
 	}
 	if cmd.Generate {
 		return generatePasswordCmd(
-			cmd.MinNum,
-			cmd.MinSpecial,
+			cmd.DigitsInPass,
+			cmd.SpecialsInPass,
 			cmd.MinLen,
 			cmd.MaxLen,
 		)
@@ -298,16 +298,16 @@ func backupUserCmd(
 }
 
 func generatePasswordCmd(
-	minNum int,
-	minSpecial int,
+	digits string,
+	specials string,
 	minLen int,
 	maxLen int,
 ) tea.Cmd {
 	return func() tea.Msg {
 		return PasswordGeneratedMsg{
 			Password: helpers.GeneratePassword(
-				minNum,
-				minSpecial,
+				digits,
+				specials,
 				minLen,
 				maxLen,
 			),

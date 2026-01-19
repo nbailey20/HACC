@@ -18,14 +18,17 @@ type password struct {
 }
 
 func GeneratePassword(
-	minNum int,
-	minSpecial int,
+	digits string, // any, required, forbidden
+	specials string,
 	minLen int,
 	maxLen int,
 ) string {
-	maxCharSwaps := max(5, minNum+minSpecial+5) // Max number of character substitutions in password
-	numWordsInPass := 4                         // XKCD-style passwords
-	maxAttempts := 5000                         // Try this many times to generate passwords which meet the min/max requirements
+	maxCharSwaps := 5 // Max number of character substitutions in password
+	if maxLen == 0 {  // Default max value from input parsing
+		maxLen = 30
+	}
+	numWordsInPass := 4   // XKCD-style passwords, works best with maxLen >= 11
+	maxAttempts := 100000 // Try this many times to generate passwords which meet the min/max requirements
 	digitCharMap := map[rune]rune{
 		'b': '6',
 		'e': '3',
@@ -38,7 +41,7 @@ func GeneratePassword(
 		'i': '!',
 		's': '$',
 	}
-	var result string
+	result := "Did not find password meeting all requirements, try again."
 	for range maxAttempts {
 		generated := randomWordsWithSwaps(
 			numWordsInPass,
@@ -48,15 +51,27 @@ func GeneratePassword(
 		)
 		// if the generated password doesn't meet our requirements,
 		// keep trying until we get one that does
-		if generated.numDigit >= minNum &&
-			generated.numSpecial >= minSpecial &&
-			len(generated.value) >= minLen &&
-			len(generated.value) <= maxLen {
+		if len(generated.value) >= minLen &&
+			len(generated.value) <= maxLen &&
+			validSwaps(generated.numDigit, digits) &&
+			validSwaps(generated.numSpecial, specials) {
 			result = generated.value
 			break
 		}
 	}
 	return result
+}
+
+func validSwaps(numSwaps int, swapRequirement string) bool {
+	switch swapRequirement {
+	case "any":
+		return true
+	case "required":
+		return numSwaps > 0
+	case "forbidden":
+		return numSwaps == 0
+	}
+	return false
 }
 
 func randomWordsWithSwaps(

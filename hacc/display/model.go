@@ -8,24 +8,24 @@ import (
 )
 
 type model struct {
-	vault           vault.Vault
-	state           State
-	initialCmd      tea.Cmd
-	action          cli.CLIAction
-	serviceName     string
-	username        string
-	password        string
-	minPassDigits   int
-	minPassSpecials int
-	minPassLen      int
-	maxPassLen      int
-	page            int
-	pageSize        int
-	cursor          int
-	showSecret      bool
-	endSuccess      bool
-	endMessage      string
-	endError        error
+	vault          vault.Vault
+	state          State
+	initialCmd     tea.Cmd
+	action         cli.CLIAction
+	serviceName    string
+	username       string
+	password       string
+	digitsInPass   string
+	specialsInPass string
+	minPassLen     int
+	maxPassLen     int
+	page           int
+	pageSize       int
+	cursor         int
+	showSecret     bool
+	endSuccess     bool
+	endMessage     string
+	endError       error
 }
 
 func (m model) Init() tea.Cmd {
@@ -85,16 +85,20 @@ func initialCmd(cmd cli.CLICommand, vault vault.Vault) tea.Cmd {
 
 func NewModel(cmd cli.CLICommand, vault vault.Vault) *model {
 	return &model{
-		vault:       vault,
-		state:       initialState(cmd, vault),
-		serviceName: cmd.Service,
-		initialCmd:  initialCmd(cmd, vault),
-		action:      cmd.Action,
-		username:    cmd.Username,
-		password:    cmd.Password,
-		page:        0,
-		pageSize:    pageSize,
-		cursor:      0,
-		endSuccess:  true,
+		vault:          vault,
+		state:          initialState(cmd, vault),
+		serviceName:    cmd.Service,
+		initialCmd:     initialCmd(cmd, vault),
+		action:         cmd.Action,
+		username:       cmd.Username,
+		password:       cmd.Password,
+		digitsInPass:   cmd.DigitsInPass,
+		specialsInPass: cmd.SpecialsInPass,
+		minPassLen:     cmd.MinLen,
+		maxPassLen:     cmd.MaxLen,
+		page:           0,
+		pageSize:       pageSize,
+		cursor:         0,
+		endSuccess:     true,
 	}
 }
