@@ -51,20 +51,16 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			return m.state.Update(m, RuneEvent{Rune: msg.Runes[0]})
 		}
+	case ErrorMsg:
+		m.endSuccess = false
+		m.endError = msg.ErrorValue()
+		m.endMessage = msg.DisplayValue()
+	case SuccessMsg:
+		m.endSuccess = true
+		m.endError = nil
+		m.endMessage = msg.DisplayValue()
 	case PasswordGeneratedMsg:
 		m.password = msg.Password
-	case AddFailedMsg:
-		m.endSuccess = false
-		m.endError = msg.Error
-	case DeleteFailedMsg:
-		m.endSuccess = false
-		m.endError = msg.Error
-	case RotateFailedMsg:
-		m.endSuccess = false
-		m.endError = msg.Error
-	case PasswordGenerationErrorMsg:
-		m.endSuccess = false
-		m.endError = msg.Error
 	}
 	return m, nil
 }

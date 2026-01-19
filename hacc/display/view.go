@@ -8,7 +8,6 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/lipgloss/table"
 	"github.com/charmbracelet/x/term"
-	"github.com/nbailey20/hacc/hacc/cli"
 )
 
 // Number of items to show per page in lists
@@ -182,29 +181,12 @@ func (m model) EndView() string {
 	style := lipgloss.NewStyle().
 		Border(lipgloss.RoundedBorder()).
 		BorderForeground(lipgloss.Color("141")). // light purple
-		Padding(0, 0)
-	successText := lipgloss.NewStyle().
-		Foreground(lipgloss.Color("42")).
-		Render("Success ")
-	errorText := lipgloss.NewStyle().
-		Foreground(lipgloss.Color("196")).
-		Render("Error ")
+		Padding(0, 0).
+		Align(lipgloss.Left)
 
-	result := successText
+	result := m.endMessage
 	if !m.endSuccess {
-		result = errorText
-	}
-	switch m.action.Kind() {
-	case cli.ActionAdd:
-		result += "adding username " + m.username + " for " + m.serviceName + "."
-	case cli.ActionDelete:
-		result += "deleting username " + m.username + " for " + m.serviceName + "."
-	case cli.ActionRotate:
-		result += "rotating username " + m.username + " for " + m.serviceName + "."
-	}
-
-	if !m.endSuccess {
-		result += fmt.Sprintf(" %v", m.endError)
+		result += fmt.Sprintf("\nError: %v", m.endError)
 	}
 	// we're going to quit after this view is displayed, so no footer instructions
 	return header() + addFooter(style.Render(result))

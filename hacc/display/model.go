@@ -20,6 +20,7 @@ type model struct {
 	cursor      int
 	showSecret  bool
 	endSuccess  bool
+	endMessage  string
 	endError    error
 }
 
@@ -66,19 +67,34 @@ func initialState(cmd cli.CLICommand, vault vault.Vault) State {
 func initialCmd(cmd cli.CLICommand, vault vault.Vault) tea.Cmd {
 	switch cmd.Action.(type) {
 	case cli.AddAction:
-		if cmd.File != "" {
-			return addMultiCredentialCmd(vault, cmd.File)
-		}
-		if cmd.Generate {
-			return generatePasswordCmd()
-		}
-		return addCredentialCmd(vault, cmd.Service, cmd.Username, cmd.Password)
+		return addCmd(
+			vault,
+			cmd.Service,
+			cmd.Username,
+			cmd.Password,
+			cmd.Generate,
+			cmd.File,
+		)
 	case cli.DeleteAction:
-		return deleteCredentialCmd(vault, cmd.Service, cmd.Username)
+		return deleteCmd(
+			vault,
+			cmd.Service,
+			cmd.Username,
+		)
 	case cli.RotateAction:
-		return rotateCredentialCmd(vault, cmd.Service, cmd.Username, cmd.Password)
+		return rotateCmd(
+			vault,
+			cmd.Service,
+			cmd.Username,
+			cmd.Password,
+		)
 	case cli.BackupAction:
-		return backupCredentialCmd(vault, cmd.File, cmd.Service, cmd.Username)
+		return backupCmd(
+			vault,
+			cmd.File,
+			cmd.Service,
+			cmd.Username,
+		)
 	default:
 		return nil
 	}
@@ -96,7 +112,6 @@ func NewModel(cmd cli.CLICommand, vault vault.Vault) *model {
 		page:        0,
 		pageSize:    pageSize,
 		cursor:      0,
-		showSecret:  false,
 		endSuccess:  true,
 	}
 }
