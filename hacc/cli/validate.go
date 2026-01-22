@@ -87,24 +87,6 @@ var AllowedInputCombinations = map[ActionKind][][]string{
 	},
 }
 
-// CLI args are lowercase dash-separated, e.g. min-len
-// command struct attributes are CamelCase, convert
-func dashToCamel(s string) string {
-	if s == "" {
-		return s
-	}
-
-	parts := strings.Split(s, "-")
-	for i, p := range parts {
-		if p == "" {
-			continue
-		}
-		parts[i] = strings.ToUpper(p[:1]) + p[1:]
-	}
-
-	return strings.Join(parts, "")
-}
-
 func ValidateCommand(command CLICommand) error {
 	// ensure a valid action is specified
 	if command.Action == nil {
@@ -148,6 +130,24 @@ func ValidateCommand(command CLICommand) error {
 		return fmt.Errorf("Invalid combination of flags: %v", providedSubargs)
 	}
 	return nil
+}
+
+// CLI args are lowercase dash-separated, e.g. min-len
+// command struct attributes are CamelCase, convert
+func dashToCamel(s string) string {
+	if s == "" {
+		return s
+	}
+
+	parts := strings.Split(s, "-")
+	for i, p := range parts {
+		if p == "" {
+			continue
+		}
+		parts[i] = strings.ToUpper(p[:1]) + p[1:]
+	}
+
+	return strings.Join(parts, "")
 }
 
 // Helper function to compare two string slices as sets (ignoring order)

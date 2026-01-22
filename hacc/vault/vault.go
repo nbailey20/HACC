@@ -5,21 +5,28 @@ import (
 	"sort"
 	"strings"
 	"sync"
+
+	"github.com/nbailey20/hacc/hacc/config"
 )
 
 type Vault struct {
-	Services map[string]*Service
-	Path     string
+	Services map[string]*service
+	path     string
+	keyId    string
+	client   *ssmClient
 }
 
 // If no services provided, load all existing services from backend
-func NewVault(services map[string]*Service, path string) (*Vault, error) {
+func NewVault(services map[string]*service, cfg config.AWSConfig) (*Vault, error) {
+	client := NewSsmClient(cfg.Profile)
 	vault := &Vault{
 		Services: services,
-		Path:     path,
+		path:     cfg.ParamPath,
+		keyId:    cfg.KmsId,
+		client:   client,
 	}
 	if services == nil {
-		vault.Services = make(map[string]*Service)
+		vault.Services = make(map[string]*service)
 		// load existing services from backend in-place
 		err := vault.FindServices()
 		if err != nil {
@@ -32,7 +39,13 @@ func NewVault(services map[string]*Service, path string) (*Vault, error) {
 func (v *Vault) Add(serviceName string, username string, value string) error {
 	_, exists := v.Services[serviceName]
 	if !exists {
-		service, err := NewService(serviceName, map[string]string{username: value}, v.Path)
+		service, err := NewService(
+			serviceName,
+			map[string]string{username: value},
+			v.path,
+			v.keyId,
+			v.client,
+		)
 		if err != nil {
 			return err
 		}
@@ -87,10 +100,9 @@ func (v *Vault) ListServices(prefix string) []string {
 }
 
 func (v *Vault) FindServices() error {
-	ssmClient := NewSsmClient()
 	// returns parameters with encrypted values
 	// parameters are of the form /path/serviceName/username
-	parameters, err := ssmClient.GetAllParametersByPath(v.Path)
+	parameters, err := v.client.GetAllParametersByPath(v.path)
 	if err != nil {
 		return err
 	}
@@ -98,7 +110,7 @@ func (v *Vault) FindServices() error {
 	// extract unique service names from parameters
 	serviceNames := make([]string, 0)
 	for name := range parameters {
-		trimmed := strings.TrimPrefix(name, v.Path)
+		trimmed := strings.TrimPrefix(name, v.path)
 		parts := strings.SplitN(trimmed, "/", 2)
 		if len(parts) == 2 {
 			serviceNames = append(serviceNames, parts[0])
@@ -117,7 +129,9 @@ func (v *Vault) FindServices() error {
 			service, err := NewService(
 				serviceName,
 				map[string]string{}, // leave empty to pull from backend, don't overwrite with encrypted value
-				v.Path,
+				v.path,
+				v.keyId,
+				v.client,
 			)
 			if err != nil {
 				errors <- err

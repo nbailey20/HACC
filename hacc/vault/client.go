@@ -12,19 +12,23 @@ import (
 )
 
 type ssmClient struct {
-	Ssm *ssm.Client
+	ssm *ssm.Client
 }
 
-func NewSsmClient() *ssmClient {
-	cfg, err := config.LoadDefaultConfig(context.TODO())
-	if err != nil {
-		log.Fatalf("failed to load AWS config, %v", err)
+func NewSsmClient(profile string) *ssmClient {
+	opts := []func(*config.LoadOptions) error{}
+	if profile != "" {
+		opts = append(opts, config.WithSharedConfigProfile(profile))
 	}
-	return &ssmClient{Ssm: ssm.NewFromConfig(cfg)}
+	cfg, err := config.LoadDefaultConfig(context.TODO(), opts...)
+	if err != nil {
+		log.Fatalf("failed to load AWS config: %v", err)
+	}
+	return &ssmClient{ssm: ssm.NewFromConfig(cfg)}
 }
 
 func (c *ssmClient) GetParameter(name string) (string, error) {
-	paramOutput, err := c.Ssm.GetParameter(context.TODO(), &ssm.GetParameterInput{
+	paramOutput, err := c.ssm.GetParameter(context.TODO(), &ssm.GetParameterInput{
 		Name:           aws.String(name),
 		WithDecryption: aws.Bool(true), // Use aws.Bool to create a *bool
 	})
@@ -34,13 +38,17 @@ func (c *ssmClient) GetParameter(name string) (string, error) {
 	return *paramOutput.Parameter.Value, nil
 }
 
-func (c *ssmClient) PutParameter(name string, value string) error {
-	_, err := c.Ssm.PutParameter(context.TODO(), &ssm.PutParameterInput{
+func (c *ssmClient) PutParameter(name string, value string, key_id string) error {
+	input := ssm.PutParameterInput{
 		Name:      aws.String(name),
 		Value:     aws.String(value),
 		Type:      "SecureString",
 		Overwrite: aws.Bool(true),
-	})
+	}
+	if key_id != "" {
+		input.KeyId = aws.String(key_id)
+	}
+	_, err := c.ssm.PutParameter(context.TODO(), &input)
 	if err != nil {
 		log.Fatalf("failed to put parameter, %v", err)
 	}
@@ -48,7 +56,7 @@ func (c *ssmClient) PutParameter(name string, value string) error {
 }
 
 func (c *ssmClient) DeleteParameter(name string) error {
-	_, err := c.Ssm.DeleteParameter(context.TODO(), &ssm.DeleteParameterInput{
+	_, err := c.ssm.DeleteParameter(context.TODO(), &ssm.DeleteParameterInput{
 		Name: aws.String(name),
 	})
 	if err != nil {
@@ -64,7 +72,7 @@ func (c *ssmClient) DeleteParameter(name string) error {
 
 func (c *ssmClient) GetAllParametersByPath(path string) (map[string]string, error) {
 	params := make(map[string]string)
-	paginator := ssm.NewGetParametersByPathPaginator(c.Ssm, &ssm.GetParametersByPathInput{
+	paginator := ssm.NewGetParametersByPathPaginator(c.ssm, &ssm.GetParametersByPathInput{
 		Path:      aws.String(path),
 		Recursive: aws.Bool(true),
 	})

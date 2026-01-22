@@ -1,0 +1,15 @@
+## Copy this file to ~/.hacc/config.yaml before running program!
+
+aws:
+  profile: hacc-client   # AWS CLI profile name to use for all Vault operations
+  kms_id: hacc-key       # KMS key ID for Vault
+  param_path: hacc-vault # SSM Parameter Store path where credentials will be kept (the vault itself)
+
+security:
+  create_scp: false  # Boolean to indicate whether optional SCP should be created to further lock down Vault account
+  scp_name: hacc-scp # Organizational SCP name that locks down Vault so only client can access
+  member_role: ""    # Cross account role for member (vault) account accessible via mgmt account creds
+
+client:
+  check_for_upgrades: false   # Boolean to indicate whether client should automatically check for new versions
+  cleanup_old_versions: false # Boolean to indicate whether previous client versions should be removed

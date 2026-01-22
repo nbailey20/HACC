@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/nbailey20/hacc/hacc/config"
 	vault "github.com/nbailey20/hacc/hacc/vault"
 	"github.com/stretchr/testify/require"
 
@@ -13,7 +14,10 @@ import (
 )
 
 func TestDisplay(t *testing.T) {
-	testVault, err := vault.NewVault(nil, "/hackyclient/test/display")
+	cfg := config.AWSConfig{
+		ParamPath: "/hackyclient/test/multi/",
+	}
+	testVault, err := vault.NewVault(nil, cfg)
 	if err != nil {
 		t.Fatalf("Error creating vault: %v", err)
 	}
@@ -100,8 +104,11 @@ func TestDisplay(t *testing.T) {
 }
 
 func TestAddMultiCredential(t *testing.T) {
+	cfg := config.AWSConfig{
+		ParamPath: "/hackyclient/test/multi/",
+	}
 	// Create a temporary vault
-	testVault, err := vault.NewVault(nil, "/hackyclient/test/multi/")
+	testVault, err := vault.NewVault(nil, cfg)
 	require.NoError(t, err)
 
 	// Create a temporary JSON file with multiple credentials
@@ -137,7 +144,10 @@ func TestAddMultiCredential(t *testing.T) {
 }
 
 func TestAddMultiCredentialFileNotFound(t *testing.T) {
-	testVault, err := vault.NewVault(nil, "/hackyclient/test/multi/")
+	cfg := config.AWSConfig{
+		ParamPath: "/hackyclient/test/multi/",
+	}
+	testVault, err := vault.NewVault(nil, cfg)
 	require.NoError(t, err)
 
 	// Test case: File doesn't exist
@@ -150,7 +160,10 @@ func TestAddMultiCredentialFileNotFound(t *testing.T) {
 }
 
 func TestAddMultiCredentialInvalidJson(t *testing.T) {
-	testVault, err := vault.NewVault(nil, "/hackyclient/test/multi/")
+	cfg := config.AWSConfig{
+		ParamPath: "/hackyclient/test/multi/",
+	}
+	testVault, err := vault.NewVault(nil, cfg)
 	require.NoError(t, err)
 
 	// Create a temporary file with invalid JSON

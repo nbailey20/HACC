@@ -4,6 +4,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/nbailey20/hacc/hacc/config"
 	vault "github.com/nbailey20/hacc/hacc/vault"
 	"github.com/stretchr/testify/require"
 )
@@ -205,7 +206,10 @@ func TestValidateCommand(t *testing.T) {
 }
 
 func TestAutoCompleteCommand(t *testing.T) {
-	vault, err := vault.NewVault(nil, "/hackyclient/test/")
+	cfg := config.AWSConfig{
+		ParamPath: "/hackyclient/test/",
+	}
+	vault, err := vault.NewVault(nil, cfg)
 	if err != nil {
 		t.Fatalf("Error creating vault: %v", err)
 	}

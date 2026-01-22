@@ -3,11 +3,14 @@ package vault
 import (
 	"testing"
 	"time"
+
+	"github.com/nbailey20/hacc/hacc/config"
 )
 
 func TestState(t *testing.T) {
 	path := "/hackyclient/test/"
-	s, err := NewState("testName", "initialVal", path)
+	client := NewSsmClient("")
+	s, err := NewCredential("testName", "initialVal", path, "", client)
 	if err != nil {
 		t.Fatalf("Error creating state: %v", err)
 	}
@@ -37,7 +40,7 @@ func TestState(t *testing.T) {
 		t.Errorf("Error saving state: %v", err)
 	}
 
-	s2, err := NewState("testName", "", path)
+	s2, err := NewCredential("testName", "", path, "", client)
 	if err != nil {
 		t.Fatalf("Error creating state: %v", err)
 	}
@@ -58,7 +61,8 @@ func TestState(t *testing.T) {
 
 func TestService(t *testing.T) {
 	path := "/hackytest/service/"
-	svc, err := NewService("testService", map[string]string{"testUser": "initialVal"}, path)
+	client := NewSsmClient("")
+	svc, err := NewService("testService", map[string]string{"testUser": "initialVal"}, path, "", client)
 	if err != nil {
 		t.Fatalf("Error creating service: %v", err)
 	}
@@ -100,7 +104,7 @@ func TestService(t *testing.T) {
 	}
 	time.Sleep(2 * time.Second) // wait for eventual consistency
 
-	svc2, err := NewService("testService", map[string]string{}, path)
+	svc2, err := NewService("testService", map[string]string{}, path, "", client)
 	if err != nil {
 		t.Fatalf("Error creating service: %v", err)
 	}
@@ -135,7 +139,10 @@ func TestService(t *testing.T) {
 }
 
 func TestVault(t *testing.T) {
-	vault, err := NewVault(nil, "/hackyclient/test/")
+	cfg := config.AWSConfig{
+		ParamPath: "/hackyclient/test/",
+	}
+	vault, err := NewVault(nil, cfg)
 	if err != nil {
 		t.Fatalf("Error creating vault: %v", err)
 	}
@@ -191,7 +198,7 @@ func TestVault(t *testing.T) {
 	}
 	time.Sleep(2 * time.Second) // wait for eventual consistency
 
-	vault2, err2 := NewVault(nil, "/hackyclient/test/")
+	vault2, err2 := NewVault(nil, cfg)
 	if err2 != nil {
 		t.Fatalf("Error creating vault2: %v", err2)
 	}
@@ -205,7 +212,7 @@ func TestVault(t *testing.T) {
 		t.Fatalf("Error deleting service2: %v", err)
 	}
 	time.Sleep(3 * time.Second) // wait for eventual consistency
-	vault3, err3 := NewVault(nil, "/hackyclient/test/")
+	vault3, err3 := NewVault(nil, cfg)
 	if err3 != nil {
 		t.Fatalf("Error creating vault3: %v", err3)
 	}
