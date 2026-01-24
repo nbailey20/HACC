@@ -31,6 +31,7 @@ func NewService(
 			numUsers:    0,
 			path:        path,
 			kms_id:      kms_id,
+			client:      client,
 		}
 		err := svc.FindUsers()
 		if err != nil {
@@ -58,6 +59,7 @@ func NewService(
 		numUsers:    len(credentials),
 		path:        path,
 		kms_id:      kms_id,
+		client:      client,
 	}, nil
 }
 

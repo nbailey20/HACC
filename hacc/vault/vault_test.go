@@ -1,13 +1,14 @@
 package vault
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
 	"github.com/nbailey20/hacc/hacc/config"
 )
 
-func TestState(t *testing.T) {
+func TestCredential(t *testing.T) {
 	path := "/hackyclient/test/"
 	client := NewSsmClient("")
 	s, err := NewCredential("testName", "initialVal", path, "", client)
@@ -66,6 +67,7 @@ func TestService(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Error creating service: %v", err)
 	}
+
 	users := svc.GetUsers("")
 	if len(users) != 1 || users[0] != "testUser" {
 		t.Errorf("Expected users ['testUser'], got %v", users)
@@ -82,7 +84,6 @@ func TestService(t *testing.T) {
 	if !svc.HasUser("bob") {
 		t.Errorf("Expected user 'bob' to be added")
 	}
-
 	value, err := svc.GetValue("testUser")
 	if err != nil {
 		t.Errorf("Error getting value: %v", err)
@@ -108,6 +109,7 @@ func TestService(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Error creating service: %v", err)
 	}
+	fmt.Println("made it here")
 	value, err = svc2.GetValue("testUser")
 	if err != nil {
 		t.Errorf("Error getting value: %v", err)

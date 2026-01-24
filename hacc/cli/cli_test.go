@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -208,16 +209,19 @@ func TestValidateCommand(t *testing.T) {
 func TestAutoCompleteCommand(t *testing.T) {
 	cfg := config.AWSConfig{
 		ParamPath: "/hackyclient/test/",
+		KmsId:     "",
 	}
 	vault, err := vault.NewVault(nil, cfg)
 	if err != nil {
 		t.Fatalf("Error creating vault: %v", err)
 	}
+
 	// Prepopulate vault with services
 	err = vault.Add("serv1Name", "user1", "value1")
 	if err != nil {
 		t.Fatalf("Error adding service1: %v", err)
 	}
+	fmt.Println("lemme know when fixed")
 	err = vault.Add("serv1Name", "user1a", "value1a")
 	if err != nil {
 		t.Fatalf("Error adding 2nd user to service1: %v", err)

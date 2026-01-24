@@ -10,8 +10,6 @@ import (
 	vault "github.com/nbailey20/hacc/hacc/vault"
 )
 
-var ssmPath = "/hackyclient/data/"
-
 func main() {
 	// Determine config.yaml location
 	path, err := config.GetPath()
@@ -38,7 +36,7 @@ func main() {
 		return
 	}
 
-	// Validate raw command into final CLI command
+	// Validate CLI command
 	err = cli.ValidateCommand(command)
 	if err != nil {
 		// If we received a help command for usage, we're done

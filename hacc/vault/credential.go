@@ -1,7 +1,5 @@
 package vault
 
-import "fmt"
-
 type credential struct {
 	name   string
 	value  string
@@ -70,7 +68,6 @@ func (c *credential) Save() error {
 	if err == nil {
 		c.saved = true
 	}
-	fmt.Println("heya")
 	return err
 }
 
