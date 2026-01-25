@@ -8,7 +8,7 @@ import (
 )
 
 type model struct {
-	vault          vault.Vault
+	vault          *vault.Vault
 	state          State
 	initialCmd     tea.Cmd
 	action         cli.CLIAction
@@ -32,7 +32,7 @@ func (m model) Init() tea.Cmd {
 	return m.initialCmd
 }
 
-func searchModelState(service string, user string, vault vault.Vault) State {
+func searchModelState(service string, user string, vault *vault.Vault) State {
 	// determines starting state for search commands
 	// if we already have enough info from CLI/autocompletion,
 	// jump straight to credential view
@@ -48,7 +48,7 @@ func searchModelState(service string, user string, vault vault.Vault) State {
 	return &ServiceListState{}
 }
 
-func initialState(cmd cli.CLICommand, vault vault.Vault) State {
+func initialState(cmd cli.CLICommand, vault *vault.Vault) State {
 	switch cmd.Action.(type) {
 	case cli.SearchAction:
 		return searchModelState(cmd.Service, cmd.Username, vault)
@@ -68,7 +68,7 @@ func initialState(cmd cli.CLICommand, vault vault.Vault) State {
 	}
 }
 
-func initialCmd(cmd cli.CLICommand, vault vault.Vault) tea.Cmd {
+func initialCmd(cmd cli.CLICommand, vault *vault.Vault) tea.Cmd {
 	switch cmd.Action.(type) {
 	case cli.SearchAction:
 		state := initialState(cmd, vault)
@@ -89,7 +89,7 @@ func initialCmd(cmd cli.CLICommand, vault vault.Vault) tea.Cmd {
 	}
 }
 
-func NewModel(cmd cli.CLICommand, vault vault.Vault) *model {
+func NewModel(cmd cli.CLICommand, vault *vault.Vault) *model {
 	return &model{
 		vault:          vault,
 		state:          initialState(cmd, vault),

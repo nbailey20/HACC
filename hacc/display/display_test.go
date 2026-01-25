@@ -20,7 +20,7 @@ func TestDisplay(t *testing.T) {
 	}
 
 	model := model{
-		vault:    *testVault,
+		vault:    testVault,
 		pageSize: 2,
 		state:    &ServiceListState{},
 	}

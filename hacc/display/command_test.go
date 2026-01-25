@@ -29,7 +29,7 @@ func TestAddMultiCredential(t *testing.T) {
 	tmpFile.Close()
 
 	// Test case 1: Successfully add multiple credentials
-	addMultiCmd := addMultiCredentialCmd(*testVault, tmpFile.Name())
+	addMultiCmd := addMultiCredentialCmd(testVault, tmpFile.Name())
 	msg := addMultiCmd()
 
 	// Should return AddSuccessMsg with no error if all succeed
@@ -58,7 +58,7 @@ func TestAddMultiCredentialFileNotFound(t *testing.T) {
 	require.NoError(t, err)
 
 	// Test case: File doesn't exist
-	addMultiCmd := addMultiCredentialCmd(*testVault, "nonexistent.json")
+	addMultiCmd := addMultiCredentialCmd(testVault, "nonexistent.json")
 	msg := addMultiCmd()
 
 	failMsg, ok := msg.(AddFailedMsg)
@@ -82,7 +82,7 @@ func TestAddMultiCredentialInvalidJson(t *testing.T) {
 	tmpFile.Close()
 
 	// Test case: Invalid JSON
-	addMultiCmd := addMultiCredentialCmd(*testVault, tmpFile.Name())
+	addMultiCmd := addMultiCredentialCmd(testVault, tmpFile.Name())
 	msg := addMultiCmd()
 
 	failMsg, ok := msg.(AddFailedMsg)

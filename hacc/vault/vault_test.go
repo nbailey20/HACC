@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/nbailey20/hacc/hacc/config"
+	"github.com/nbailey20/hacc/hacc/helpers"
 )
 
 func TestCredential(t *testing.T) {
@@ -109,7 +110,6 @@ func TestService(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Error creating service: %v", err)
 	}
-	fmt.Println("made it here")
 	value, err = svc2.GetValue("testUser")
 	if err != nil {
 		t.Errorf("Error getting value: %v", err)
@@ -230,5 +230,58 @@ func TestVault(t *testing.T) {
 	value5 := vault3.ListServices("")
 	if len(value5) != 0 {
 		t.Errorf("Expected 0 services, got %d", len(value5))
+	}
+}
+
+func TestVaultMultiAdd(t *testing.T) {
+	cfg := config.AWSConfig{
+		ParamPath: "/hackyclient/test/",
+	}
+	vault, err := NewVault(nil, cfg)
+	if err != nil {
+		t.Fatalf("Error creating vault: %v", err)
+	}
+	var creds []helpers.FileCred
+	for i := range 100 {
+		creds = append(
+			creds,
+			helpers.FileCred{
+				Username: fmt.Sprintf("bob%d", i),
+				Password: fmt.Sprintf("bobpass%d", i),
+				Service:  fmt.Sprintf("bobserv%d", i),
+			},
+		)
+	}
+	results := vault.AddMulti(creds)
+	for _, r := range results {
+		if !r.Success {
+			t.Errorf("Expected success = True adding multiple services, got false")
+		}
+		if r.Err != nil {
+			t.Errorf("Expected error = nil adding multiple services, got %v", r.Err)
+		}
+	}
+	for _, c := range creds {
+		if !vault.HasService(c.Service) {
+			t.Errorf("Expected service %s to be in Vault", c.Service)
+		}
+		p, err := vault.Get(c.Service, c.Username)
+		if err != nil {
+			t.Errorf("Expected no error retrieving pass for %s/%s", c.Service, c.Username)
+		}
+		if p != c.Password {
+			t.Errorf("Expected password %s for %s/%s", c.Password, c.Service, c.Username)
+		}
+	}
+
+	time.Sleep(2 * time.Second) // wait for eventual consistency
+	for i := range creds {
+		err := vault.Delete(
+			fmt.Sprintf("bobserv%d", i),
+			fmt.Sprintf("bob%d", i),
+		)
+		if err != nil {
+			t.Errorf("Expected no error cleaning up credentials from Vault")
+		}
 	}
 }

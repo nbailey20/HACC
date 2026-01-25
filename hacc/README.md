@@ -1,4 +1,3 @@
 ## Todo
 
-* parallelize bulk operations, add -f  / backup
-* remove computation / backend calls from views
+Add performance tests for backing up lots of credentials to ensure concurrency is handled well.

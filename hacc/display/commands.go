@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"sync"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"golang.design/x/clipboard"
@@ -13,7 +14,8 @@ import (
 	"github.com/nbailey20/hacc/hacc/vault"
 )
 
-func addCmd(vault vault.Vault, cmd cli.CLICommand) tea.Cmd {
+// main add cmd invoked as initial cmd or state change
+func addCmd(vault *vault.Vault, cmd cli.CLICommand) tea.Cmd {
 	if cmd.File != "" {
 		return addMultiCredentialCmd(vault, cmd.File)
 	}
@@ -29,7 +31,7 @@ func addCmd(vault vault.Vault, cmd cli.CLICommand) tea.Cmd {
 }
 
 func addCredentialCmd(
-	vault vault.Vault,
+	vault *vault.Vault,
 	service string,
 	user string,
 	pass string,
@@ -57,9 +59,9 @@ func addCredentialCmd(
 	}
 }
 
-func addMultiCredentialCmd(vault vault.Vault, file string) tea.Cmd {
+func addMultiCredentialCmd(vault *vault.Vault, file string) tea.Cmd {
 	return func() tea.Msg {
-		data, err := helpers.ReadJsonFile(file)
+		fileCreds, err := helpers.ReadCredsFile(file)
 		if err != nil {
 			return AddFailedMsg{
 				Error: err,
@@ -70,47 +72,44 @@ func addMultiCredentialCmd(vault vault.Vault, file string) tea.Cmd {
 				),
 			}
 		}
-		creds := data["creds_list"]
-		var addErrors []error
-		var addSuccesses []string
-		for _, cred := range creds {
-			currentError := vault.Add(
-				cred["service"],
-				cred["username"],
-				cred["password"],
-			)
-			if currentError != nil {
-				addErrors = append(addErrors, currentError)
+
+		vaultResults := vault.AddMulti(fileCreds)
+		var successResults []string
+		var errorResults []error
+		for _, result := range vaultResults {
+			if result.Success == false {
+				errorResults = append(errorResults, result.Err)
 			} else {
-				addSuccesses = append(
-					addSuccesses,
+				successResults = append(
+					successResults,
 					fmt.Sprintf(
 						"%s added user %s for service %s.",
 						successfully,
-						cred["username"],
-						cred["service"],
+						result.Username,
+						result.Service,
 					),
 				)
 			}
 		}
-		if len(addErrors) > 0 {
+
+		if len(errorResults) > 0 {
 			return AddFailedMsg{
-				Error: errors.Join(addErrors...),
+				Error: errors.Join(errorResults...),
 				Display: fmt.Sprintf(
 					"%s\n%s to import one or more credentials from file %s",
-					strings.Join(addSuccesses, "\n"), // multiple creds can be added at once, show ones that succeeded
+					strings.Join(successResults, "\n"), // multiple creds can be added at once, show ones that succeeded
 					failed,
 					file,
 				),
 			}
 		}
 		return AddSuccessMsg{
-			Display: strings.Join(addSuccesses, "\n"),
+			Display: strings.Join(successResults, "\n"),
 		}
 	}
 }
 
-func deleteCmd(vault vault.Vault, cmd cli.CLICommand) tea.Cmd {
+func deleteCmd(vault *vault.Vault, cmd cli.CLICommand) tea.Cmd {
 	return func() tea.Msg {
 		if err := vault.Delete(cmd.Service, cmd.Username); err != nil {
 			return DeleteErrorMsg{
@@ -134,7 +133,7 @@ func deleteCmd(vault vault.Vault, cmd cli.CLICommand) tea.Cmd {
 	}
 }
 
-func rotateCmd(vault vault.Vault, cmd cli.CLICommand) tea.Cmd {
+func rotateCmd(vault *vault.Vault, cmd cli.CLICommand) tea.Cmd {
 	return func() tea.Msg {
 		if err := vault.Replace(cmd.Service, cmd.Username, cmd.Password); err != nil {
 			return RotateErrorMsg{
@@ -158,40 +157,57 @@ func rotateCmd(vault vault.Vault, cmd cli.CLICommand) tea.Cmd {
 	}
 }
 
-func backupCmd(vault vault.Vault, cmd cli.CLICommand) tea.Cmd {
+type backupResult struct {
+	fileCred helpers.FileCred
+	result   string
+	err      error
+}
+
+func backupCmd(vault *vault.Vault, cmd cli.CLICommand) tea.Cmd {
 	return func() tea.Msg {
-		var jsonData = map[string][]map[string]string{"creds_list": {}}
-		var display string
-		var backupErr error
-		switch {
-		case cmd.Username != "" && cmd.Service != "":
-			var serviceJson map[string]string
-			serviceJson, display, backupErr = backupUserCmd(
-				vault,
-				cmd.Service,
-				cmd.Username,
-			)
-			jsonData["creds_list"] = []map[string]string{serviceJson}
-		case cmd.Service != "":
-			var userDisplays []string
-			var userErrors []error
-			jsonData["creds_list"], userDisplays, userErrors = backupServiceCmd(
-				vault,
-				cmd.Service,
-			)
-			display = strings.Join(userDisplays, "\n")
-			backupErr = errors.Join(userErrors...)
-		default:
-			var serviceDisplays []string
-			var serviceErrors []error
-			jsonData["creds_list"], serviceDisplays, serviceErrors = backupVaultCmd(
-				vault,
-			)
-			display = strings.Join(serviceDisplays, "\n")
-			backupErr = errors.Join(serviceErrors...)
+		var backupResults []string
+		var backupErrs []error
+		var fileCreds []helpers.FileCred
+
+		credsToBackup, err := getCredsForBackup(vault, cmd)
+		if err != nil {
+			return BackupErrorMsg{
+				Error: err,
+				Display: fmt.Sprintf(
+					"%s retrieving credentials for backup.",
+					failed,
+				),
+			}
 		}
 
-		writeErr := helpers.WriteJsonFile(cmd.File, jsonData)
+		// retrieve data for users in parallel
+		results := make(chan backupResult)
+		var wg sync.WaitGroup
+
+		for service, users := range credsToBackup {
+			for _, u := range users {
+				wg.Add(1)
+				go func(svc, user string) {
+					defer wg.Done()
+					fileCred, result, err := backupUserCmd(
+						vault,
+						service,
+						u,
+					)
+					results <- backupResult{fileCred, result, err}
+				}(service, u)
+			}
+		}
+		// read the results of the channel
+		for i := 0; i < len(credsToBackup); i++ {
+			result := <-results
+			fileCreds = append(fileCreds, result.fileCred)
+			backupResults = append(backupResults, result.result)
+			backupErrs = append(backupErrs, result.err)
+		}
+
+		// write data to creds file
+		writeErr := helpers.WriteCredsFile(cmd.File, fileCreds)
 		if writeErr != nil {
 			return BackupErrorMsg{
 				Error: writeErr,
@@ -202,12 +218,12 @@ func backupCmd(vault vault.Vault, cmd cli.CLICommand) tea.Cmd {
 				),
 			}
 		}
-		if backupErr != nil {
+		if backupErrs != nil {
 			return BackupErrorMsg{
-				Error: backupErr,
+				Error: errors.Join(backupErrs...),
 				Display: fmt.Sprintf(
 					"%s\n\n%s to backup one or more credentials to file %s.",
-					display,
+					strings.Join(backupResults, "\n"),
 					failed,
 					cmd.File,
 				),
@@ -216,66 +232,43 @@ func backupCmd(vault vault.Vault, cmd cli.CLICommand) tea.Cmd {
 		return BackupSuccessMsg{
 			Display: fmt.Sprintf(
 				"%s\n\n%s completed backup to file %s.",
-				display,
+				strings.Join(backupResults, "\n"),
 				successfully,
 				cmd.File,
 			),
 		}
-
 	}
 }
 
-func backupVaultCmd(vault vault.Vault) ([]map[string]string, []string, []error) {
-	services := vault.ListServices("")
-	// aggregate json/errors/display results from lower cmd
-	var backupJson []map[string]string
-	var backupDisplays []string
-	var backupErrors []error
-	for _, service := range services {
-		serviceJson, serviceDisplays, serviceErrs := backupServiceCmd(
-			vault,
-			service,
-		)
-		if serviceErrs != nil {
-			backupErrors = append(backupErrors, serviceErrs...)
-		} else {
-			backupJson = append(backupJson, serviceJson...)
+func getCredsForBackup(vault *vault.Vault, cmd cli.CLICommand) (map[string][]string, error) {
+	// determine users to backup
+	credsToBackup := make(map[string][]string)
+	var err error
+	switch {
+	case cmd.Username != "" && cmd.Service != "":
+		credsToBackup[cmd.Service] = []string{cmd.Username}
+		err = nil
+	case cmd.Service != "":
+		credsToBackup[cmd.Service], err = vault.GetUsersForService(cmd.Service)
+	default:
+		// backup entire Vault
+		var allErrs []error
+		for _, s := range vault.ListServices("") {
+			credsToBackup[s], err = vault.GetUsersForService(s)
+			if err != nil {
+				allErrs = append(allErrs, err)
+			}
 		}
-		backupDisplays = append(backupDisplays, serviceDisplays...)
+		err = errors.Join(allErrs...)
 	}
-	return backupJson, backupDisplays, backupErrors
-}
-
-func backupServiceCmd(
-	vault vault.Vault,
-	service string,
-) ([]map[string]string, []string, []error) {
-	users := vault.Services[service].GetUsers("")
-	// aggregate json/errors/display results from lower cmd
-	var backupJson []map[string]string
-	var backupErrors []error
-	var backupDisplays []string
-	for _, user := range users {
-		json, display, err := backupUserCmd(
-			vault,
-			service,
-			user,
-		)
-		if err != nil {
-			backupErrors = append(backupErrors, err)
-		} else {
-			backupJson = append(backupJson, json)
-		}
-		backupDisplays = append(backupDisplays, display)
-	}
-	return backupJson, backupDisplays, backupErrors
+	return credsToBackup, err
 }
 
 func backupUserCmd(
-	vault vault.Vault,
+	vault *vault.Vault,
 	service string,
 	user string,
-) (map[string]string, string, error) {
+) (helpers.FileCred, string, error) {
 	successDisplay := fmt.Sprintf(
 		"%s backed up credential %s/%s.",
 		successfully,
@@ -290,12 +283,12 @@ func backupUserCmd(
 	)
 	pass, err := vault.Get(service, user)
 	if err != nil {
-		return nil, errorDisplay, err
+		return helpers.FileCred{}, errorDisplay, err
 	}
-	return map[string]string{
-		"service":  service,
-		"username": user,
-		"password": pass,
+	return helpers.FileCred{
+		Service:  service,
+		Username: user,
+		Password: pass,
 	}, successDisplay, nil
 }
 
@@ -317,7 +310,7 @@ func generatePasswordCmd(
 	}
 }
 
-func loadPasswordCmd(vault vault.Vault, service string, user string) tea.Cmd {
+func loadPasswordCmd(vault *vault.Vault, service string, user string) tea.Cmd {
 	return func() tea.Msg {
 		pass, err := vault.Get(service, user)
 		if err != nil {

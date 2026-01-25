@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	"github.com/nbailey20/hacc/hacc/config"
+	"github.com/nbailey20/hacc/hacc/helpers"
 )
 
 type Vault struct {
@@ -14,6 +15,14 @@ type Vault struct {
 	path     string
 	keyId    string
 	client   *ssmClient
+	mu       sync.Mutex
+}
+
+type AddCredResult struct {
+	Service  string
+	Username string
+	Success  bool
+	Err      error
 }
 
 // If no services provided, load all existing services from backend
@@ -37,7 +46,10 @@ func NewVault(services map[string]*service, cfg config.AWSConfig) (*Vault, error
 }
 
 func (v *Vault) Add(serviceName string, username string, value string) error {
+	v.mu.Lock()
 	_, exists := v.Services[serviceName]
+	v.mu.Unlock()
+
 	if !exists {
 		service, err := NewService(
 			serviceName,
@@ -49,10 +61,49 @@ func (v *Vault) Add(serviceName string, username string, value string) error {
 		if err != nil {
 			return err
 		}
-		v.Services[serviceName] = service
+		// check again to make sure service wasn't created since previous locked check
+		v.mu.Lock()
+		if _, exists := v.Services[serviceName]; !exists {
+			v.Services[serviceName] = service
+		}
+		v.mu.Unlock()
 		return nil
 	}
 	return v.Services[serviceName].Add(username, value)
+}
+
+func (v *Vault) AddMulti(creds []helpers.FileCred) []AddCredResult {
+	resultsChan := make(chan AddCredResult, len(creds))
+	var wg sync.WaitGroup
+	wg.Add(len(creds))
+
+	for _, cred := range creds {
+		go func(cred helpers.FileCred) {
+			defer wg.Done()
+			err := v.Add(
+				cred.Service,
+				cred.Username,
+				cred.Password,
+			)
+			result := AddCredResult{
+				Service:  cred.Service,
+				Username: cred.Username,
+				Success:  true,
+				Err:      err,
+			}
+			if err != nil {
+				result.Success = false
+			}
+			resultsChan <- result
+		}(cred)
+	}
+
+	// read the results of the channel
+	out := make([]AddCredResult, 0, len(creds))
+	for i := 0; i < len(creds); i++ {
+		out = append(out, <-resultsChan)
+	}
+	return out
 }
 
 func (v *Vault) Get(serviceName string, username string) (string, error) {
@@ -61,6 +112,14 @@ func (v *Vault) Get(serviceName string, username string) (string, error) {
 		return "", fmt.Errorf("service %s does not exist", serviceName)
 	}
 	return service.GetValue(username)
+}
+
+func (v *Vault) GetUsersForService(serviceName string) ([]string, error) {
+	service, exists := v.Services[serviceName]
+	if !exists {
+		return []string{}, fmt.Errorf("service %s does not exist", serviceName)
+	}
+	return service.GetUsers(""), nil
 }
 
 func (v *Vault) Replace(serviceName string, username string, value string) error {
