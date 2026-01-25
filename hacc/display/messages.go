@@ -1,6 +1,6 @@
 package display
 
-// interface for ErrorMsg types
+// interface for ErrorMsg types shown to user in EndState
 type ErrorMsg interface {
 	ErrorValue() error
 	DisplayValue() string
@@ -58,7 +58,7 @@ func (m BackupErrorMsg) DisplayValue() string {
 	return m.Display
 }
 
-// interface for SuccessMsg types shown to user
+// interface for SuccessMsg types shown to user in EndState
 type SuccessMsg interface {
 	DisplayValue() string
 }
@@ -99,3 +99,9 @@ func (m BackupSuccessMsg) DisplayValue() string {
 type PasswordGeneratedMsg struct {
 	Password string
 }
+
+type PasswordLoadedMsg struct {
+	Password string
+}
+
+type PasswordCopiedMsg struct{}

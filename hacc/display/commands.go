@@ -6,6 +6,8 @@ import (
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"golang.design/x/clipboard"
+
 	"github.com/nbailey20/hacc/hacc/cli"
 	"github.com/nbailey20/hacc/hacc/helpers"
 	"github.com/nbailey20/hacc/hacc/vault"
@@ -312,5 +314,27 @@ func generatePasswordCmd(
 				maxLen,
 			),
 		}
+	}
+}
+
+func loadPasswordCmd(vault vault.Vault, service string, user string) tea.Cmd {
+	return func() tea.Msg {
+		pass, err := vault.Get(service, user)
+		if err != nil {
+			return PasswordLoadedMsg{
+				Password: fmt.Sprintf("Could not load password: %v", err),
+			}
+		}
+		return PasswordLoadedMsg{
+			Password: pass,
+		}
+	}
+}
+
+func copyPasswordCmd(password string) tea.Cmd {
+	return func() tea.Msg {
+		clipboard.Init()
+		clipboard.Write(clipboard.FmtText, []byte(password))
+		return PasswordCopiedMsg{}
 	}
 }

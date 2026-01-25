@@ -15,6 +15,7 @@ type EnterEvent struct {
 	ServiceName string
 }
 type BackEvent struct{}
+type SpaceEvent struct{}
 type NumberEvent struct {
 	Number int
 }
@@ -28,28 +29,34 @@ type RuneEvent struct {
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		switch msg.Type {
-		case tea.KeyCtrlC, tea.KeyEsc:
+		switch msg.String() {
+		case "ctrl+c", "esc":
 			return m, tea.Quit
-		case tea.KeyUp:
+		case "up":
 			return m.state.Update(m, UpEvent{})
-		case tea.KeyDown:
+		case "down":
 			return m.state.Update(m, DownEvent{})
-		case tea.KeyLeft:
+		case "left":
 			return m.state.Update(m, LeftEvent{})
-		case tea.KeyRight:
+		case "right":
 			return m.state.Update(m, RightEvent{})
-		case tea.KeyEnter:
+		case "enter":
 			return m.state.Update(m, EnterEvent{})
-		case tea.KeyBackspace:
+		case "backspace":
 			return m.state.Update(m, BackEvent{})
-		case tea.KeyRunes:
+		case " ":
+			return m.state.Update(m, SpaceEvent{})
+		default:
+			if len(msg.String()) != 1 {
+				return m, nil
+			}
 			// Check if single digit number for List selection
-			if len(msg.Runes) == 1 && msg.Runes[0] >= '0' && msg.Runes[0] <= '9' {
-				n := int(msg.Runes[0] - '0')
+			key := msg.String()[0]
+			if key >= '0' && key <= '9' {
+				n := int(key - '0')
 				return m.state.Update(m, NumberEvent{Number: n})
 			}
-			return m.state.Update(m, RuneEvent{Rune: msg.Runes[0]})
+			return m.state.Update(m, RuneEvent{Rune: rune(key)})
 		}
 	case ErrorMsg:
 		m.endSuccess = false
@@ -61,6 +68,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.endMessage = msg.DisplayValue()
 	case PasswordGeneratedMsg:
 		m.password = msg.Password
+	case PasswordLoadedMsg:
+		m.password = msg.Password
+		return m, copyPasswordCmd(m.password)
 	}
 	return m, nil
 }
@@ -243,6 +253,8 @@ type CredentialState struct{}
 
 func (s CredentialState) Update(m model, e Event) (model, tea.Cmd) {
 	switch e.(type) {
+	case SpaceEvent:
+		m.showPass = !m.showPass
 	case BackEvent:
 		return s.Back(m)
 	}
@@ -324,7 +336,7 @@ func (s UsernameListState) Update(m model, e Event) (model, tea.Cmd) {
 			selectedUser := users[m.page*m.pageSize+m.cursor]
 			m.username = selectedUser
 			m.state = &CredentialState{}
-			return m, nil
+			return m, loadPasswordCmd(m.vault, m.serviceName, m.username)
 		},
 	)
 }

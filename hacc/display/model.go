@@ -1,10 +1,10 @@
 package display
 
 import (
+	tea "github.com/charmbracelet/bubbletea"
+
 	cli "github.com/nbailey20/hacc/hacc/cli"
 	vault "github.com/nbailey20/hacc/hacc/vault"
-
-	tea "github.com/charmbracelet/bubbletea"
 )
 
 type model struct {
@@ -22,7 +22,7 @@ type model struct {
 	page           int
 	pageSize       int
 	cursor         int
-	showSecret     bool
+	showPass       bool
 	endSuccess     bool
 	endMessage     string
 	endError       error
@@ -70,6 +70,12 @@ func initialState(cmd cli.CLICommand, vault vault.Vault) State {
 
 func initialCmd(cmd cli.CLICommand, vault vault.Vault) tea.Cmd {
 	switch cmd.Action.(type) {
+	case cli.SearchAction:
+		state := initialState(cmd, vault)
+		if _, ok := state.(*CredentialState); ok {
+			return loadPasswordCmd(vault, cmd.Service, cmd.Username)
+		}
+		return nil
 	case cli.AddAction:
 		return addCmd(vault, cmd)
 	case cli.DeleteAction:
@@ -92,6 +98,7 @@ func NewModel(cmd cli.CLICommand, vault vault.Vault) *model {
 		action:         cmd.Action,
 		username:       cmd.Username,
 		password:       cmd.Password,
+		showPass:       false,
 		digitsInPass:   cmd.DigitsInPass,
 		specialsInPass: cmd.SpecialsInPass,
 		minPassLen:     cmd.MinLen,

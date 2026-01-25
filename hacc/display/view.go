@@ -64,22 +64,15 @@ func horizontalLine() string {
 	return style.Render(line)
 }
 
-func addFooter(content string) string {
-	rawFooter := `
-←→↑↓ / 1-9: navigate   Enter: select
-Backspace: back        Esc / ^C: quit
-`
-	footer := lipgloss.NewStyle().
-		Italic(true).
-		Foreground(lipgloss.Color("244")). // grey
-		Align(lipgloss.Center).
-		Render(
-			rawFooter,
-		)
+func addFooter(contentStr string, footerStr string) string {
+	if footerStr == "" {
+		footerStr = defaultFooterStr
+	}
+	footer := footerStyle.Render(footerStr)
 
 	return lipgloss.NewStyle().
 		Align(lipgloss.Center).
-		Render(content + "\n" + footer)
+		Render(contentStr + "\n" + footer)
 }
 
 func credBox(service string, content string) string {
@@ -189,7 +182,7 @@ func (m model) EndView() string {
 		result += fmt.Sprintf("\nError: %v", m.endError)
 	}
 	// we're going to quit after this view is displayed, so no footer instructions
-	return header() + addFooter(style.Render(result))
+	return header() + addFooter(style.Render(result), "")
 }
 
 func (m model) CredentialView() string {
@@ -200,16 +193,20 @@ func (m model) CredentialView() string {
 	service := lipgloss.NewStyle().Foreground(lipgloss.Color("185")).Render(" " + m.serviceName + " ") // yellow
 	credTextStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("117"))                             // light blue
 	user := credTextStyle.Render(m.username)
-	rawPass, err := m.vault.Get(m.serviceName, m.username)
-	pass := credTextStyle.Render(rawPass)
-	if err != nil {
-		pass = credTextStyle.Render(fmt.Sprintf("%v", err))
+	pass := "*****"
+	if m.password == "" {
+		pass = "Loading..."
 	}
+	if m.showPass {
+		pass = m.password
+	}
+	pass = credTextStyle.Render(pass)
+
 	spacer := lipgloss.NewStyle().Foreground(lipgloss.Color("160")).Render(" │ ") //red
 	content := user + spacer + pass
 	paddedContent := lipgloss.NewStyle().Padding(0, 1).Render(content)
 
-	return header() + "\n" + addFooter(credBox(service, paddedContent))
+	return header() + "\n" + addFooter(credBox(service, paddedContent), credentialFooterStr)
 }
 
 func (m model) ConfirmView() string {
@@ -237,13 +234,16 @@ func (m model) ServiceListView() string {
 		rows = append(rows, []string{fmt.Sprintf("%d", idx+1), serviceName})
 	}
 
-	return header() + addFooter(listTable(
-		"Service",
-		rows,
-		m.page+1,
-		NumPages(len(services), m.pageSize),
-		m.cursor,
-	))
+	return header() + addFooter(
+		listTable(
+			"Service",
+			rows,
+			m.page+1,
+			NumPages(len(services), m.pageSize),
+			m.cursor,
+		),
+		defaultFooterStr,
+	)
 }
 
 func (m model) UsernameListView() string {
@@ -262,11 +262,14 @@ func (m model) UsernameListView() string {
 		rows = append(rows, []string{fmt.Sprintf("%d", idx+1), userName})
 	}
 
-	return header() + addFooter(listTable(
-		"Username",
-		rows,
-		m.page+1,
-		NumPages(len(usernames), m.pageSize),
-		m.cursor,
-	))
+	return header() + addFooter(
+		listTable(
+			"Username",
+			rows,
+			m.page+1,
+			NumPages(len(usernames), m.pageSize),
+			m.cursor,
+		),
+		defaultFooterStr,
+	)
 }
