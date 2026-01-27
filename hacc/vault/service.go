@@ -90,7 +90,7 @@ func (s *service) Add(username string, value string) error {
 }
 
 func (s *service) GetUsers(prefix string) []string {
-	users := make([]string, 0, len(s.credentials))
+	users := make([]string, 0, s.numUsers)
 	for username := range s.credentials {
 		if strings.HasPrefix(username, prefix) {
 			users = append(users, username)
@@ -101,12 +101,19 @@ func (s *service) GetUsers(prefix string) []string {
 }
 
 func (s *service) GetValue(username string) (string, error) {
+	if _, exists := s.credentials[username]; !exists {
+		return "", fmt.Errorf("user %s does not exist in service %s", username, s.name)
+	}
 	return s.credentials[username].GetValue()
 }
 
 func (s *service) SetValue(username string, value string) error {
 	s.credentials[username].SetValue(value)
 	return s.credentials[username].Save()
+}
+
+func (s *service) NumUsers() int {
+	return s.numUsers
 }
 
 func (s *service) Delete(username string) error {

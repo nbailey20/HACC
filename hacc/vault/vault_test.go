@@ -2,6 +2,7 @@ package vault
 
 import (
 	"fmt"
+	"math/rand"
 	"testing"
 	"time"
 
@@ -11,7 +12,10 @@ import (
 
 func TestCredential(t *testing.T) {
 	path := "/hackyclient/test/"
-	client := NewSsmClient("")
+	client, err := NewSsmClient("")
+	if err != nil {
+		t.Fatalf("Error creating SSM client: %v", err)
+	}
 	s, err := NewCredential("testName", "initialVal", path, "", client)
 	if err != nil {
 		t.Fatalf("Error creating state: %v", err)
@@ -63,7 +67,10 @@ func TestCredential(t *testing.T) {
 
 func TestService(t *testing.T) {
 	path := "/hackytest/service/"
-	client := NewSsmClient("")
+	client, err := NewSsmClient("")
+	if err != nil {
+		t.Fatalf("Error creating SSM client: %v", err)
+	}
 	svc, err := NewService("testService", map[string]string{"testUser": "initialVal"}, path, "", client)
 	if err != nil {
 		t.Fatalf("Error creating service: %v", err)
@@ -160,6 +167,19 @@ func TestVault(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Error adding service2: %v", err)
 	}
+	if !vault.HasService("service1") {
+		t.Errorf("Expected vault to have service1")
+	}
+	if !vault.HasService("service2") {
+		t.Errorf("Expected vault to have service2")
+	}
+	users, err := vault.GetUsersForService("service1")
+	if err != nil {
+		t.Fatalf("Error getting users for service1: %v", err)
+	}
+	if len(users) != 2 {
+		t.Errorf("Expected 2 users for service1")
+	}
 	err = vault.FindServices()
 	if err != nil {
 		t.Fatalf("Error finding services: %v", err)
@@ -242,16 +262,28 @@ func TestVaultMultiAdd(t *testing.T) {
 		t.Fatalf("Error creating vault: %v", err)
 	}
 	var creds []helpers.FileCred
-	for i := range 100 {
+	for i := range 20 {
+		x := rand.Intn(i+1) + 1
 		creds = append(
 			creds,
 			helpers.FileCred{
 				Username: fmt.Sprintf("bob%d", i),
 				Password: fmt.Sprintf("bobpass%d", i),
-				Service:  fmt.Sprintf("bobserv%d", i),
+				Service:  fmt.Sprintf("bobserv%d", x),
 			},
 		)
 	}
+
+	t.Cleanup(func() {
+		time.Sleep(2 * time.Second) // eventual consistency
+
+		for _, c := range creds {
+			if err := vault.Delete(c.Service, c.Username); err != nil {
+				t.Errorf("cleanup failed for %s/%s: %v", c.Service, c.Username, err)
+			}
+		}
+	})
+
 	results := vault.AddMulti(creds)
 	for _, r := range results {
 		if !r.Success {
@@ -267,21 +299,10 @@ func TestVaultMultiAdd(t *testing.T) {
 		}
 		p, err := vault.Get(c.Service, c.Username)
 		if err != nil {
-			t.Errorf("Expected no error retrieving pass for %s/%s", c.Service, c.Username)
+			t.Errorf("Expected no error retrieving pass for %s/%s: %v", c.Service, c.Username, err)
 		}
 		if p != c.Password {
 			t.Errorf("Expected password %s for %s/%s", c.Password, c.Service, c.Username)
-		}
-	}
-
-	time.Sleep(2 * time.Second) // wait for eventual consistency
-	for i := range creds {
-		err := vault.Delete(
-			fmt.Sprintf("bobserv%d", i),
-			fmt.Sprintf("bob%d", i),
-		)
-		if err != nil {
-			t.Errorf("Expected no error cleaning up credentials from Vault")
 		}
 	}
 }

@@ -3,9 +3,10 @@ package vault
 import (
 	"context"
 	"errors"
-	"log"
+	"fmt"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/aws/retry"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/ssm"
 	"github.com/aws/aws-sdk-go-v2/service/ssm/types"
@@ -15,16 +16,24 @@ type ssmClient struct {
 	ssm *ssm.Client
 }
 
-func NewSsmClient(profile string) *ssmClient {
-	opts := []func(*config.LoadOptions) error{}
+func NewSsmClient(profile string) (*ssmClient, error) {
+	opts := []func(*config.LoadOptions) error{
+		config.WithRetryer(func() aws.Retryer {
+			return retry.NewAdaptiveMode()
+		}),
+		config.WithRetryMaxAttempts(20),
+	}
 	if profile != "" {
-		opts = append(opts, config.WithSharedConfigProfile(profile))
+		opts = append(
+			opts,
+			config.WithSharedConfigProfile(profile),
+		)
 	}
 	cfg, err := config.LoadDefaultConfig(context.TODO(), opts...)
 	if err != nil {
-		log.Fatalf("failed to load AWS config: %v", err)
+		return nil, fmt.Errorf("failed to load AWS config: %v", err)
 	}
-	return &ssmClient{ssm: ssm.NewFromConfig(cfg)}
+	return &ssmClient{ssm: ssm.NewFromConfig(cfg)}, nil
 }
 
 func (c *ssmClient) GetParameter(name string) (string, error) {
@@ -33,7 +42,7 @@ func (c *ssmClient) GetParameter(name string) (string, error) {
 		WithDecryption: aws.Bool(true), // Use aws.Bool to create a *bool
 	})
 	if err != nil {
-		log.Fatalf("failed to get parameter, %v", err)
+		return "", fmt.Errorf("failed to get parameter, %v", err)
 	}
 	return *paramOutput.Parameter.Value, nil
 }
@@ -50,7 +59,7 @@ func (c *ssmClient) PutParameter(name string, value string, key_id string) error
 	}
 	_, err := c.ssm.PutParameter(context.TODO(), &input)
 	if err != nil {
-		log.Fatalf("failed to put parameter, %v", err)
+		return fmt.Errorf("failed to put parameter, %v", err)
 	}
 	return nil
 }
@@ -65,7 +74,7 @@ func (c *ssmClient) DeleteParameter(name string) error {
 			// Return no error if the parameter doesn't exist
 			return nil
 		}
-		log.Fatalf("failed to delete parameter, %v", err)
+		return fmt.Errorf("failed to delete parameter, %v", err)
 	}
 	return nil
 }
@@ -80,7 +89,7 @@ func (c *ssmClient) GetAllParametersByPath(path string) (map[string]string, erro
 	for paginator.HasMorePages() {
 		page, err := paginator.NextPage(context.TODO())
 		if err != nil {
-			log.Fatalf("failed to get parameters by path for %s, %v", path, err)
+			return params, fmt.Errorf("failed to get parameters by path for %s, %v", path, err)
 		}
 		for _, param := range page.Parameters {
 			params[*param.Name] = *param.Value

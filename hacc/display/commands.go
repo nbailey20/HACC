@@ -179,9 +179,13 @@ func backupCmd(vault *vault.Vault, cmd cli.CLICommand) tea.Cmd {
 				),
 			}
 		}
+		totalCreds := 0
+		for _, users := range credsToBackup {
+			totalCreds += len(users)
+		}
 
 		// retrieve data for users in parallel
-		results := make(chan backupResult)
+		results := make(chan backupResult, totalCreds)
 		var wg sync.WaitGroup
 
 		for service, users := range credsToBackup {
@@ -191,19 +195,21 @@ func backupCmd(vault *vault.Vault, cmd cli.CLICommand) tea.Cmd {
 					defer wg.Done()
 					fileCred, result, err := backupUserCmd(
 						vault,
-						service,
-						u,
+						svc,
+						user,
 					)
 					results <- backupResult{fileCred, result, err}
 				}(service, u)
 			}
 		}
 		// read the results of the channel
-		for i := 0; i < len(credsToBackup); i++ {
+		for i := 0; i < totalCreds; i++ {
 			result := <-results
 			fileCreds = append(fileCreds, result.fileCred)
 			backupResults = append(backupResults, result.result)
-			backupErrs = append(backupErrs, result.err)
+			if result.err != nil {
+				backupErrs = append(backupErrs, result.err)
+			}
 		}
 
 		// write data to creds file

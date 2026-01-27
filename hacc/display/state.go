@@ -88,7 +88,7 @@ type Backable interface {
 type EnterFunc func(m model) (model, tea.Cmd)
 
 func updateListState(m model, e Event, numItems int, onEnter EnterFunc) (model, tea.Cmd) {
-	switch e.(type) {
+	switch e := e.(type) {
 	case UpEvent:
 		return CursorUp(m, numItems), nil
 	case DownEvent:
@@ -102,7 +102,7 @@ func updateListState(m model, e Event, numItems int, onEnter EnterFunc) (model, 
 	case BackEvent:
 		return m.state.(Backable).Back(m)
 	case NumberEvent:
-		return CursorNumber(m, e.(NumberEvent).Number), nil
+		return CursorNumber(m, e.Number), nil
 	default:
 		return m, nil
 	}
@@ -145,9 +145,13 @@ func CursorNumber(m model, n int) model {
 	if n < 1 || n > m.pageSize {
 		return m
 	}
+	numResources := len(m.vault.Services)
+	if _, ok := m.state.(*UsernameListState); ok {
+		numResources = m.vault.Services[m.serviceName].NumUsers()
+	}
 	// Consider less-than-full last page
-	if m.page == NumPages(len(m.vault.Services), m.pageSize)-1 {
-		if n > NumLastPageItems(len(m.vault.Services), m.pageSize) {
+	if m.page == NumPages(numResources, m.pageSize)-1 {
+		if n > NumLastPageItems(numResources, m.pageSize) {
 			return m
 		}
 	}
@@ -269,16 +273,16 @@ func (s CredentialState) Back(m model) (model, tea.Cmd) {
 type ConfirmState struct{}
 
 func (s ConfirmState) Update(m model, e Event) (model, tea.Cmd) {
-	switch e.(type) {
+	switch e := e.(type) {
 	case EnterEvent:
 		m.state = &EndState{}
 		return m, addCredentialCmd(m.vault, m.serviceName, m.username, m.password)
 	case RuneEvent:
-		if e.(RuneEvent).Rune == 'y' {
+		if e.Rune == 'y' {
 			m.state = &EndState{}
 			return m, addCredentialCmd(m.vault, m.serviceName, m.username, m.password)
 		}
-		if e.(RuneEvent).Rune == 'n' {
+		if e.Rune == 'n' {
 			return m, generatePasswordCmd(
 				m.digitsInPass,
 				m.specialsInPass,
@@ -288,7 +292,7 @@ func (s ConfirmState) Update(m model, e Event) (model, tea.Cmd) {
 		}
 		return m, nil
 	case PasswordGeneratedMsg:
-		m.password = e.(PasswordGeneratedMsg).Password
+		m.password = e.Password
 		return m, nil
 	default:
 		return m, nil

@@ -44,7 +44,6 @@ func GetPath() (string, error) {
 func (c Config) Validate() error {
 	requiredStrings := map[string]string{
 		"aws.profile":    c.AWS.Profile,
-		"aws.kms_id":     c.AWS.KmsId,
 		"aws.param_path": c.AWS.ParamPath,
 	}
 	for name, value := range requiredStrings {

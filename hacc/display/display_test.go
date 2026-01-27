@@ -51,7 +51,6 @@ func TestDisplay(t *testing.T) {
 			t.Errorf("Expected line '%s' in view, got:\n%s", line, view)
 		}
 	}
-	fmt.Println("got here!!!")
 
 	// Simulate navigating down
 	model.cursor = 1

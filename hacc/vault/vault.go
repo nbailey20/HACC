@@ -2,13 +2,17 @@ package vault
 
 import (
 	"fmt"
+	"math/rand"
 	"sort"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/nbailey20/hacc/hacc/config"
 	"github.com/nbailey20/hacc/hacc/helpers"
 )
+
+var MAX_CONCURRENT_REQUESTS = 3
 
 type Vault struct {
 	Services map[string]*service
@@ -27,12 +31,15 @@ type AddCredResult struct {
 
 // If no services provided, load all existing services from backend
 func NewVault(services map[string]*service, cfg config.AWSConfig) (*Vault, error) {
-	client := NewSsmClient(cfg.Profile)
+	client, err := NewSsmClient(cfg.Profile)
 	vault := &Vault{
 		Services: services,
 		path:     cfg.ParamPath,
 		keyId:    cfg.KmsId,
 		client:   client,
+	}
+	if err != nil {
+		return nil, err
 	}
 	if services == nil {
 		vault.Services = make(map[string]*service)
@@ -65,6 +72,9 @@ func (v *Vault) Add(serviceName string, username string, value string) error {
 		v.mu.Lock()
 		if _, exists := v.Services[serviceName]; !exists {
 			v.Services[serviceName] = service
+		} else {
+			// service was created in the meantime, add credential to existing service
+			err = v.Services[serviceName].Add(username, value)
 		}
 		v.mu.Unlock()
 		return nil
@@ -74,12 +84,27 @@ func (v *Vault) Add(serviceName string, username string, value string) error {
 
 func (v *Vault) AddMulti(creds []helpers.FileCred) []AddCredResult {
 	resultsChan := make(chan AddCredResult, len(creds))
+	sem := make(chan struct{}, MAX_CONCURRENT_REQUESTS)
 	var wg sync.WaitGroup
-	wg.Add(len(creds))
 
 	for _, cred := range creds {
+		wg.Add(1)
 		go func(cred helpers.FileCred) {
 			defer wg.Done()
+			sem <- struct{}{} // acquire semaphore
+			defer func() {
+				if r := recover(); r != nil {
+					resultsChan <- AddCredResult{
+						Service:  cred.Service,
+						Username: cred.Username,
+						Success:  false,
+						Err:      fmt.Errorf("panic: %v", r),
+					}
+				}
+				<-sem // release semaphore
+			}()
+			// slight random sleep to reduce likelihood of throttling
+			time.Sleep(time.Duration(rand.Intn(100)) * time.Millisecond)
 			err := v.Add(
 				cred.Service,
 				cred.Username,
@@ -98,10 +123,16 @@ func (v *Vault) AddMulti(creds []helpers.FileCred) []AddCredResult {
 		}(cred)
 	}
 
+	// close results channel when all workers finish
+	go func() {
+		wg.Wait()
+		close(resultsChan)
+	}()
+
 	// read the results of the channel
 	out := make([]AddCredResult, 0, len(creds))
-	for i := 0; i < len(creds); i++ {
-		out = append(out, <-resultsChan)
+	for r := range resultsChan {
+		out = append(out, r)
 	}
 	return out
 }
@@ -168,11 +199,13 @@ func (v *Vault) FindServices() error {
 
 	// extract unique service names from parameters
 	serviceNames := make([]string, 0)
+	seen := make(map[string]bool)
 	for name := range parameters {
 		trimmed := strings.TrimPrefix(name, v.path)
 		parts := strings.SplitN(trimmed, "/", 2)
-		if len(parts) == 2 {
+		if len(parts) == 2 && !seen[parts[0]] {
 			serviceNames = append(serviceNames, parts[0])
+			seen[parts[0]] = true
 		}
 	}
 

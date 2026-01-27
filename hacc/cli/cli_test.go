@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"fmt"
 	"testing"
 	"time"
 
@@ -221,7 +220,6 @@ func TestAutoCompleteCommand(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Error adding service1: %v", err)
 	}
-	fmt.Println("lemme know when fixed")
 	err = vault.Add("serv1Name", "user1a", "value1a")
 	if err != nil {
 		t.Fatalf("Error adding 2nd user to service1: %v", err)
