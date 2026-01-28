@@ -1,13 +1,16 @@
 package vault
 
+import "fmt"
+
 type credential struct {
-	name   string
-	value  string
-	path   string
-	kms_id string
-	loaded bool // is the local copy up-to-date with the current value
-	saved  bool // is the current value saved to the backend
-	client *ssmClient
+	name           string
+	value          string
+	path           string
+	kmsId          string
+	obfuscationKey string
+	loaded         bool // is the local copy up-to-date with the current value
+	saved          bool // is the current value saved to the backend
+	client         *ssmClient
 }
 
 // If Value is empty, use existing value from backend
@@ -16,17 +19,19 @@ func NewCredential(
 	name string,
 	value string,
 	path string,
-	kms_id string,
+	kmsId string,
+	obfuscationKey string,
 	client *ssmClient,
 ) (*credential, error) {
 	credential := credential{
-		name:   name,
-		value:  value,
-		path:   path,
-		kms_id: kms_id,
-		loaded: false,
-		saved:  false,
-		client: client,
+		name:           name,
+		value:          value,
+		path:           path,
+		kmsId:          kmsId,
+		obfuscationKey: obfuscationKey,
+		loaded:         false,
+		saved:          false,
+		client:         client,
 	}
 	if value != "" {
 		credential.loaded = true
@@ -36,6 +41,7 @@ func NewCredential(
 		}
 		return &credential, err
 	}
+	// Lazy backend fetching, don't pull the value before its needed
 	return &credential, nil
 }
 
@@ -43,7 +49,6 @@ func (c *credential) GetName() string {
 	return c.name
 }
 
-// Lazy backend fetching, don't pull the value before its needed
 func (s *credential) GetValue() (string, error) {
 	if !s.loaded {
 		err := s.Load()
@@ -64,7 +69,15 @@ func (c *credential) Save() error {
 	if c.saved {
 		return nil
 	}
-	err := c.client.PutParameter(c.path+c.name, c.value, c.kms_id)
+	obf_path, err := obfuscate(
+		fmt.Sprintf("/%s/%s", c.path, c.name),
+		c.obfuscationKey,
+	)
+	fmt.Printf("real path: %s/%s, obfpath: %s", c.path, c.name, obf_path)
+	if err != nil {
+		return err
+	}
+	err = c.client.PutParameter(obf_path, c.value, c.kmsId)
 	if err == nil {
 		c.saved = true
 	}
@@ -75,7 +88,14 @@ func (c *credential) Load() error {
 	if c.loaded {
 		return nil
 	}
-	value, err := c.client.GetParameter(c.path + c.name)
+	obf_path, err := obfuscate(
+		fmt.Sprintf("/%s/%s", c.path, c.name),
+		c.obfuscationKey,
+	)
+	if err != nil {
+		return err
+	}
+	value, err := c.client.GetParameter(obf_path)
 	if err == nil {
 		c.value = value
 		c.loaded = true
@@ -84,7 +104,11 @@ func (c *credential) Load() error {
 }
 
 func (c *credential) Delete() error {
-	err := c.client.DeleteParameter(c.path + c.name)
+	obf_path, err := obfuscate("/"+c.path+"/"+c.name, c.obfuscationKey)
+	if err != nil {
+		return err
+	}
+	err = c.client.DeleteParameter(obf_path)
 	c.name = ""
 	c.value = ""
 	c.loaded = false

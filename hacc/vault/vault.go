@@ -15,11 +15,12 @@ import (
 var MAX_CONCURRENT_REQUESTS = 3
 
 type Vault struct {
-	Services map[string]*service
-	path     string
-	keyId    string
-	client   *ssmClient
-	mu       sync.Mutex
+	Services       map[string]*service
+	path           string
+	keyId          string
+	obfuscationKey string
+	client         *ssmClient
+	mu             sync.Mutex
 }
 
 type AddCredResult struct {
@@ -63,6 +64,7 @@ func (v *Vault) Add(serviceName string, username string, value string) error {
 			map[string]string{username: value},
 			v.path,
 			v.keyId,
+			v.obfuscationKey,
 			v.client,
 		)
 		if err != nil {
@@ -192,7 +194,7 @@ func (v *Vault) ListServices(prefix string) []string {
 func (v *Vault) FindServices() error {
 	// returns parameters with encrypted values
 	// parameters are of the form /path/serviceName/username
-	parameters, err := v.client.GetAllParametersByPath(v.path)
+	parameters, err := v.client.GetAllParametersByPath("/" + v.path + "/")
 	if err != nil {
 		return err
 	}
@@ -201,7 +203,7 @@ func (v *Vault) FindServices() error {
 	serviceNames := make([]string, 0)
 	seen := make(map[string]bool)
 	for name := range parameters {
-		trimmed := strings.TrimPrefix(name, v.path)
+		trimmed := strings.TrimPrefix(name, "/"+v.path+"/")
 		parts := strings.SplitN(trimmed, "/", 2)
 		if len(parts) == 2 && !seen[parts[0]] {
 			serviceNames = append(serviceNames, parts[0])
@@ -223,6 +225,7 @@ func (v *Vault) FindServices() error {
 				map[string]string{}, // leave empty to pull from backend, don't overwrite with encrypted value
 				v.path,
 				v.keyId,
+				v.obfuscationKey,
 				v.client,
 			)
 			if err != nil {

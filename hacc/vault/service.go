@@ -8,32 +8,35 @@ import (
 )
 
 type service struct {
-	name        string
-	credentials map[string]*credential
-	numUsers    int
-	path        string
-	kms_id      string
-	client      *ssmClient
-	mu          sync.Mutex
+	name           string
+	credentials    map[string]*credential
+	numUsers       int
+	path           string
+	kmsId          string
+	obfuscationKey string
+	client         *ssmClient
+	mu             sync.Mutex
 }
 
 func NewService(
 	serviceName string,
 	credentials map[string]string,
 	path string,
-	kms_id string,
+	kmsId string,
+	obfuscationKey string,
 	client *ssmClient,
 ) (*service, error) {
 	serviceCreds := make(map[string]*credential)
 	// if credentials map is empty, load existing users from backend
 	if len(credentials) == 0 {
 		svc := &service{
-			name:        serviceName,
-			credentials: serviceCreds,
-			numUsers:    0,
-			path:        path,
-			kms_id:      kms_id,
-			client:      client,
+			name:           serviceName,
+			credentials:    serviceCreds,
+			numUsers:       0,
+			path:           path,
+			kmsId:          kmsId,
+			obfuscationKey: obfuscationKey,
+			client:         client,
 		}
 		err := svc.FindUsers()
 		if err != nil {
@@ -43,11 +46,14 @@ func NewService(
 	}
 
 	for name, value := range credentials {
+		fmt.Println(path)
+		fmt.Println(serviceName)
 		st, err := NewCredential(
 			name,
 			value,
-			path+serviceName+"/",
-			kms_id,
+			fmt.Sprintf("%s/%s", path, serviceName),
+			kmsId,
+			obfuscationKey,
 			client,
 		)
 		if err != nil {
@@ -56,12 +62,13 @@ func NewService(
 		serviceCreds[name] = st
 	}
 	return &service{
-		name:        serviceName,
-		credentials: serviceCreds,
-		numUsers:    len(credentials),
-		path:        path,
-		kms_id:      kms_id,
-		client:      client,
+		name:           serviceName,
+		credentials:    serviceCreds,
+		numUsers:       len(credentials),
+		path:           path,
+		kmsId:          kmsId,
+		obfuscationKey: obfuscationKey,
+		client:         client,
 	}, nil
 }
 
@@ -75,8 +82,9 @@ func (s *service) Add(username string, value string) error {
 	st, err := NewCredential(
 		username,
 		value,
-		s.path+s.name+"/",
-		s.kms_id,
+		fmt.Sprintf("%s/%s", s.path, s.name),
+		s.kmsId,
+		s.obfuscationKey,
 		s.client,
 	)
 	if err != nil {
@@ -143,19 +151,35 @@ func (s *service) HasUser(username string) bool {
 }
 
 func (s *service) FindUsers() error {
+	obf_path, err := obfuscate(
+		fmt.Sprintf("/%s/%s/", s.path, s.name),
+		s.obfuscationKey,
+	)
+	if err != nil {
+		return err
+	}
+
 	// returns parameters with encrypted values
-	parameters, err := s.client.GetAllParametersByPath(s.path + s.name + "/")
+	parameters, err := s.client.GetAllParametersByPath(obf_path)
 	if err != nil {
 		return err
 	}
 	for name := range parameters {
-		userName := strings.TrimPrefix(name, s.path+s.name+"/")
+		path, err := deobfuscate(name, s.obfuscationKey)
+		if err != nil {
+			return err
+		}
+		userName := strings.TrimPrefix(
+			path,
+			fmt.Sprintf("/%s/%s/", s.path, s.name),
+		)
 
 		st, err := NewCredential(
 			userName,
 			"", // create credential with empty value to pull from backend
-			s.path+s.name+"/",
-			s.kms_id,
+			fmt.Sprintf("%s/%s", s.path, userName),
+			s.kmsId,
+			s.obfuscationKey,
 			s.client,
 		)
 		if err != nil {

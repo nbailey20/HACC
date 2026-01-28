@@ -39,7 +39,7 @@ func NewSsmClient(profile string) (*ssmClient, error) {
 func (c *ssmClient) GetParameter(name string) (string, error) {
 	paramOutput, err := c.ssm.GetParameter(context.TODO(), &ssm.GetParameterInput{
 		Name:           aws.String(name),
-		WithDecryption: aws.Bool(true), // Use aws.Bool to create a *bool
+		WithDecryption: aws.Bool(true),
 	})
 	if err != nil {
 		return "", fmt.Errorf("failed to get parameter, %v", err)
@@ -71,8 +71,7 @@ func (c *ssmClient) DeleteParameter(name string) error {
 	if err != nil {
 		var notFoundErr *types.ParameterNotFound
 		if errors.As(err, &notFoundErr) {
-			// Return no error if the parameter doesn't exist
-			return nil
+			return err
 		}
 		return fmt.Errorf("failed to delete parameter, %v", err)
 	}

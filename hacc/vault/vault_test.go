@@ -11,12 +11,12 @@ import (
 )
 
 func TestCredential(t *testing.T) {
-	path := "/hackyclient/test/"
+	path := "hackyclient/test"
 	client, err := NewSsmClient("")
 	if err != nil {
 		t.Fatalf("Error creating SSM client: %v", err)
 	}
-	s, err := NewCredential("testName", "initialVal", path, "", client)
+	s, err := NewCredential("testName", "initialVal", path, "", "obfkey", client)
 	if err != nil {
 		t.Fatalf("Error creating state: %v", err)
 	}
@@ -46,7 +46,7 @@ func TestCredential(t *testing.T) {
 		t.Errorf("Error saving state: %v", err)
 	}
 
-	s2, err := NewCredential("testName", "", path, "", client)
+	s2, err := NewCredential("testName", "", path, "", "obfkey", client)
 	if err != nil {
 		t.Fatalf("Error creating state: %v", err)
 	}
@@ -66,12 +66,12 @@ func TestCredential(t *testing.T) {
 }
 
 func TestService(t *testing.T) {
-	path := "/hackytest/service/"
+	path := "hackytest/service"
 	client, err := NewSsmClient("")
 	if err != nil {
 		t.Fatalf("Error creating SSM client: %v", err)
 	}
-	svc, err := NewService("testService", map[string]string{"testUser": "initialVal"}, path, "", client)
+	svc, err := NewService("testService", map[string]string{"testUser": "initialVal"}, path, "", "obfkey", client)
 	if err != nil {
 		t.Fatalf("Error creating service: %v", err)
 	}
@@ -113,7 +113,7 @@ func TestService(t *testing.T) {
 	}
 	time.Sleep(2 * time.Second) // wait for eventual consistency
 
-	svc2, err := NewService("testService", map[string]string{}, path, "", client)
+	svc2, err := NewService("testService", map[string]string{}, path, "", "obfkey", client)
 	if err != nil {
 		t.Fatalf("Error creating service: %v", err)
 	}
@@ -149,7 +149,7 @@ func TestService(t *testing.T) {
 
 func TestVault(t *testing.T) {
 	cfg := config.AWSConfig{
-		ParamPath: "/hackyclient/test/",
+		ParamPath: "hackyclient/test",
 	}
 	vault, err := NewVault(nil, cfg)
 	if err != nil {
@@ -255,7 +255,7 @@ func TestVault(t *testing.T) {
 
 func TestVaultMultiAdd(t *testing.T) {
 	cfg := config.AWSConfig{
-		ParamPath: "/hackyclient/test/",
+		ParamPath: "hackyclient/test",
 	}
 	vault, err := NewVault(nil, cfg)
 	if err != nil {
