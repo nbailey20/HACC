@@ -46,12 +46,14 @@ func NewService(
 	}
 
 	for name, value := range credentials {
-		fmt.Println(path)
-		fmt.Println(serviceName)
+		obfPath, err := obfuscatePath(path, serviceName, obfuscationKey)
+		if err != nil {
+			return nil, err
+		}
 		st, err := NewCredential(
 			name,
 			value,
-			fmt.Sprintf("%s/%s", path, serviceName),
+			obfPath,
 			kmsId,
 			obfuscationKey,
 			client,
@@ -79,10 +81,14 @@ func (s *service) Add(username string, value string) error {
 	if exists {
 		return fmt.Errorf("user %s already exists in service %s", username, s.name)
 	}
+	obfPath, err := obfuscatePath(s.path, s.name, s.obfuscationKey)
+	if err != nil {
+		return err
+	}
 	st, err := NewCredential(
 		username,
 		value,
-		fmt.Sprintf("%s/%s", s.path, s.name),
+		obfPath,
 		s.kmsId,
 		s.obfuscationKey,
 		s.client,
@@ -126,7 +132,7 @@ func (s *service) NumUsers() int {
 
 func (s *service) Delete(username string) error {
 	err := s.credentials[username].Delete()
-	if err == nil {
+	if err == nil || strings.Contains(err.Error(), "ParameterNotFound") {
 		delete(s.credentials, username)
 		s.numUsers--
 	}
@@ -151,33 +157,31 @@ func (s *service) HasUser(username string) bool {
 }
 
 func (s *service) FindUsers() error {
-	obf_path, err := obfuscate(
-		fmt.Sprintf("/%s/%s/", s.path, s.name),
-		s.obfuscationKey,
-	)
+	obfPath, err := obfuscatePath(s.path, s.name, s.obfuscationKey)
 	if err != nil {
 		return err
 	}
 
 	// returns parameters with encrypted values
-	parameters, err := s.client.GetAllParametersByPath(obf_path)
+	parameters, err := s.client.GetAllParametersByPath(obfPath + "/")
 	if err != nil {
 		return err
 	}
-	for name := range parameters {
-		path, err := deobfuscate(name, s.obfuscationKey)
+	for fullName := range parameters {
+		obfUserName := strings.TrimPrefix(
+			fullName,
+			obfPath+"/",
+		)
+
+		userName, err := deobfuscate(obfUserName, s.obfuscationKey)
 		if err != nil {
 			return err
 		}
-		userName := strings.TrimPrefix(
-			path,
-			fmt.Sprintf("/%s/%s/", s.path, s.name),
-		)
 
 		st, err := NewCredential(
 			userName,
 			"", // create credential with empty value to pull from backend
-			fmt.Sprintf("%s/%s", s.path, userName),
+			obfPath,
 			s.kmsId,
 			s.obfuscationKey,
 			s.client,

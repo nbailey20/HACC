@@ -1,7 +1,5 @@
 package vault
 
-import "fmt"
-
 type credential struct {
 	name           string
 	value          string
@@ -49,14 +47,14 @@ func (c *credential) GetName() string {
 	return c.name
 }
 
-func (s *credential) GetValue() (string, error) {
-	if !s.loaded {
-		err := s.Load()
+func (c *credential) GetValue() (string, error) {
+	if !c.loaded {
+		err := c.Load()
 		if err != nil {
 			return "", err
 		}
 	}
-	return s.value, nil
+	return c.value, nil
 }
 
 func (c *credential) SetValue(value string) {
@@ -69,11 +67,7 @@ func (c *credential) Save() error {
 	if c.saved {
 		return nil
 	}
-	obf_path, err := obfuscate(
-		fmt.Sprintf("/%s/%s", c.path, c.name),
-		c.obfuscationKey,
-	)
-	fmt.Printf("real path: %s/%s, obfpath: %s", c.path, c.name, obf_path)
+	obf_path, err := obfuscatePath(c.path, c.name, c.obfuscationKey)
 	if err != nil {
 		return err
 	}
@@ -88,10 +82,7 @@ func (c *credential) Load() error {
 	if c.loaded {
 		return nil
 	}
-	obf_path, err := obfuscate(
-		fmt.Sprintf("/%s/%s", c.path, c.name),
-		c.obfuscationKey,
-	)
+	obf_path, err := obfuscatePath(c.path, c.name, c.obfuscationKey)
 	if err != nil {
 		return err
 	}
@@ -104,11 +95,11 @@ func (c *credential) Load() error {
 }
 
 func (c *credential) Delete() error {
-	obf_path, err := obfuscate("/"+c.path+"/"+c.name, c.obfuscationKey)
+	obfPath, err := obfuscatePath(c.path, c.name, c.obfuscationKey)
 	if err != nil {
 		return err
 	}
-	err = c.client.DeleteParameter(obf_path)
+	err = c.client.DeleteParameter(obfPath)
 	c.name = ""
 	c.value = ""
 	c.loaded = false

@@ -9,14 +9,14 @@ func TestObfuscate(t *testing.T) {
 	if err != nil {
 		t.Fatalf("obfuscate failed: %v", err)
 	}
-	expected := "/my/qUhNE3rN/qEx2AhX2xcn-"
+	expected := "/xp2/qUhNE3rN/qEx2AhX2xcn-"
 	if obfuscated != expected {
 		t.Errorf("obfuscate returned %s, expected %s", obfuscated, expected)
 	}
 }
 
 func TestDeobfuscate(t *testing.T) {
-	obfuscated := "/my/qUhNE3rN/qEx2AhX2xcn-"
+	obfuscated := "/xp2/qUhNE3rN/qEx2AhX2xcn-"
 	key := "mysecretkey"
 	deobfuscated, err := deobfuscate(obfuscated, key)
 	if err != nil {

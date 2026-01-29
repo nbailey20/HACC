@@ -9,13 +9,9 @@ import (
 const validConfigYAML = `
 aws:
   profile: hacc-user
-  kms_id: hacc-key
-  param_path: hacc-vault
-
-security:
-  create_scp: false
-  scp_name: ""
-  member_role: ""
+  kms_id: 1234567890
+  param_path: /hacc-vault
+  obfuscation_key: supersecretkey
 
 client:
   check_for_upgrades: true
@@ -46,6 +42,18 @@ func TestLoadConfig_Success(t *testing.T) {
 	if !cfg.Client.CheckForUpgrades {
 		t.Errorf("expected check_for_upgrades=true")
 	}
+	if cfg.Client.CleanupOldVersions {
+		t.Errorf("expected cleanup_old_versions=false")
+	}
+	if cfg.AWS.Profile != "hacc-user" {
+		t.Errorf("expected aws.profile=hacc-user, got %s", cfg.AWS.Profile)
+	}
+	if cfg.AWS.KmsId != "1234567890" {
+		t.Errorf("expected aws.kms_id=hacc-key, got %s", cfg.AWS.KmsId)
+	}
+	if cfg.AWS.ParamPath != "/hacc-vault" {
+		t.Errorf("expected aws.param_path=hacc-vault, got %s", cfg.AWS.ParamPath)
+	}
 }
 
 func TestLoadConfig_MissingFile(t *testing.T) {
@@ -55,7 +63,7 @@ func TestLoadConfig_MissingFile(t *testing.T) {
 	}
 }
 
-func TestSecurityValidation_Disabled(t *testing.T) {
+func TestValidate(t *testing.T) {
 	path := writeTempConfig(t, validConfigYAML)
 
 	cfg, err := Load(path)
@@ -68,22 +76,75 @@ func TestSecurityValidation_Disabled(t *testing.T) {
 	}
 }
 
-func TestSecurityValidation_EnabledMissingFields(t *testing.T) {
-	invalidYAML := `
-security:
-  create_scp: true
-  scp_name: ""
-  member_role: ""
-`
-
-	path := writeTempConfig(t, invalidYAML)
-
+func TestValidate_MissingAWSProfile(t *testing.T) {
+	path := writeTempConfig(t, `
+aws:
+  kms_id: 1234567890
+  param_path: /hacc-vault
+  obfuscation_key: supersecretkey
+client:
+  check_for_upgrades: true
+  cleanup_old_versions: false
+`)
 	cfg, err := Load(path)
 	if err != nil {
-		t.Fatalf("unexpected load error: %v", err)
+		t.Fatalf("unexpected error: %v", err)
 	}
+	if err := cfg.Validate(); err != nil {
+		t.Fatalf("expected validation success for missing aws.profile")
+	}
+}
 
+func TestValidate_MissingKmsId(t *testing.T) {
+	path := writeTempConfig(t, `
+aws:
+  profile: hacc-user
+  param_path: /hacc-vault
+  obfuscation_key: supersecretkey
+client:
+  check_for_upgrades: true
+  cleanup_old_versions: false
+`)
+	cfg, err := Load(path)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if err := cfg.Validate(); err != nil {
+		t.Fatalf("expected validation success with no aws.kms_id")
+	}
+}
+
+func TestValidate_MissingParamPath(t *testing.T) {
+	path := writeTempConfig(t, `
+aws:
+  profile: hacc-user
+  kms_id: 1234567890
+  obfuscation_key: supersecretkey	
+client:
+  check_for_upgrades: true
+  cleanup_old_versions: false
+`)
+	cfg, err := Load(path)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
 	if err := cfg.Validate(); err == nil {
-		t.Fatalf("expected validation error when create_scp=true")
+		t.Fatalf("expected validation error for missing aws.param_path")
+	}
+}
+
+func TestValidate_MissingObfuscationKey(t *testing.T) {
+	path := writeTempConfig(t, `
+aws:
+  profile: hacc-user
+  kms_id: 1234567890
+  param_path: /hacc-vault
+`)
+	cfg, err := Load(path)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if err := cfg.Validate(); err == nil {
+		t.Fatalf("expected validation error for missing aws.obfuscation_key")
 	}
 }

@@ -10,21 +10,15 @@ import (
 )
 
 type Config struct {
-	AWS      AWSConfig      `yaml:"aws"`
-	Security SecurityConfig `yaml:"security"`
-	Client   ClientConfig   `yaml:"client"`
+	AWS    AWSConfig    `yaml:"aws"`
+	Client ClientConfig `yaml:"client"`
 }
 
 type AWSConfig struct {
-	Profile   string `yaml:"profile"`
-	KmsId     string `yaml:"kms_id"`
-	ParamPath string `yaml:"param_path"`
-}
-
-type SecurityConfig struct {
-	CreateSCP  bool   `yaml:"create_scp"`
-	SCPName    string `yaml:"scp_name"`
-	MemberRole string `yaml:"member_role"`
+	Profile        string `yaml:"profile"`
+	KmsId          string `yaml:"kms_id"`
+	ParamPath      string `yaml:"param_path"`
+	ObfuscationKey string `yaml:"obfuscation_key"`
 }
 
 type ClientConfig struct {
@@ -43,13 +37,17 @@ func GetPath() (string, error) {
 
 func (c Config) Validate() error {
 	requiredStrings := map[string]string{
-		"aws.profile":    c.AWS.Profile,
-		"aws.param_path": c.AWS.ParamPath,
+		"aws.param_path":      c.AWS.ParamPath,
+		"aws.obfuscation_key": c.AWS.ObfuscationKey,
 	}
+
 	for name, value := range requiredStrings {
 		if strings.TrimSpace(value) == "" {
 			return fmt.Errorf("%s is required in config.yaml.", name)
 		}
+	}
+	if !strings.HasPrefix(c.AWS.ParamPath, "/") || strings.HasSuffix(c.AWS.ParamPath, "/") {
+		return fmt.Errorf("aws.param_path must start with '/' and not end with '/' in config.yaml.")
 	}
 	return nil
 }
@@ -64,6 +62,5 @@ func Load(path string) (*Config, error) {
 	if err := yaml.Unmarshal(data, &cfg); err != nil {
 		return nil, err
 	}
-
 	return &cfg, nil
 }

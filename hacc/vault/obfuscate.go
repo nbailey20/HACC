@@ -8,22 +8,25 @@ import (
 const allowed = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_"
 
 // Helper functions to (de)obfuscate a SSM Parameter path name using a key
-// e.g. input: "/haccpath/secret/parameter", should always start with a leading /
 // and ensure the output only contains characters in the SSM Parameter name set
 // preserves / characters so GetParametersByPath still works
+
+func obfuscatePath(path, name, key string) (string, error) {
+	obf_name, err := obfuscate(name, key)
+	if err != nil {
+		return "", err
+	}
+	return fmt.Sprintf("%s/%s", path, obf_name), nil
+}
+
 func obfuscate(plaintext, key string) (string, error) {
 	if len(key) == 0 {
 		return "", fmt.Errorf("key must not be empty")
 	}
 
 	parts := strings.Split(plaintext, "/")
-	if len(parts) < 2 {
-		return "", fmt.Errorf("invalid deobfuscated parameter name: %q", plaintext)
-	}
 	outParts := make([]string, 0, len(parts))
-	outParts = append(outParts, parts[0]) // empty part b/c leading slash
-	outParts = append(outParts, parts[1]) // preserve first segment (e.g. "haccpath")
-	for _, part := range parts[2:] {
+	for _, part := range parts {
 		// Preserve empty segments (leading or double slashes)
 		if part == "" {
 			outParts = append(outParts, "")
@@ -91,13 +94,8 @@ func deobfuscate(ciphertext, key string) (string, error) {
 	}
 
 	parts := strings.Split(ciphertext, "/")
-	if len(parts) < 2 {
-		return "", fmt.Errorf("invalid obfuscated parameter name: %q", ciphertext)
-	}
 	outParts := make([]string, 0, len(parts))
-	outParts = append(outParts, parts[0]) // empty part b/c leading slash
-	outParts = append(outParts, parts[1]) // preserve first segment (e.g. "haccpath")
-	for _, part := range parts[2:] {
+	for _, part := range parts {
 		// Preserve empty segments (leading or double slashes)
 		if part == "" {
 			outParts = append(outParts, "")

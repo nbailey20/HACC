@@ -11,7 +11,7 @@ import (
 )
 
 func TestCredential(t *testing.T) {
-	path := "hackyclient/test"
+	path := "/hackyclient/test"
 	client, err := NewSsmClient("")
 	if err != nil {
 		t.Fatalf("Error creating SSM client: %v", err)
@@ -66,7 +66,7 @@ func TestCredential(t *testing.T) {
 }
 
 func TestService(t *testing.T) {
-	path := "hackytest/service"
+	path := "/hackytest/service"
 	client, err := NewSsmClient("")
 	if err != nil {
 		t.Fatalf("Error creating SSM client: %v", err)
@@ -129,10 +129,10 @@ func TestService(t *testing.T) {
 		t.Errorf("Error deleting service: %v", err)
 	}
 	err = svc.Delete("testUser")
-	if err != nil {
-		t.Errorf("Error deleting already deleted service: %v", err)
+	if err == nil {
+		t.Errorf("Expected Error deleting already deleted service: %v", err)
 	}
-	numUsers = svc.numUsers
+	numUsers = svc2.numUsers
 	if numUsers != 1 {
 		t.Errorf("Expected 1 user after deletion, got %d", numUsers)
 	}
@@ -147,9 +147,10 @@ func TestService(t *testing.T) {
 	}
 }
 
-func TestVault(t *testing.T) {
+func TestVaultGeneral(t *testing.T) {
 	cfg := config.AWSConfig{
-		ParamPath: "hackyclient/test",
+		ParamPath:      "/hackyclient/test",
+		ObfuscationKey: "obfkey",
 	}
 	vault, err := NewVault(nil, cfg)
 	if err != nil {
@@ -255,7 +256,8 @@ func TestVault(t *testing.T) {
 
 func TestVaultMultiAdd(t *testing.T) {
 	cfg := config.AWSConfig{
-		ParamPath: "hackyclient/test",
+		ParamPath:      "/hackyclient/test",
+		ObfuscationKey: "obfkey",
 	}
 	vault, err := NewVault(nil, cfg)
 	if err != nil {

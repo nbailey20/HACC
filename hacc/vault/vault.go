@@ -34,10 +34,11 @@ type AddCredResult struct {
 func NewVault(services map[string]*service, cfg config.AWSConfig) (*Vault, error) {
 	client, err := NewSsmClient(cfg.Profile)
 	vault := &Vault{
-		Services: services,
-		path:     cfg.ParamPath,
-		keyId:    cfg.KmsId,
-		client:   client,
+		Services:       services,
+		path:           cfg.ParamPath,
+		keyId:          cfg.KmsId,
+		obfuscationKey: cfg.ObfuscationKey,
+		client:         client,
 	}
 	if err != nil {
 		return nil, err
@@ -194,7 +195,7 @@ func (v *Vault) ListServices(prefix string) []string {
 func (v *Vault) FindServices() error {
 	// returns parameters with encrypted values
 	// parameters are of the form /path/serviceName/username
-	parameters, err := v.client.GetAllParametersByPath("/" + v.path + "/")
+	parameters, err := v.client.GetAllParametersByPath(v.path + "/")
 	if err != nil {
 		return err
 	}
@@ -202,12 +203,16 @@ func (v *Vault) FindServices() error {
 	// extract unique service names from parameters
 	serviceNames := make([]string, 0)
 	seen := make(map[string]bool)
-	for name := range parameters {
-		trimmed := strings.TrimPrefix(name, "/"+v.path+"/")
-		parts := strings.SplitN(trimmed, "/", 2)
-		if len(parts) == 2 && !seen[parts[0]] {
-			serviceNames = append(serviceNames, parts[0])
-			seen[parts[0]] = true
+	for fullName := range parameters {
+		obfServiceUser := strings.TrimPrefix(fullName, v.path+"/")
+		parts := strings.SplitN(obfServiceUser, "/", 2)
+		service, err := deobfuscate(parts[0], v.obfuscationKey)
+		if err != nil {
+			return err
+		}
+		if len(parts) == 2 && !seen[service] {
+			serviceNames = append(serviceNames, service)
+			seen[service] = true
 		}
 	}
 

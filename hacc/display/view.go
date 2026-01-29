@@ -133,10 +133,14 @@ func (m model) UsernameListView() string {
 	for idx, userName := range displayed_usernames {
 		rows = append(rows, []string{fmt.Sprintf("%d", idx+1), userName})
 	}
+	headerRow := fmt.Sprintf("Usernames — %s", m.serviceName)
+	if len(usernames) < 2 {
+		headerRow = fmt.Sprintf("Username — %s", m.serviceName)
+	}
 
 	return header() + addFooter(
 		listTable(
-			"Username",
+			headerRow,
 			rows,
 			m.page+1,
 			NumPages(len(usernames), m.pageSize),

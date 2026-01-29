@@ -12,7 +12,8 @@ import (
 
 func TestDisplay(t *testing.T) {
 	cfg := config.AWSConfig{
-		ParamPath: "/hackyclient/test/multi/",
+		ParamPath:      "/hackyclient/test/multi",
+		ObfuscationKey: "secretkey",
 	}
 	testVault, err := vault.NewVault(nil, cfg)
 	if err != nil {
