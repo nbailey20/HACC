@@ -12,13 +12,14 @@ Current Version: v2.0.0
 ## Current Features
 
 * Add, search, rotate, delete, backup, and generate credentials with your own Hacc Vault
-* Store multiple credentials per service
-* Interactive search mode for browsing & retrieving existing credentials
+* Organize credentials by services e.g. gmail, spectrum, etc
+* Interactively view and retrieving existing credentials in the Vault
     * Credential is auto-copied to clipboard with visibility toggle for security
+* CLI input is autocompleted where possible to minimize keystrokes required for usage
 * Generate hard-to-guess password for new credentials offline via built-in wordlist
     * Includes min/max password length and special / numeric character requirement
-* Backup entire vault to file
-* Ability to provide add credentials in bulk by supplying "--file" subarg
+* Backup a credential, all credentials in a service, or the entire Vault to a file
+* Add credentials to the Vault in bulk by supplying "--file" subarg to the add action
     * Example: importing a backup file to a different Vault
 
 ## TODO
