@@ -9,10 +9,10 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/nbailey20/hacc/hacc/cli"
-	"github.com/nbailey20/hacc/hacc/config"
-	"github.com/nbailey20/hacc/hacc/helpers"
-	vault "github.com/nbailey20/hacc/hacc/vault"
+	"github.com/nbailey20/hacc/cli"
+	"github.com/nbailey20/hacc/config"
+	"github.com/nbailey20/hacc/helpers"
+	vault "github.com/nbailey20/hacc/vault"
 )
 
 func TestAddMultiCredential(t *testing.T) {

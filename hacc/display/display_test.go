@@ -6,8 +6,8 @@ import (
 	"testing"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/nbailey20/hacc/hacc/config"
-	vault "github.com/nbailey20/hacc/hacc/vault"
+	"github.com/nbailey20/hacc/config"
+	vault "github.com/nbailey20/hacc/vault"
 )
 
 func TestDisplay(t *testing.T) {

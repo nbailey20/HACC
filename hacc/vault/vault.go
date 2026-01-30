@@ -8,8 +8,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/nbailey20/hacc/hacc/config"
-	"github.com/nbailey20/hacc/hacc/helpers"
+	"github.com/nbailey20/hacc/config"
+	"github.com/nbailey20/hacc/helpers"
 )
 
 var MAX_CONCURRENT_REQUESTS = 3

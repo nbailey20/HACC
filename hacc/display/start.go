@@ -2,8 +2,8 @@ package display
 
 import (
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/nbailey20/hacc/hacc/cli"
-	"github.com/nbailey20/hacc/hacc/vault"
+	"github.com/nbailey20/hacc/cli"
+	"github.com/nbailey20/hacc/vault"
 )
 
 func Start(command cli.CLICommand, vault *vault.Vault) error {

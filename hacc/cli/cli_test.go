@@ -4,8 +4,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/nbailey20/hacc/hacc/config"
-	vault "github.com/nbailey20/hacc/hacc/vault"
+	"github.com/nbailey20/hacc/config"
+	vault "github.com/nbailey20/hacc/vault"
 	"github.com/stretchr/testify/require"
 )
 

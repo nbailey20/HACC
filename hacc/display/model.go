@@ -3,8 +3,8 @@ package display
 import (
 	tea "github.com/charmbracelet/bubbletea"
 
-	cli "github.com/nbailey20/hacc/hacc/cli"
-	vault "github.com/nbailey20/hacc/hacc/vault"
+	cli "github.com/nbailey20/hacc/cli"
+	vault "github.com/nbailey20/hacc/vault"
 )
 
 type model struct {
