@@ -7,9 +7,9 @@ HACC is an open-source credential manager command-line tool that uses your perso
 * Encrypted with AWS KMS (AWS-managed or CMEK) Key
 * Can store up to 40MB of encrypted data
 
-Current Version: v2.0.0
+Current Version: v2.0
 
-## Current Features
+## Features
 
 * Add, search, rotate, delete, backup, and generate credentials with your own Hacc Vault
 * Organize credentials by services e.g. gmail, spectrum, etc
@@ -22,13 +22,30 @@ Current Version: v2.0.0
 * Add credentials to the Vault in bulk by supplying "--file" subarg to the add action
     * Example: importing a backup file to a different Vault
 
-## TODO
-* Optionally check for client version updates in github, --upgrade keyword if not on latest version
-* Better sample usage / -h output
-* Backup option --no-creds for usernames/services only
-* Support for different password types, e.g. base64, random, xkcd
-* Configuration bool to indicate whether previous HACC client versions should be cleaned up from system
-* Add MIT license
+
+# Installation
+
+## Prerequisites
+* AWS account
+* AWS CLI installed
+* Optional - IAM CLI user with the following minimum permissions added to AWS CLI
+  * ssm:PutParameter
+  * ssm:DeleteParameter
+  * ssm:GetParametersByPath
+  * ssm:GetParameter
+  * kms:Encrypt
+  * kms:Decrypt
+  * (default profile used, well, by default)
+* Optional - KMS CMEK key ID (aws/ssm managed key used if not specified)
+
+## Setting up Config File
+* Download template yaml file from releases folder and update information as needed
+* Move to `~/.hacc/config.yaml` (Mac/Linux) or `%USERPROFILE%\.hacc\config.yaml`
+
+## Downloading and Running Executable
+* Download appropriate executable from the latest releases folder and rename as `hacc`
+* Add location to PATH and test by running `hacc` or `hacc -h`.
+
 
 
 ## hacc -h
@@ -60,3 +77,12 @@ Sample Usage:
   hacc backup -f test_backup.txt
   hacc d testService -u example
 ```
+
+
+## TODO
+* Optionally check for client version updates in github, --upgrade keyword if not on latest version
+* Better sample usage / -h output
+* Backup option --no-creds for usernames/services only
+* Support for different password types, e.g. base64, random, xkcd
+* Configuration bool to indicate whether previous HACC client versions should be cleaned up from system
+* Add MIT license
