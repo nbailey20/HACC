@@ -9,9 +9,9 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"golang.design/x/clipboard"
 
-	"github.com/nbailey20/hacc/hacc/cli"
-	"github.com/nbailey20/hacc/hacc/helpers"
-	"github.com/nbailey20/hacc/hacc/vault"
+	"github.com/nbailey20/hacc/cli"
+	"github.com/nbailey20/hacc/helpers"
+	"github.com/nbailey20/hacc/vault"
 )
 
 // main add cmd invoked as initial cmd or state change

@@ -2,7 +2,7 @@ package display
 
 import (
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/nbailey20/hacc/hacc/cli"
+	"github.com/nbailey20/hacc/cli"
 )
 
 type Event interface{}

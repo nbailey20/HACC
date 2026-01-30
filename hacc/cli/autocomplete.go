@@ -1,7 +1,7 @@
 package cli
 
 import (
-	"github.com/nbailey20/hacc/hacc/vault"
+	"github.com/nbailey20/hacc/vault"
 )
 
 func AutoCompleteCommand(command CLICommand, vault *vault.Vault) CLICommand {

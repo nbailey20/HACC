@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"os"
 
-	cli "github.com/nbailey20/hacc/hacc/cli"
-	"github.com/nbailey20/hacc/hacc/config"
-	display "github.com/nbailey20/hacc/hacc/display"
-	vault "github.com/nbailey20/hacc/hacc/vault"
+	cli "github.com/nbailey20/hacc/cli"
+	"github.com/nbailey20/hacc/config"
+	display "github.com/nbailey20/hacc/display"
+	vault "github.com/nbailey20/hacc/vault"
 )
 
 func main() {
