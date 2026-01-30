@@ -26,6 +26,7 @@ Current Version: v2.0
 # Installation
 
 ## Prerequisites
+
 * AWS account
 * AWS CLI installed
 * Optional - IAM CLI user with the following minimum permissions added to AWS CLI
@@ -39,10 +40,12 @@ Current Version: v2.0
 * Optional - KMS CMEK key ID (aws/ssm managed key used if not specified)
 
 ## Setting up Config File
+
 * Download template yaml file from releases folder and update information as needed
 * Move to `~/.hacc/config.yaml` (Mac/Linux) or `%USERPROFILE%\.hacc\config.yaml`
 
 ## Downloading and Running Executable
+
 * Download appropriate executable from the latest releases folder and rename as `hacc`
 * Add location to PATH and test by running `hacc` or `hacc -h`.
 
