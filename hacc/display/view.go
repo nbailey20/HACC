@@ -9,7 +9,7 @@ import (
 // Number of items to show per page in lists
 // The Update function allows single digits for list row selection,
 // so pageSize > 9 will cause issues with elements beyond row 9.
-var pageSize = 5
+var pageSize = 9
 
 func (m model) View() string {
 	switch m.state.(type) {
