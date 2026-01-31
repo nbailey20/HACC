@@ -83,9 +83,11 @@ Sample Usage:
 
 
 ## TODO
+* Show total number of credentials/services on startup, welcome message
 * Optionally check for client version updates in github, --upgrade keyword if not on latest version
 * Better sample usage / -h output
 * Backup option --no-creds for usernames/services only
 * Support for different password types, e.g. base64, random, xkcd
 * Configuration bool to indicate whether previous HACC client versions should be cleaned up from system
 * Add MIT license
+* alt window doesn't display lots of lines well, when bulk adding/deleting

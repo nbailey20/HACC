@@ -110,6 +110,14 @@ func addMultiCredentialCmd(vault *vault.Vault, file string) tea.Cmd {
 }
 
 func deleteCmd(vault *vault.Vault, cmd cli.CLICommand) tea.Cmd {
+	if cmd.File != "" {
+		return deleteMultiCredentialCmd(vault, cmd.File)
+	}
+	return deleteCredentialCmd(vault, cmd)
+}
+
+// single delete cmd wrapper used when no file provided
+func deleteCredentialCmd(vault *vault.Vault, cmd cli.CLICommand) tea.Cmd {
 	return func() tea.Msg {
 		if err := vault.Delete(cmd.Service, cmd.Username); err != nil {
 			return DeleteErrorMsg{
@@ -129,6 +137,57 @@ func deleteCmd(vault *vault.Vault, cmd cli.CLICommand) tea.Cmd {
 				cmd.Username,
 				cmd.Service,
 			),
+		}
+	}
+}
+
+// delete multiple credentials in parallel from a file
+func deleteMultiCredentialCmd(vault *vault.Vault, file string) tea.Cmd {
+	return func() tea.Msg {
+		fileCreds, err := helpers.ReadCredsFile(file)
+		if err != nil {
+			return DeleteErrorMsg{
+				Error: err,
+				Display: fmt.Sprintf(
+					"%s to read import file %s.",
+					failed,
+					file,
+				),
+			}
+		}
+
+		results := vault.DeleteMulti(fileCreds)
+		var successResults []string
+		var errorResults []error
+		for _, result := range results {
+			if result.Success == false {
+				errorResults = append(errorResults, result.Err)
+			} else {
+				successResults = append(
+					successResults,
+					fmt.Sprintf(
+						"%s deleted user %s from service %s.",
+						successfully,
+						result.Username,
+						result.Service,
+					),
+				)
+			}
+		}
+
+		if len(errorResults) > 0 {
+			return DeleteErrorMsg{
+				Error: errors.Join(errorResults...),
+				Display: fmt.Sprintf(
+					"%s\n%s to delete one or more credentials from file %s",
+					strings.Join(successResults, "\n"),
+					failed,
+					file,
+				),
+			}
+		}
+		return DeleteSuccessMsg{
+			Display: strings.Join(successResults, "\n"),
 		}
 	}
 }

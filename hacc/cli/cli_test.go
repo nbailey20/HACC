@@ -113,6 +113,20 @@ func TestParse(t *testing.T) {
 		"-p", "567",
 	}, true)
 	require.NoError(t, err)
+
+	// Test case 12: hacc add -f backup.json
+	cmd, err = Parse([]string{
+		"add",
+		"-f", "backup.json",
+	}, true)
+	require.NoError(t, err)
+
+	// Test case 13: hacc delete -f backup.json
+	cmd, err = Parse([]string{
+		"delete",
+		"-f", "backup.json",
+	}, true)
+	require.NoError(t, err)
 }
 
 func TestEqualStringSets(t *testing.T) {

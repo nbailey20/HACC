@@ -85,7 +85,7 @@ func addAddCommand(root *cobra.Command, cliCommand *CLICommand) {
 
 	addCmd.Flags().StringVarP(&addUsername, "username", "u", "", "Username")
 	addCmd.Flags().StringVarP(&addPassword, "password", "p", "", "Password")
-	addCmd.Flags().StringVarP(&addFile, "file", "f", "", "Backup file name to import")
+	addCmd.Flags().StringVarP(&addFile, "file", "f", "", "Backup file name for bulk credential addition")
 	addCmd.Flags().BoolVarP(&addGenerate, "generate", "g", false, "Generate password")
 	addCmd.Flags().StringVarP(&specialsInPass, "specials", "", "any", "Digit requirement when generating a password: any|required|forbidden")
 	addCmd.Flags().StringVarP(&digitsInPass, "digits", "", "any", "Special character requirement when generating a password: any|required|forbidden")
@@ -97,23 +97,35 @@ func addAddCommand(root *cobra.Command, cliCommand *CLICommand) {
 func addDeleteCommand(root *cobra.Command, cliCommand *CLICommand) {
 	var (
 		deleteUsername string
+		deleteFile     string
 	)
 
 	var deleteCmd = &cobra.Command{
 		Use:     "delete SERVICE",
 		Aliases: []string{"d"},
 		Short:   "Delete a credential for a service",
-		Args:    cobra.ExactArgs(1),
+		Args: func(cmd *cobra.Command, args []string) error {
+			// if using file flag, no positional service arg expected
+			if deleteFile != "" {
+				return nil
+			}
+			// otherwise expect the service positional arg
+			return cobra.ExactArgs(1)(cmd, args)
+		},
 
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if len(args) > 0 {
+				cliCommand.Service = args[0]
+			}
 			cliCommand.Action = DeleteAction{}
-			cliCommand.Service = args[0]
 			cliCommand.Username = deleteUsername
+			cliCommand.File = deleteFile
 			return nil
 		},
 	}
 
 	deleteCmd.Flags().StringVarP(&deleteUsername, "username", "u", "", "Username")
+	deleteCmd.Flags().StringVarP(&deleteFile, "file", "f", "", "Backup file name for bulk credential deletion")
 	root.AddCommand(deleteCmd)
 }
 

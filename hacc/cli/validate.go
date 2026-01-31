@@ -30,14 +30,6 @@ var SubArgs = []FlagDef{
 }
 
 var AllowedInputCombinations = map[ActionKind][][]string{
-	ActionInstall: {
-		// {},
-		// {"file"},
-	},
-	ActionEradicate: {
-		// {},
-		// {"wipe"},
-	},
 	ActionAdd: {
 		{"file"},
 		{"service", "username", "password"},
@@ -60,6 +52,7 @@ var AllowedInputCombinations = map[ActionKind][][]string{
 	},
 	ActionDelete: {
 		{"service", "username"},
+		{"file"},
 	},
 	ActionRotate: {
 		{"service", "username", "password"},
@@ -74,16 +67,6 @@ var AllowedInputCombinations = map[ActionKind][][]string{
 		{"file"},
 		{"file", "service"},
 		{"file", "service", "username"},
-	},
-	ActionConfigure: {
-		// {"show"},
-		// {"set"},
-		//{"export"},
-		// {"set", "file", "password"},
-		// {"export", "file"},
-	},
-	ActionUpgrade: {
-		// {},
 	},
 }
 
