@@ -179,6 +179,62 @@ func (v *Vault) Delete(serviceName string, username string) error {
 	return nil
 }
 
+// DeleteMulti performs concurrent deletion of credentials listed in the provided FileCred slice.
+// It mirrors the concurrency pattern used by AddMulti and returns a slice of results per credential.
+func (v *Vault) DeleteMulti(creds []helpers.FileCred) []AddCredResult {
+	resultsChan := make(chan AddCredResult, len(creds))
+	sem := make(chan struct{}, MAX_CONCURRENT_REQUESTS)
+	var wg sync.WaitGroup
+
+	for _, cred := range creds {
+		wg.Add(1)
+		go func(cred helpers.FileCred) {
+			defer wg.Done()
+			sem <- struct{}{} // acquire semaphore
+			defer func() {
+				if r := recover(); r != nil {
+					resultsChan <- AddCredResult{
+						Service:  cred.Service,
+						Username: cred.Username,
+						Success:  false,
+						Err:      fmt.Errorf("panic: %v", r),
+					}
+				}
+				<-sem // release semaphore
+			}()
+			// slight random sleep to reduce likelihood of throttling
+			time.Sleep(time.Duration(rand.Intn(100)) * time.Millisecond)
+			err := v.Delete(
+				cred.Service,
+				cred.Username,
+			)
+			result := AddCredResult{
+				Service:  cred.Service,
+				Username: cred.Username,
+				Success:  true,
+				Err:      err,
+			}
+			if err != nil {
+				result.Success = false
+			}
+			resultsChan <- result
+		}(cred)
+	}
+
+	// close results channel when all workers finish
+	go func() {
+		wg.Wait()
+		close(resultsChan)
+	}()
+
+	// read the results of the channel
+	out := make([]AddCredResult, 0, len(creds))
+	for r := range resultsChan {
+		out = append(out, r)
+	}
+	return out
+}
+
 func (v *Vault) ListServices(prefix string) []string {
 	// return sorted list of service names with prefix filtering
 	// provide empty string for no prefix filtering

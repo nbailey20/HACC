@@ -308,3 +308,58 @@ func TestVaultMultiAdd(t *testing.T) {
 		}
 	}
 }
+
+func TestVaultMultiDelete(t *testing.T) {
+	cfg := config.AWSConfig{
+		ParamPath:      "/hackyclient/test",
+		ObfuscationKey: "obfkey",
+	}
+	vault, err := NewVault(nil, cfg)
+	if err != nil {
+		t.Fatalf("Error creating vault: %v", err)
+	}
+	var creds []helpers.FileCred
+	for i := range 20 {
+		x := rand.Intn(i+1) + 1
+		creds = append(
+			creds,
+			helpers.FileCred{
+				Username: fmt.Sprintf("alice%d", i),
+				Password: fmt.Sprintf("alicepass%d", i),
+				Service:  fmt.Sprintf("alicevserv%d", x),
+			},
+		)
+	}
+	addResults := vault.AddMulti(creds)
+	for _, r := range addResults {
+		if !r.Success {
+			t.Errorf("Expected success = True adding multiple services, got false")
+		}
+		if r.Err != nil {
+			t.Errorf("Expected error = nil adding multiple services, got %v", r.Err)
+		}
+	}
+
+	t.Cleanup(func() {
+		time.Sleep(2 * time.Second) // eventual consistency
+		results := vault.DeleteMulti(creds)
+		for _, r := range results {
+			if !r.Success {
+				t.Errorf("Expected success = True deleting multiple services, got false")
+			}
+			if r.Err != nil {
+				t.Errorf("Expected error = nil deleting multiple services, got %v", r.Err)
+			}
+		}
+		for _, c := range creds {
+			if vault.HasService(c.Service) {
+				t.Errorf("Expected service %s to be deleted from Vault", c.Service)
+			}
+			_, err := vault.Get(c.Service, c.Username)
+			if err == nil {
+				t.Errorf("Expected error retrieving deleted cred for %s/%s", c.Service, c.Username)
+			}
+		}
+	})
+
+}

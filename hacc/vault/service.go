@@ -132,11 +132,29 @@ func (s *service) NumUsers() int {
 }
 
 func (s *service) Delete(username string) error {
-	err := s.credentials[username].Delete()
-	if err == nil || strings.Contains(err.Error(), "ParameterNotFound") {
-		delete(s.credentials, username)
-		s.numUsers--
+	// Step 1: grab credential safely
+	s.mu.Lock()
+	cred, exists := s.credentials[username]
+	s.mu.Unlock()
+
+	if !exists {
+		return nil // or ParameterNotFound equivalent
 	}
+
+	// Step 2: do network call WITHOUT holding lock
+	err := cred.Delete()
+
+	// Step 3: update in-memory state safely
+	if err == nil || strings.Contains(err.Error(), "ParameterNotFound") {
+		s.mu.Lock()
+		// re-check in case another goroutine deleted it
+		if _, stillExists := s.credentials[username]; stillExists {
+			delete(s.credentials, username)
+			s.numUsers--
+		}
+		s.mu.Unlock()
+	}
+
 	return err
 }
 
