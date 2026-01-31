@@ -56,33 +56,32 @@ func NewVault(services map[string]*service, cfg config.AWSConfig) (*Vault, error
 
 func (v *Vault) Add(serviceName string, username string, value string) error {
 	v.mu.Lock()
-	_, exists := v.Services[serviceName]
+	svc, exists := v.Services[serviceName]
 	v.mu.Unlock()
 
-	if !exists {
-		service, err := NewService(
-			serviceName,
-			map[string]string{username: value},
-			v.path,
-			v.keyId,
-			v.obfuscationKey,
-			v.client,
-		)
-		if err != nil {
-			return err
-		}
-		// check again to make sure service wasn't created since previous locked check
-		v.mu.Lock()
-		if _, exists := v.Services[serviceName]; !exists {
-			v.Services[serviceName] = service
-		} else {
-			// service was created in the meantime, add credential to existing service
-			err = v.Services[serviceName].Add(username, value)
-		}
-		v.mu.Unlock()
-		return nil
+	if exists {
+		return svc.Add(username, value)
 	}
-	return v.Services[serviceName].Add(username, value)
+
+	service, err := NewService(
+		serviceName,
+		map[string]string{username: value},
+		v.path,
+		v.keyId,
+		v.obfuscationKey,
+		v.client,
+	)
+	if err != nil {
+		return err
+	}
+	// check again to make sure service wasn't created since previous locked check
+	v.mu.Lock()
+	defer v.mu.Unlock()
+	if existing, exists := v.Services[serviceName]; exists {
+		return existing.Add(username, value)
+	}
+	v.Services[serviceName] = service
+	return nil
 }
 
 func (v *Vault) AddMulti(creds []helpers.FileCred) []AddCredResult {
@@ -93,6 +92,7 @@ func (v *Vault) AddMulti(creds []helpers.FileCred) []AddCredResult {
 	for _, cred := range creds {
 		wg.Add(1)
 		go func(cred helpers.FileCred) {
+
 			defer wg.Done()
 			sem <- struct{}{} // acquire semaphore
 			defer func() {

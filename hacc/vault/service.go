@@ -77,6 +77,8 @@ func NewService(
 func (s *service) Add(username string, value string) error {
 	// ensure Add is a thread-safe method
 	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	_, exists := s.credentials[username]
 	if exists {
 		return fmt.Errorf("user %s already exists in service %s", username, s.name)
@@ -99,7 +101,6 @@ func (s *service) Add(username string, value string) error {
 
 	s.credentials[username] = st
 	s.numUsers++
-	s.mu.Unlock()
 	return nil
 }
 
