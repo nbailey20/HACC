@@ -31,7 +31,7 @@ type AddCredResult struct {
 }
 
 // If no services provided, load all existing services from backend
-func NewVault(services map[string]*service, cfg config.AWSConfig) (*Vault, error) {
+func NewVault(services map[string]*service, cfg *config.Config) (*Vault, error) {
 	client, err := NewSsmClient(cfg.Profile)
 	vault := &Vault{
 		Services:       services,

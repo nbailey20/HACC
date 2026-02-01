@@ -2,6 +2,7 @@ package display
 
 import (
 	"fmt"
+	"strconv"
 
 	"github.com/charmbracelet/lipgloss"
 )
@@ -52,7 +53,10 @@ func header() string {
 }
 
 func (m model) WelcomeView() string {
-	msg := header() + welcomeFooterStyle.Render("Press any key to continue...")
+	numServices := strconv.Itoa(len(m.vault.Services))
+	msg := header() + welcomeFooterStyle.Render(
+		"Vault contains "+numServices+" services.\nPress any key to continue...",
+	)
 	return msg
 }
 
@@ -123,7 +127,6 @@ func (m model) UsernameListView() string {
 	if m.serviceName == "" {
 		return "Error: service name should not be empty in UsernameListView"
 	}
-
 	usernames, err := m.vault.GetUsersForService(m.serviceName)
 	if err != nil {
 		return fmt.Sprintf("Error retrieving users for service %s: %v", m.serviceName, err)

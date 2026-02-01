@@ -7,15 +7,10 @@ import (
 )
 
 const validConfigYAML = `
-aws:
-  profile: hacc-user
-  kms_id: 1234567890
-  param_path: /hacc-vault
-  obfuscation_key: supersecretkey
-
-client:
-  check_for_upgrades: true
-  cleanup_old_versions: false
+profile: hacc-user
+kms_id: 1234567890
+param_path: /hacc-vault
+obfuscation_key: supersecretkey
 `
 
 func writeTempConfig(t *testing.T, contents string) string {
@@ -39,20 +34,14 @@ func TestLoadConfig_Success(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	if !cfg.Client.CheckForUpgrades {
-		t.Errorf("expected check_for_upgrades=true")
+	if cfg.Profile != "hacc-user" {
+		t.Errorf("expected profile=hacc-user, got %s", cfg.Profile)
 	}
-	if cfg.Client.CleanupOldVersions {
-		t.Errorf("expected cleanup_old_versions=false")
+	if cfg.KmsId != "1234567890" {
+		t.Errorf("expected kms_id=hacc-key, got %s", cfg.KmsId)
 	}
-	if cfg.AWS.Profile != "hacc-user" {
-		t.Errorf("expected aws.profile=hacc-user, got %s", cfg.AWS.Profile)
-	}
-	if cfg.AWS.KmsId != "1234567890" {
-		t.Errorf("expected aws.kms_id=hacc-key, got %s", cfg.AWS.KmsId)
-	}
-	if cfg.AWS.ParamPath != "/hacc-vault" {
-		t.Errorf("expected aws.param_path=hacc-vault, got %s", cfg.AWS.ParamPath)
+	if cfg.ParamPath != "/hacc-vault" {
+		t.Errorf("expected param_path=hacc-vault, got %s", cfg.ParamPath)
 	}
 }
 
@@ -78,13 +67,9 @@ func TestValidate(t *testing.T) {
 
 func TestValidate_MissingAWSProfile(t *testing.T) {
 	path := writeTempConfig(t, `
-aws:
-  kms_id: 1234567890
-  param_path: /hacc-vault
-  obfuscation_key: supersecretkey
-client:
-  check_for_upgrades: true
-  cleanup_old_versions: false
+kms_id: 1234567890
+param_path: /hacc-vault
+obfuscation_key: supersecretkey
 `)
 	cfg, err := Load(path)
 	if err != nil {
@@ -97,13 +82,9 @@ client:
 
 func TestValidate_MissingKmsId(t *testing.T) {
 	path := writeTempConfig(t, `
-aws:
-  profile: hacc-user
-  param_path: /hacc-vault
-  obfuscation_key: supersecretkey
-client:
-  check_for_upgrades: true
-  cleanup_old_versions: false
+profile: hacc-user
+param_path: /hacc-vault
+obfuscation_key: supersecretkey
 `)
 	cfg, err := Load(path)
 	if err != nil {
@@ -116,13 +97,9 @@ client:
 
 func TestValidate_MissingParamPath(t *testing.T) {
 	path := writeTempConfig(t, `
-aws:
-  profile: hacc-user
-  kms_id: 1234567890
-  obfuscation_key: supersecretkey	
-client:
-  check_for_upgrades: true
-  cleanup_old_versions: false
+profile: hacc-user
+kms_id: 1234567890
+obfuscation_key: supersecretkey	
 `)
 	cfg, err := Load(path)
 	if err != nil {
@@ -135,10 +112,9 @@ client:
 
 func TestValidate_MissingObfuscationKey(t *testing.T) {
 	path := writeTempConfig(t, `
-aws:
-  profile: hacc-user
-  kms_id: 1234567890
-  param_path: /hacc-vault
+profile: hacc-user
+kms_id: 1234567890
+param_path: /hacc-vault
 `)
 	cfg, err := Load(path)
 	if err != nil {

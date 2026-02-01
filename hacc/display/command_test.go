@@ -16,12 +16,12 @@ import (
 )
 
 func TestAddMultiCredential(t *testing.T) {
-	cfg := config.AWSConfig{
+	cfg := config.Config{
 		ParamPath:      "/hackyclient/test/multi",
 		ObfuscationKey: "secretkey",
 	}
 	// Create a temporary vault
-	testVault, err := vault.NewVault(nil, cfg)
+	testVault, err := vault.NewVault(nil, &cfg)
 	require.NoError(t, err)
 
 	// Create a temporary JSON file with multiple credentials
@@ -57,11 +57,11 @@ func TestAddMultiCredential(t *testing.T) {
 }
 
 func TestAddMultiCredentialFileNotFound(t *testing.T) {
-	cfg := config.AWSConfig{
+	cfg := config.Config{
 		ParamPath:      "/hackyclient/test/multi",
 		ObfuscationKey: "secretkey",
 	}
-	testVault, err := vault.NewVault(nil, cfg)
+	testVault, err := vault.NewVault(nil, &cfg)
 	require.NoError(t, err)
 
 	// Test case: File doesn't exist
@@ -74,11 +74,11 @@ func TestAddMultiCredentialFileNotFound(t *testing.T) {
 }
 
 func TestAddMultiCredentialInvalidJson(t *testing.T) {
-	cfg := config.AWSConfig{
+	cfg := config.Config{
 		ParamPath:      "/hackyclient/test/multi",
 		ObfuscationKey: "secretkey",
 	}
-	testVault, err := vault.NewVault(nil, cfg)
+	testVault, err := vault.NewVault(nil, &cfg)
 	require.NoError(t, err)
 
 	// Create a temporary file with invalid JSON
@@ -99,12 +99,12 @@ func TestAddMultiCredentialInvalidJson(t *testing.T) {
 }
 
 func TestBackupCredential(t *testing.T) {
-	cfg := config.AWSConfig{
+	cfg := config.Config{
 		ParamPath:      "/hackyclient/test/backup",
 		ObfuscationKey: "secretkey",
 	}
 	// Create a temporary vault
-	testVault, err := vault.NewVault(nil, cfg)
+	testVault, err := vault.NewVault(nil, &cfg)
 	require.NoError(t, err)
 	// Add a test credential
 	err = testVault.Add("backupservice", "backupuser", "backuppass")
@@ -129,12 +129,12 @@ func TestBackupCredential(t *testing.T) {
 }
 
 func TestBackupServiceCredentials(t *testing.T) {
-	cfg := config.AWSConfig{
+	cfg := config.Config{
 		ParamPath:      "/hackyclient/test/backup",
 		ObfuscationKey: "secretkey",
 	}
 	// Create a temporary vault
-	testVault, err := vault.NewVault(nil, cfg)
+	testVault, err := vault.NewVault(nil, &cfg)
 	require.NoError(t, err)
 	// Add test credentials
 	err = testVault.Add("svc1", "user1", "pass1")
@@ -161,12 +161,12 @@ func TestBackupServiceCredentials(t *testing.T) {
 }
 
 func TestBackupAllCredentials(t *testing.T) {
-	cfg := config.AWSConfig{
+	cfg := config.Config{
 		ParamPath:      "/hackyclient/test/backup",
 		ObfuscationKey: "secretkey",
 	}
 	// Create a temporary vault
-	testVault, err := vault.NewVault(nil, cfg)
+	testVault, err := vault.NewVault(nil, &cfg)
 	require.NoError(t, err)
 	// Add test credentials
 	var creds []helpers.FileCred

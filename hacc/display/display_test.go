@@ -11,11 +11,11 @@ import (
 )
 
 func TestDisplay(t *testing.T) {
-	cfg := config.AWSConfig{
+	cfg := config.Config{
 		ParamPath:      "/hackyclient/test/multi",
 		ObfuscationKey: "secretkey",
 	}
-	testVault, err := vault.NewVault(nil, cfg)
+	testVault, err := vault.NewVault(nil, &cfg)
 	if err != nil {
 		t.Fatalf("Error creating vault: %v", err)
 	}
