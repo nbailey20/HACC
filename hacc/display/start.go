@@ -11,7 +11,6 @@ func Start(command cli.CLICommand, vault *vault.Vault) error {
 	for _, service := range vault.Services {
 		numCreds += service.NumUsers()
 	}
-
 	model := NewModel(command, vault)
 	p := tea.NewProgram(model, tea.WithAltScreen())
 	_, err := p.Run()

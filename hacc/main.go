@@ -49,7 +49,7 @@ func main() {
 
 	// Create backend Vault, don't pass any services
 	// to auto-load from backend
-	vault, err := vault.NewVault(nil, cfg.AWS)
+	vault, err := vault.NewVault(nil, cfg)
 	if err != nil {
 		fmt.Printf("Error creating vault, exiting: %v\n", err)
 		return

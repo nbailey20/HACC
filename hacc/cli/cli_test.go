@@ -220,12 +220,12 @@ func TestValidateCommand(t *testing.T) {
 }
 
 func TestAutoCompleteCommand(t *testing.T) {
-	cfg := config.AWSConfig{
+	cfg := config.Config{
 		ParamPath:      "/hackyclient/test",
 		KmsId:          "",
 		ObfuscationKey: "specialkey",
 	}
-	vault, err := vault.NewVault(nil, cfg)
+	vault, err := vault.NewVault(nil, &cfg)
 	if err != nil {
 		t.Fatalf("Error creating vault: %v", err)
 	}

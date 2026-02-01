@@ -148,11 +148,11 @@ func TestService(t *testing.T) {
 }
 
 func TestVaultGeneral(t *testing.T) {
-	cfg := config.AWSConfig{
+	cfg := config.Config{
 		ParamPath:      "/hackyclient/test",
 		ObfuscationKey: "obfkey",
 	}
-	vault, err := NewVault(nil, cfg)
+	vault, err := NewVault(nil, &cfg)
 	if err != nil {
 		t.Fatalf("Error creating vault: %v", err)
 	}
@@ -221,7 +221,7 @@ func TestVaultGeneral(t *testing.T) {
 	}
 	time.Sleep(2 * time.Second) // wait for eventual consistency
 
-	vault2, err2 := NewVault(nil, cfg)
+	vault2, err2 := NewVault(nil, &cfg)
 	if err2 != nil {
 		t.Fatalf("Error creating vault2: %v", err2)
 	}
@@ -235,7 +235,7 @@ func TestVaultGeneral(t *testing.T) {
 		t.Fatalf("Error deleting service2: %v", err)
 	}
 	time.Sleep(3 * time.Second) // wait for eventual consistency
-	vault3, err3 := NewVault(nil, cfg)
+	vault3, err3 := NewVault(nil, &cfg)
 	if err3 != nil {
 		t.Fatalf("Error creating vault3: %v", err3)
 	}
@@ -255,11 +255,11 @@ func TestVaultGeneral(t *testing.T) {
 }
 
 func TestVaultMultiAdd(t *testing.T) {
-	cfg := config.AWSConfig{
+	cfg := config.Config{
 		ParamPath:      "/hackyclient/test",
 		ObfuscationKey: "obfkey",
 	}
-	vault, err := NewVault(nil, cfg)
+	vault, err := NewVault(nil, &cfg)
 	if err != nil {
 		t.Fatalf("Error creating vault: %v", err)
 	}
@@ -310,11 +310,11 @@ func TestVaultMultiAdd(t *testing.T) {
 }
 
 func TestVaultMultiDelete(t *testing.T) {
-	cfg := config.AWSConfig{
+	cfg := config.Config{
 		ParamPath:      "/hackyclient/test",
 		ObfuscationKey: "obfkey",
 	}
-	vault, err := NewVault(nil, cfg)
+	vault, err := NewVault(nil, &cfg)
 	if err != nil {
 		t.Fatalf("Error creating vault: %v", err)
 	}

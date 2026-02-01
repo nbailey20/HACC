@@ -40,7 +40,7 @@ func preprocessArgs(args []string) []string {
 func NewRootCommand(cliCommand *CLICommand) *cobra.Command {
 	rootCmd := &cobra.Command{
 		Use:   "hacc",
-		Short: "hacc is a credential manager backed by AWS SSM",
+		Short: "HACC v2.0 - Homemade Authentication Credential Client, backed by AWS SSM Parameter Store.",
 		Args:  cobra.ArbitraryArgs,
 
 		RunE: func(cmd *cobra.Command, args []string) error {

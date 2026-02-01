@@ -316,6 +316,7 @@ func (s ServiceListState) Update(m model, e Event) (model, tea.Cmd) {
 			selectedService := services[m.page*m.pageSize+m.cursor]
 			m.serviceName = selectedService
 			m.cursor = 0
+			m.page = 0
 			m.state = &UsernameListState{}
 			return m, nil
 		},
