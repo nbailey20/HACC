@@ -22,6 +22,7 @@ func isVerb(s string) bool {
 func addSearchCommand(root *cobra.Command, cliCommand *CLICommand) {
 	var (
 		searchUsername string
+		jsonOutput     bool
 	)
 
 	searchCmd := &cobra.Command{
@@ -34,11 +35,13 @@ func addSearchCommand(root *cobra.Command, cliCommand *CLICommand) {
 			cliCommand.Action = SearchAction{}
 			cliCommand.Service = args[0]
 			cliCommand.Username = searchUsername
+			cliCommand.JSONOutput = jsonOutput
 			return nil
 		},
 	}
 
 	searchCmd.Flags().StringVarP(&searchUsername, "username", "u", "", "Username")
+	searchCmd.Flags().BoolVarP(&jsonOutput, "json-output", "", false, "Whether output should be json or interactive (default interactive)")
 	root.AddCommand(searchCmd)
 }
 
@@ -80,6 +83,7 @@ func addAddCommand(root *cobra.Command, cliCommand *CLICommand) {
 			cliCommand.DigitsInPass = digitsInPass
 			cliCommand.MinLen = minLen
 			cliCommand.MaxLen = maxLen
+			cliCommand.JSONOutput = jsonOutput
 			return nil
 		},
 	}
@@ -139,6 +143,7 @@ func addDeleteCommand(root *cobra.Command, cliCommand *CLICommand) {
 			cliCommand.Action = DeleteAction{}
 			cliCommand.Username = deleteUsername
 			cliCommand.File = deleteFile
+			cliCommand.JSONOutput = jsonOutput
 			return nil
 		},
 	}
@@ -170,6 +175,8 @@ func addRotateCommand(root *cobra.Command, cliCommand *CLICommand) {
 			cliCommand.Service = args[0]
 			cliCommand.Username = rotateUsername
 			cliCommand.Password = rotatePassword
+			cliCommand.Generate = rotateGenerate
+			cliCommand.JSONOutput = jsonOutput
 			return nil
 		},
 	}
@@ -210,6 +217,7 @@ func addBackupCommand(root *cobra.Command, cliCommand *CLICommand) {
 			}
 			cliCommand.Username = backupUser
 			cliCommand.File = backupFile
+			cliCommand.JSONOutput = jsonOutput
 			return nil
 		},
 	}

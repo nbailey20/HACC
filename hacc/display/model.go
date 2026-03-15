@@ -7,24 +7,6 @@ import (
 	"github.com/nbailey20/hacc/engine"
 )
 
-//	type model struct {
-//		vault          *vault.Vault
-//		state          State
-//		initialCmd     tea.Cmd
-//		action         cli.CLIAction
-//		serviceName    string
-//		username       string
-//		password       string
-//		digitsInPass   string
-//		specialsInPass string
-//		minPassLen     int
-//		maxPassLen     int
-//		page           int
-//		pageSize       int
-//		cursor         int
-//		showPass       bool
-//		result         engine.Result
-//	}
 type model struct {
 	exec *engine.Executor
 	cmd  cli.CLICommand
