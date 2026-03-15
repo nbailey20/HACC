@@ -7,6 +7,7 @@ import (
 	cli "github.com/nbailey20/hacc/cli"
 	"github.com/nbailey20/hacc/config"
 	display "github.com/nbailey20/hacc/display"
+	"github.com/nbailey20/hacc/engine"
 	vault "github.com/nbailey20/hacc/vault"
 )
 
@@ -36,17 +37,6 @@ func main() {
 		return
 	}
 
-	// Validate CLI command
-	err = cli.ValidateCommand(command)
-	if err != nil {
-		// If we received a help command for usage, we're done
-		if err.Error() == "No action" {
-			return
-		}
-		fmt.Printf("Invalid input, exiting: %v\n", err)
-		return
-	}
-
 	// Create backend Vault, don't pass any services
 	// to auto-load from backend
 	vault, err := vault.NewVault(nil, cfg)
@@ -59,8 +49,9 @@ func main() {
 	// purely for enhancing UX and less typing
 	command = cli.AutoCompleteCommand(command, vault)
 
-	// Pass Vault to display component and start program
-	if err := display.Start(command, vault); err != nil {
+	// Pass Vault executor to display component and start program
+	executor := engine.NewExecutor(vault)
+	if err := display.Start(command, executor); err != nil {
 		fmt.Println("Error starting program:", err)
 	}
 }

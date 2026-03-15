@@ -35,10 +35,11 @@ func TestParse(t *testing.T) {
 	require.Equal(t, "secret", cmd.Password)
 	require.False(t, cmd.Generate)
 
-	// Test case 3: hacc a gmail -g
+	// Test case 3: hacc a gmail -g -u bob
 	cmd, err = Parse([]string{
 		"a",
 		"gmail",
+		"-u", "bob",
 		"-g",
 	}, true)
 	require.NoError(t, err)
@@ -51,11 +52,12 @@ func TestParse(t *testing.T) {
 	_, err = Parse([]string{"service1", "service2"}, true)
 	require.Error(t, err)
 
-	// Test case 5: hacc a -g gmail
+	// Test case 5: hacc a -g gmail -u testUser
 	cmd, err = Parse([]string{
 		"a",
 		"-g",
 		"gmail",
+		"-u", "testUser",
 	}, true)
 	require.NoError(t, err)
 	require.Equal(t, "gmail", cmd.Service)
@@ -65,6 +67,7 @@ func TestParse(t *testing.T) {
 		"gmail",
 		"a",
 		"-g",
+		"-u", "testUser",
 	}, true)
 	require.NoError(t, err)
 	require.Equal(t, "gmail", cmd.Service)

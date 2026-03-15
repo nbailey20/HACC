@@ -1,0 +1,4 @@
+profile: hacc-test                    # AWS CLI profile name to use for all Vault operations (default if empty)
+kms_id: ""                              # KMS key ID for Vault, (default aws/ssm managed key)
+param_path: /hacc-test                 # Required - SSM Parameter Store path where credentials will be kept (the vault itself)
+obfuscation_key: somedecentlylongstring # Required - String used to obfuscate SSM Parameter names and ensure they meet the character requirements

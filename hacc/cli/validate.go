@@ -27,6 +27,7 @@ var SubArgs = []FlagDef{
 	{Short: "", Long: "min-special", Help: "Minimum number of special characters required when generating a password", Kind: "int"},
 	{Short: "", Long: "min-len", Help: "Minimum length of password to generate", Kind: "int"},
 	{Short: "", Long: "max-len", Help: "Maximum length of password to generate (default 30)", Kind: "int"},
+	{Short: "", Long: "json-output", Help: "Whether output should be json or interactive (default interactive)", Kind: "bool"},
 }
 
 var AllowedInputCombinations = map[ActionKind][][]string{

@@ -43,11 +43,13 @@ Current Version: v2.0
 
 * Download template yaml file from releases folder and update information as needed
 * Move to `~/.hacc/config.yaml` (Mac/Linux) or `%USERPROFILE%\.hacc\config.yaml`
+  * If you don't like the default config.yaml location, set the HACC_CONF env variable with a different path
+  * I.e. export HACC_CONFIG=/my/different/location
 
 ## Downloading and Running Executable
 
 * Download appropriate executable from the latest releases folder and rename as `hacc`
-* Add location to PATH and test by running `hacc` or `hacc -h`.
+* Add executable location to PATH and test by running `hacc` or `hacc -h`.
 
 
 
@@ -88,4 +90,3 @@ Sample Usage:
 * Backup option --no-creds for usernames/services only
 * Support for different password types, e.g. base64, random, xkcd
 * Add MIT license
-* alt window doesn't display lots of lines well, when bulk adding/deleting, alt window depending on action?

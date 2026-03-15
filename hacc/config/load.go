@@ -17,11 +17,17 @@ type Config struct {
 }
 
 func GetPath() (string, error) {
-	// returns path of config.yaml file required for program
+	// Prefer explicit config path via env var
+	if cfg := os.Getenv("HACC_CONFIG"); cfg != "" {
+		return cfg, nil
+	}
+
+	// Fallback to default in user's home directory
 	home, err := os.UserHomeDir()
 	if err != nil {
 		return "", err
 	}
+
 	return filepath.Join(home, ".hacc", "config.yaml"), nil
 }
 

@@ -3,6 +3,7 @@ package display
 import (
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/charmbracelet/lipgloss"
 )
@@ -53,7 +54,7 @@ func header() string {
 }
 
 func (m model) WelcomeView() string {
-	numServices := strconv.Itoa(len(m.vault.Services))
+	numServices := strconv.Itoa(m.exec.GetNumServices())
 	msg := header() + welcomeFooterStyle.Render(
 		"Vault contains "+numServices+" services.\nPress any key to continue...",
 	)
@@ -65,27 +66,67 @@ func (m model) EmptyView() string {
 }
 
 func (m model) EndView() string {
-	result := m.endMessage
-	if !m.endSuccess {
-		result += fmt.Sprintf("\nError: %v", m.endError)
+	var parts []string
+
+	// 1. Render credential data first
+	if len(m.result.Data) > 0 {
+		for _, cred := range m.result.Data {
+			line := fmt.Sprintf(
+				"Service: %s | Username: %s",
+				cred.Service,
+				cred.Username,
+			)
+
+			if cred.Password != "" {
+				line += fmt.Sprintf(" | Password: %s", cred.Password)
+			}
+
+			parts = append(parts, line)
+		}
 	}
-	// we're going to quit after this view is displayed, so no footer instructions
+
+	// 2. Render action result message
+	if m.result.Success {
+		parts = append(parts,
+			fmt.Sprintf("%s executed %s command",
+				successfully,
+				m.result.Action,
+			),
+		)
+	} else {
+		parts = append(parts,
+			fmt.Sprintf("%s executing %s command",
+				failed,
+				m.result.Action,
+			),
+		)
+	}
+
+	// 3. Append error message if present
+	if m.result.Error != "" {
+		parts = append(parts,
+			fmt.Sprintf("Error: %s", m.result.Error),
+		)
+	}
+
+	result := strings.Join(parts, "\n")
 	return header() + addFooter(endStyle.Render(result), "")
 }
 
 func (m model) CredentialView() string {
-	if m.serviceName == "" {
-		return "Error: service name should not be empty in CredentialView"
+	if len(m.result.Data) == 0 || m.result.Data[0].Service == "" {
+		return "Error: no credential data available."
 	}
 
-	service := credServiceStyle.Render(" " + m.serviceName + " ")
-	user := credTextStyle.Render(m.username)
+	cred := m.result.Data[0]
+	service := credServiceStyle.Render(" " + cred.Service + " ")
+	user := credTextStyle.Render(cred.Username)
 	pass := "*****"
-	if m.password == "" {
+	if cred.Password == "" {
 		pass = "Loading..."
 	}
 	if m.showPass {
-		pass = m.password
+		pass = cred.Password
 	}
 	pass = credTextStyle.Render(pass)
 	content := user + credSpacer + pass
@@ -94,16 +135,16 @@ func (m model) CredentialView() string {
 }
 
 func (m model) ConfirmView() string {
-	service := credServiceStyle.Render(" " + m.serviceName + " ")
-	user := credTextStyle.Render(m.username)
-	pass := credTextStyle.Render(m.password)
+	service := credServiceStyle.Render(" " + m.cmd.Service + " ")
+	user := credTextStyle.Render(m.cmd.Username)
+	pass := credTextStyle.Render(m.cmd.Password)
 	content := user + credSpacer + pass
 	paddedContent := sidePaddingStyle.Render(content)
 	return header() + credBox(service, paddedContent) + "\n" + footerStyle.Render("Use this password? y/n (default y)")
 }
 
 func (m model) ServiceListView() string {
-	services := m.vault.ListServices(m.serviceName)
+	services := m.exec.GetServicesWithPrefix(m.cmd.Service)
 	displayed_services := services[m.page*m.pageSize : min((m.page+1)*m.pageSize, len(services))]
 
 	var rows [][]string
@@ -124,21 +165,21 @@ func (m model) ServiceListView() string {
 }
 
 func (m model) UsernameListView() string {
-	if m.serviceName == "" {
+	if m.cmd.Service == "" {
 		return "Error: service name should not be empty in UsernameListView"
 	}
-	usernames, err := m.vault.GetUsersForService(m.serviceName)
+	usernames, err := m.exec.GetUsersForService(m.cmd.Service)
 	if err != nil {
-		return fmt.Sprintf("Error retrieving users for service %s: %v", m.serviceName, err)
+		return fmt.Sprintf("Error retrieving users for service %s: %v", m.cmd.Service, err)
 	}
 	displayed_usernames := usernames[m.page*m.pageSize : min((m.page+1)*m.pageSize, len(usernames))]
 	var rows [][]string
 	for idx, userName := range displayed_usernames {
 		rows = append(rows, []string{fmt.Sprintf("%d", idx+1), userName})
 	}
-	headerRow := fmt.Sprintf("Usernames — %s", m.serviceName)
+	headerRow := fmt.Sprintf("Usernames — %s", m.cmd.Service)
 	if len(usernames) < 2 {
-		headerRow = fmt.Sprintf("Username — %s", m.serviceName)
+		headerRow = fmt.Sprintf("Username — %s", m.cmd.Service)
 	}
 
 	return header() + addFooter(

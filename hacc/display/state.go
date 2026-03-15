@@ -1,8 +1,11 @@
 package display
 
 import (
+	"fmt"
+
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/nbailey20/hacc/cli"
+	"github.com/nbailey20/hacc/engine"
 )
 
 type Event interface{}
@@ -58,19 +61,13 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			return m.state.Update(m, RuneEvent{Rune: rune(key)})
 		}
-	case ErrorMsg:
-		m.endSuccess = false
-		m.endError = msg.ErrorValue()
-		m.endMessage = msg.DisplayValue()
-	case SuccessMsg:
-		m.endSuccess = true
-		m.endError = nil
-		m.endMessage = msg.DisplayValue()
+	case resultMsg:
+		m.result = msg.result
 	case PasswordGeneratedMsg:
-		m.password = msg.Password
+		m.cmd.Password = msg.Password
 	case PasswordLoadedMsg:
-		m.password = msg.Password
-		return m, copyPasswordCmd(m.password)
+		m.cmd.Password = msg.Password
+		return m, copyPasswordCmd(m.cmd.Password)
 	}
 	return m, nil
 }
@@ -145,9 +142,9 @@ func CursorNumber(m model, n int) model {
 	if n < 1 || n > m.pageSize {
 		return m
 	}
-	numResources := len(m.vault.Services)
+	numResources := m.exec.GetNumServices()
 	if _, ok := m.state.(*UsernameListState); ok {
-		numResources = m.vault.Services[m.serviceName].NumUsers()
+		numResources = m.exec.GetNumUsers(m.cmd.Service)
 	}
 	// Consider less-than-full last page
 	if m.page == NumPages(numResources, m.pageSize)-1 {
@@ -209,7 +206,7 @@ func NumLastPageItems(totalItems, pageSize int) int {
 type WelcomeState struct{}
 
 func (s WelcomeState) Update(m model, e Event) (model, tea.Cmd) {
-	if len(m.vault.Services) == 0 {
+	if m.exec.GetNumServices() == 0 {
 		m.state = &EmptyState{}
 		return m, nil
 	}
@@ -234,14 +231,14 @@ func (s EndState) Update(m model, e Event) (model, tea.Cmd) {
 }
 
 func (s EndState) Back(m model) (model, tea.Cmd) {
-	m.action = cli.SearchAction{}
+	m.cmd.Action = cli.SearchAction{}
 	m.state = &UsernameListState{}
 	// if the last user in a service was just deleted,
 	// update model and go back to the other services
-	if !m.vault.HasService(m.serviceName) {
-		m.serviceName = ""
-		m.username = ""
-		m.password = ""
+	if !m.exec.HasService(m.cmd.Service) {
+		m.cmd.Service = ""
+		m.cmd.Username = ""
+		m.cmd.Password = ""
 		m.state = &ServiceListState{}
 	}
 	return m, nil
@@ -276,23 +273,18 @@ func (s ConfirmState) Update(m model, e Event) (model, tea.Cmd) {
 	switch e := e.(type) {
 	case EnterEvent:
 		m.state = &EndState{}
-		return m, addCredentialCmd(m.vault, m.serviceName, m.username, m.password)
+		return m, execCmd(m.cmd, m.exec)
 	case RuneEvent:
 		if e.Rune == 'y' {
 			m.state = &EndState{}
-			return m, addCredentialCmd(m.vault, m.serviceName, m.username, m.password)
+			return m, execCmd(m.cmd, m.exec)
 		}
 		if e.Rune == 'n' {
-			return m, generatePasswordCmd(
-				m.digitsInPass,
-				m.specialsInPass,
-				m.minPassLen,
-				m.maxPassLen,
-			)
+			return m, generateCmd(m.cmd, m.exec)
 		}
 		return m, nil
 	case PasswordGeneratedMsg:
-		m.password = e.Password
+		m.cmd.Password = e.Password
 		return m, nil
 	default:
 		return m, nil
@@ -305,16 +297,16 @@ func (s ServiceListState) Update(m model, e Event) (model, tea.Cmd) {
 	return updateListState(
 		m,
 		e,
-		len(m.vault.Services),
+		m.exec.GetNumServices(),
 		func(m model) (model, tea.Cmd) {
-			if len(m.vault.Services) == 0 {
+			if m.exec.GetNumServices() == 0 {
 				m.state = &EmptyState{}
 				return m, nil
 			}
 			// Get the selected service name
-			services := m.vault.ListServices(m.serviceName)
+			services := m.exec.GetServicesWithPrefix(m.cmd.Service)
 			selectedService := services[m.page*m.pageSize+m.cursor]
-			m.serviceName = selectedService
+			m.cmd.Service = selectedService
 			m.cursor = 0
 			m.page = 0
 			m.state = &UsernameListState{}
@@ -333,21 +325,29 @@ func (s UsernameListState) Update(m model, e Event) (model, tea.Cmd) {
 	return updateListState(
 		m,
 		e,
-		len(m.vault.Services[m.serviceName].GetUsers("")),
+		m.exec.GetNumUsers(m.cmd.Service),
 		func(m model) (model, tea.Cmd) {
 			// Get the selected service name
-			service := m.vault.Services[m.serviceName]
-			users := service.GetUsers("")
+			users, err := m.exec.GetUsersForService(m.cmd.Service)
+			if err != nil {
+				m.result = engine.Result{
+					Action:  "search",
+					Success: false,
+					Error:   fmt.Sprintf("error retrieving users for service %s: %v", m.cmd.Service, err),
+				}
+				m.state = &EndState{}
+				return m, nil
+			}
 			selectedUser := users[m.page*m.pageSize+m.cursor]
-			m.username = selectedUser
+			m.cmd.Username = selectedUser
 			m.state = &CredentialState{}
-			return m, loadPasswordCmd(m.vault, m.serviceName, m.username)
+			return m, execCmd(m.cmd, m.exec)
 		},
 	)
 }
 
 func (s UsernameListState) Back(m model) (model, tea.Cmd) {
 	m.state = &ServiceListState{}
-	m.serviceName = ""
+	m.cmd.Service = ""
 	return m, nil
 }

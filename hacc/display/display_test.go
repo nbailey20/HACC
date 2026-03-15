@@ -6,7 +6,9 @@ import (
 	"testing"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/nbailey20/hacc/cli"
 	"github.com/nbailey20/hacc/config"
+	"github.com/nbailey20/hacc/engine"
 	vault "github.com/nbailey20/hacc/vault"
 )
 
@@ -21,7 +23,8 @@ func TestDisplay(t *testing.T) {
 	}
 
 	model := model{
-		vault:    testVault,
+		exec:     engine.NewExecutor(testVault),
+		cmd:      cli.CLICommand{},
 		pageSize: 2,
 		state:    &ServiceListState{},
 	}

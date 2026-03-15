@@ -66,4 +66,5 @@ type CLICommand struct {
 	SpecialsInPass string
 	MinLen         int
 	MaxLen         int
+	JSONOutput     bool
 }

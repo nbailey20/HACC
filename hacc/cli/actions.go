@@ -52,6 +52,7 @@ func addAddCommand(root *cobra.Command, cliCommand *CLICommand) {
 		specialsInPass string
 		minLen         int
 		maxLen         int
+		jsonOutput     bool
 	)
 
 	addCmd := &cobra.Command{
@@ -91,6 +92,23 @@ func addAddCommand(root *cobra.Command, cliCommand *CLICommand) {
 	addCmd.Flags().StringVarP(&digitsInPass, "digits", "", "any", "Special character requirement when generating a password: any|required|forbidden")
 	addCmd.Flags().IntVarP(&minLen, "min-len", "", 0, "Minimum length of password to generate")
 	addCmd.Flags().IntVarP(&maxLen, "max-len", "", 0, "Maximum length of password to generate")
+	addCmd.Flags().BoolVarP(&jsonOutput, "json-output", "", false, "Whether output should be json or interactive (default interactive)")
+
+	// Flag constraints
+	addCmd.MarkFlagsMutuallyExclusive("password", "generate")
+	addCmd.MarkFlagsOneRequired("username", "file")
+	addCmd.MarkFlagsOneRequired("password", "generate", "file")
+	for _, a := range []string{
+		"username",
+		"password",
+		"generate",
+		"specials",
+		"digits",
+		"min-len",
+		"max-len",
+	} {
+		addCmd.MarkFlagsMutuallyExclusive(a, "file")
+	}
 	root.AddCommand(addCmd)
 }
 
@@ -98,6 +116,7 @@ func addDeleteCommand(root *cobra.Command, cliCommand *CLICommand) {
 	var (
 		deleteUsername string
 		deleteFile     string
+		jsonOutput     bool
 	)
 
 	var deleteCmd = &cobra.Command{
@@ -126,6 +145,9 @@ func addDeleteCommand(root *cobra.Command, cliCommand *CLICommand) {
 
 	deleteCmd.Flags().StringVarP(&deleteUsername, "username", "u", "", "Username")
 	deleteCmd.Flags().StringVarP(&deleteFile, "file", "f", "", "Backup file name for bulk credential deletion")
+	deleteCmd.Flags().BoolVarP(&jsonOutput, "json-output", "", false, "Whether output should be json or interactive (default interactive)")
+	deleteCmd.MarkFlagsMutuallyExclusive("username", "file")
+	deleteCmd.MarkFlagsOneRequired("username", "file")
 	root.AddCommand(deleteCmd)
 }
 
@@ -133,6 +155,8 @@ func addRotateCommand(root *cobra.Command, cliCommand *CLICommand) {
 	var (
 		rotateUsername string
 		rotatePassword string
+		rotateGenerate bool
+		jsonOutput     bool
 	)
 
 	var rotateCmd = &cobra.Command{
@@ -152,6 +176,11 @@ func addRotateCommand(root *cobra.Command, cliCommand *CLICommand) {
 
 	rotateCmd.Flags().StringVarP(&rotateUsername, "username", "u", "", "Username")
 	rotateCmd.Flags().StringVarP(&rotatePassword, "password", "p", "", "Password")
+	rotateCmd.Flags().BoolVarP(&rotateGenerate, "generate", "g", false, "Generate password")
+	rotateCmd.Flags().BoolVarP(&jsonOutput, "json-output", "", false, "Whether output should be json or interactive (default interactive)")
+	rotateCmd.MarkFlagRequired("username")
+	rotateCmd.MarkFlagsMutuallyExclusive("password", "generate")
+	rotateCmd.MarkFlagsOneRequired("password", "generate")
 	root.AddCommand(rotateCmd)
 }
 
@@ -159,6 +188,7 @@ func addBackupCommand(root *cobra.Command, cliCommand *CLICommand) {
 	var (
 		backupFile string
 		backupUser string
+		jsonOutput bool
 	)
 
 	var backupCmd = &cobra.Command{
@@ -186,5 +216,7 @@ func addBackupCommand(root *cobra.Command, cliCommand *CLICommand) {
 
 	backupCmd.Flags().StringVarP(&backupFile, "file", "f", "", "File name where backup should be created")
 	backupCmd.Flags().StringVarP(&backupUser, "username", "u", "", "Username")
+	backupCmd.Flags().BoolVarP(&jsonOutput, "json-output", "", false, "Whether output should be json or interactive (default interactive)")
+	backupCmd.MarkFlagRequired("file")
 	root.AddCommand(backupCmd)
 }

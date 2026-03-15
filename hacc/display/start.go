@@ -3,16 +3,16 @@ package display
 import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/nbailey20/hacc/cli"
-	"github.com/nbailey20/hacc/vault"
+	"github.com/nbailey20/hacc/engine"
 )
 
-func Start(command cli.CLICommand, vault *vault.Vault) error {
+func Start(command cli.CLICommand, executor *engine.Executor) error {
 	numCreds := 0
-	for _, service := range vault.Services {
-		numCreds += service.NumUsers()
+	for _, service := range executor.GetServices() {
+		numCreds += executor.GetNumUsers(service)
 	}
-	model := NewModel(command, vault)
-	p := tea.NewProgram(model, tea.WithAltScreen())
+	model := NewModel(command, executor)
+	p := tea.NewProgram(model) //tea.WithAltScreen())
 	_, err := p.Run()
 	return err
 }

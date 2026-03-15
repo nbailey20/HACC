@@ -1,99 +1,105 @@
 package display
 
-// interface for ErrorMsg types shown to user in EndState
-type ErrorMsg interface {
-	ErrorValue() error
-	DisplayValue() string
+import "github.com/nbailey20/hacc/engine"
+
+type resultMsg struct {
+	result engine.Result
 }
 
-type AddFailedMsg struct {
-	Error   error
-	Display string
-}
+// // interface for ErrorMsg types shown to user in EndState
+// type ErrorMsg interface {
+// 	ErrorValue() error
+// 	DisplayValue() string
+// }
 
-func (m AddFailedMsg) ErrorValue() error {
-	return m.Error
-}
+// type AddFailedMsg struct {
+// 	Error   error
+// 	Display string
+// }
 
-func (m AddFailedMsg) DisplayValue() string {
-	return m.Display
-}
+// func (m AddFailedMsg) ErrorValue() error {
+// 	return m.Error
+// }
 
-type DeleteErrorMsg struct {
-	Error   error
-	Display string
-}
+// func (m AddFailedMsg) DisplayValue() string {
+// 	return m.Display
+// }
 
-func (m DeleteErrorMsg) ErrorValue() error {
-	return m.Error
-}
+// type DeleteErrorMsg struct {
+// 	Error   error
+// 	Display string
+// }
 
-func (m DeleteErrorMsg) DisplayValue() string {
-	return m.Display
-}
+// func (m DeleteErrorMsg) ErrorValue() error {
+// 	return m.Error
+// }
 
-type RotateErrorMsg struct {
-	Error   error
-	Display string
-}
+// func (m DeleteErrorMsg) DisplayValue() string {
+// 	return m.Display
+// }
 
-func (m RotateErrorMsg) ErrorValue() error {
-	return m.Error
-}
+// type RotateErrorMsg struct {
+// 	Error   error
+// 	Display string
+// }
 
-func (m RotateErrorMsg) DisplayValue() string {
-	return m.Display
-}
+// func (m RotateErrorMsg) ErrorValue() error {
+// 	return m.Error
+// }
 
-type BackupErrorMsg struct {
-	Error   error
-	Display string
-}
+// func (m RotateErrorMsg) DisplayValue() string {
+// 	return m.Display
+// }
 
-func (m BackupErrorMsg) ErrorValue() error {
-	return m.Error
-}
+// type BackupErrorMsg struct {
+// 	Error   error
+// 	Display string
+// }
 
-func (m BackupErrorMsg) DisplayValue() string {
-	return m.Display
-}
+// func (m BackupErrorMsg) ErrorValue() error {
+// 	return m.Error
+// }
 
-// interface for SuccessMsg types shown to user in EndState
-type SuccessMsg interface {
-	DisplayValue() string
-}
+// func (m BackupErrorMsg) DisplayValue() string {
+// 	return m.Display
+// }
 
-type AddSuccessMsg struct {
-	Display string
-}
+// // interface for SuccessMsg types shown to user in EndState
+// type SuccessMsg interface {
+// 	DisplayValue() string
+// }
 
-func (m AddSuccessMsg) DisplayValue() string {
-	return m.Display
-}
+// type AddSuccessMsg struct {
+// 	Display string
+// }
 
-type DeleteSuccessMsg struct {
-	Display string
-}
+// func (m AddSuccessMsg) DisplayValue() string {
+// 	return m.Display
+// }
 
-func (m DeleteSuccessMsg) DisplayValue() string {
-	return m.Display
-}
+// type DeleteSuccessMsg struct {
+// 	Display string
+// }
 
-type RotateSuccessMsg struct {
-	Display string
-}
+// func (m DeleteSuccessMsg) DisplayValue() string {
+// 	return m.Display
+// }
 
-func (m RotateSuccessMsg) DisplayValue() string {
-	return m.Display
-}
+// type RotateSuccessMsg struct {
+// 	Display string
+// }
 
-type BackupSuccessMsg struct {
-	Display string
-}
+// func (m RotateSuccessMsg) DisplayValue() string {
+// 	return m.Display
+// }
 
-func (m BackupSuccessMsg) DisplayValue() string {
-	return m.Display
-}
+// type BackupSuccessMsg struct {
+// 	Display string
+// }
+
+// func (m BackupSuccessMsg) DisplayValue() string {
+// 	return m.Display
+// }
 
 // other message types
 type PasswordGeneratedMsg struct {

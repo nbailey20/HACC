@@ -4,54 +4,66 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 
 	cli "github.com/nbailey20/hacc/cli"
-	vault "github.com/nbailey20/hacc/vault"
+	"github.com/nbailey20/hacc/engine"
 )
 
+//	type model struct {
+//		vault          *vault.Vault
+//		state          State
+//		initialCmd     tea.Cmd
+//		action         cli.CLIAction
+//		serviceName    string
+//		username       string
+//		password       string
+//		digitsInPass   string
+//		specialsInPass string
+//		minPassLen     int
+//		maxPassLen     int
+//		page           int
+//		pageSize       int
+//		cursor         int
+//		showPass       bool
+//		result         engine.Result
+//	}
 type model struct {
-	vault          *vault.Vault
-	state          State
-	initialCmd     tea.Cmd
-	action         cli.CLIAction
-	serviceName    string
-	username       string
-	password       string
-	digitsInPass   string
-	specialsInPass string
-	minPassLen     int
-	maxPassLen     int
-	page           int
-	pageSize       int
-	cursor         int
-	showPass       bool
-	endSuccess     bool
-	endMessage     string
-	endError       error
+	exec *engine.Executor
+	cmd  cli.CLICommand
+
+	state      State
+	initialCmd tea.Cmd
+
+	page     int
+	pageSize int
+	cursor   int
+	showPass bool
+
+	result engine.Result
 }
 
 func (m model) Init() tea.Cmd {
 	return m.initialCmd
 }
 
-func searchModelState(service string, user string, vault *vault.Vault) State {
+func searchModelState(service string, user string, exec *engine.Executor) State {
 	// determines starting state for search commands
 	// if we already have enough info from CLI/autocompletion,
 	// jump straight to credential view
 	if service == "" && user == "" {
 		return &WelcomeState{}
 	}
-	if vault.HasService(service) && vault.Services[service].HasUser(user) {
+	if exec.HasService(service) && exec.HasUser(service, user) {
 		return &CredentialState{}
 	}
-	if vault.HasService(service) {
+	if exec.HasService(service) {
 		return &UsernameListState{}
 	}
 	return &ServiceListState{}
 }
 
-func initialState(cmd cli.CLICommand, vault *vault.Vault) State {
+func initialState(cmd cli.CLICommand, exec *engine.Executor) State {
 	switch cmd.Action.(type) {
 	case cli.SearchAction:
-		return searchModelState(cmd.Service, cmd.Username, vault)
+		return searchModelState(cmd.Service, cmd.Username, exec)
 	case cli.AddAction:
 		if cmd.Generate {
 			return &ConfirmState{}
@@ -68,44 +80,36 @@ func initialState(cmd cli.CLICommand, vault *vault.Vault) State {
 	}
 }
 
-func initialCmd(cmd cli.CLICommand, vault *vault.Vault) tea.Cmd {
+func initialCmd(cmd cli.CLICommand, exec *engine.Executor) tea.Cmd {
 	switch cmd.Action.(type) {
 	case cli.SearchAction:
-		state := initialState(cmd, vault)
+		state := initialState(cmd, exec)
 		if _, ok := state.(*CredentialState); ok {
-			return loadPasswordCmd(vault, cmd.Service, cmd.Username)
+			return execCmd(cmd, exec)
 		}
 		return nil
 	case cli.AddAction:
-		return addCmd(vault, cmd)
+		return execCmd(cmd, exec)
 	case cli.DeleteAction:
-		return deleteCmd(vault, cmd)
+		return execCmd(cmd, exec)
 	case cli.RotateAction:
-		return rotateCmd(vault, cmd)
+		return execCmd(cmd, exec)
 	case cli.BackupAction:
-		return backupCmd(vault, cmd)
+		return execCmd(cmd, exec)
 	default:
 		return nil
 	}
 }
 
-func NewModel(cmd cli.CLICommand, vault *vault.Vault) *model {
+func NewModel(cmd cli.CLICommand, executor *engine.Executor) *model {
 	return &model{
-		vault:          vault,
-		state:          initialState(cmd, vault),
-		serviceName:    cmd.Service,
-		initialCmd:     initialCmd(cmd, vault),
-		action:         cmd.Action,
-		username:       cmd.Username,
-		password:       cmd.Password,
-		showPass:       false,
-		digitsInPass:   cmd.DigitsInPass,
-		specialsInPass: cmd.SpecialsInPass,
-		minPassLen:     cmd.MinLen,
-		maxPassLen:     cmd.MaxLen,
-		page:           0,
-		pageSize:       pageSize,
-		cursor:         0,
-		endSuccess:     true,
+		exec:       executor,
+		cmd:        cmd,
+		state:      initialState(cmd, executor),
+		initialCmd: initialCmd(cmd, executor),
+		showPass:   false,
+		page:       0,
+		pageSize:   pageSize,
+		cursor:     0,
 	}
 }
