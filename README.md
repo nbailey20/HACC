@@ -52,6 +52,11 @@ Current Version: v2.0
 * Download appropriate executable from the latest releases folder and rename as `hacc`
 * Add executable location to PATH and test by running `hacc` or `hacc -h`.
 
+### Optionally BYO (Build-Your-Own) Executable from GitHub source
+
+* Clone repo locally on machine where it should be executed
+* Run `go build`
+
 
 
 ## hacc -h
