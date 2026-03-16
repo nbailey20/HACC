@@ -21,7 +21,7 @@ type Result struct {
 
 type Credential struct {
 	Service  string `json:"service"`
-	Username string `json:"username"`
+	Username string `json:"username,omitempty"`
 	Password string `json:"password,omitempty"`
 }
 

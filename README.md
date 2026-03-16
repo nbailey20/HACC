@@ -21,6 +21,7 @@ Current Version: v2.0
 * Backup a credential, all credentials in a service, or the entire Vault to a file
 * Add credentials to the Vault in bulk by supplying "--file" subarg to the add action
     * Example: importing a backup file to a different Vault
+* Optionally skip interactive mode with --json-output for programmatic usage
 
 
 # Installation
@@ -80,13 +81,12 @@ Sample Usage:
   hacc testService
   hacc rotate test -u test@yahoo.com -g
   hacc backup -f test_backup.txt
-  hacc d testService -u example
+  hacc d testService -u example --json-output
 ```
 
 
 ## TODO
 * Better sample usage / -h output
-* output mode, -o json for easier testing / embedding within other apps
 * Backup option --no-creds for usernames/services only
 * Support for different password types, e.g. base64, random, xkcd
 * Add MIT license
