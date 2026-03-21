@@ -1,0 +1,4 @@
+profile: ""                              # AWS CLI profile name to use for all Vault operations (leave empty for Lambda, will use default profile)
+kms_id: ""                               # KMS key ID for Vault, (default aws/ssm managed key if not provided)
+param_path: /hacc-lambda                 # Required - SSM Parameter Store path where credentials will be kept (the vault itself)
+obfuscation_key: lambdatestcomegetitg    # Required - String used to obfuscate SSM Parameter names and ensure they meet the character requirements
