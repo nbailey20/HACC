@@ -71,6 +71,9 @@ func initialCmd(cmd cli.CLICommand, exec *engine.Executor) tea.Cmd {
 		}
 		return nil
 	case cli.AddAction:
+		if cmd.Generate {
+			return generateCmd(cmd, exec)
+		}
 		return execCmd(cmd, exec)
 	case cli.DeleteAction:
 		return execCmd(cmd, exec)

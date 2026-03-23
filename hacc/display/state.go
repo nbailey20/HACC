@@ -65,9 +65,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.result = msg.result
 	case PasswordGeneratedMsg:
 		m.cmd.Password = msg.Password
-	case PasswordLoadedMsg:
-		m.cmd.Password = msg.Password
-		return m, copyPasswordCmd(m.cmd.Password)
 	}
 	return m, nil
 }

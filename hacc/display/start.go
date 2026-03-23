@@ -25,10 +25,6 @@ func Start(command cli.CLICommand, executor *engine.Executor) error {
 	}
 
 	// Default interactive mode
-	numCreds := 0
-	for _, service := range executor.GetServices() {
-		numCreds += executor.GetNumUsers(service)
-	}
 	model := NewModel(command, executor)
 	p := tea.NewProgram(model, tea.WithAltScreen())
 	_, err := p.Run()

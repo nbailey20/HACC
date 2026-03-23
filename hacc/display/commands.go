@@ -10,7 +10,12 @@ import (
 
 func execCmd(cmd cli.CLICommand, exec *engine.Executor) tea.Cmd {
 	return func() tea.Msg {
-		return resultMsg{exec.Execute(cmd)}
+		result := exec.Execute(cmd)
+		// if result is a single password, copy to clipboard
+		if result.Action == "search" && len(result.Data) == 1 {
+			copyPasswordCmd(result.Data[0].Password)
+		}
+		return resultMsg{result}
 	}
 }
 
@@ -25,10 +30,7 @@ func generateCmd(cmd cli.CLICommand, exec *engine.Executor) tea.Cmd {
 	}
 }
 
-func copyPasswordCmd(password string) tea.Cmd {
-	return func() tea.Msg {
-		clipboard.Init()
-		clipboard.Write(clipboard.FmtText, []byte(password))
-		return PasswordCopiedMsg{}
-	}
+func copyPasswordCmd(password string) {
+	clipboard.Init()
+	clipboard.Write(clipboard.FmtText, []byte(password))
 }

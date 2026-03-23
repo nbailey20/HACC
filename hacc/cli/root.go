@@ -38,6 +38,11 @@ func preprocessArgs(args []string) []string {
 }
 
 func NewRootCommand(cliCommand *CLICommand) *cobra.Command {
+	var (
+		searchUsername string
+		jsonOutput     bool
+	)
+
 	rootCmd := &cobra.Command{
 		Use:   "hacc",
 		Short: "HACC v2.0 - Homemade Authentication Credential Client, backed by AWS SSM Parameter Store.",
@@ -46,17 +51,22 @@ func NewRootCommand(cliCommand *CLICommand) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) == 0 {
 				cliCommand.Action = SearchAction{}
+				cliCommand.JSONOutput = jsonOutput
 				return nil
 			}
 			if len(args) == 1 {
 				cliCommand.Action = SearchAction{}
 				cliCommand.Service = args[0]
+				cliCommand.Username = searchUsername
+				cliCommand.JSONOutput = jsonOutput
 				return nil
 			}
 			return fmt.Errorf("Unrecognized action in %v", args)
 		},
 	}
 
+	rootCmd.Flags().StringVarP(&searchUsername, "username", "u", "", "Username")
+	rootCmd.Flags().BoolVarP(&jsonOutput, "json-output", "", false, "Whether output should be json or interactive (default interactive)")
 	registerActions(rootCmd, cliCommand)
 	return rootCmd
 }
@@ -81,6 +91,5 @@ func Parse(args []string, quiet bool) (CLICommand, error) {
 	if err != nil {
 		return CLICommand{}, err
 	}
-
 	return cliCommand, nil
 }

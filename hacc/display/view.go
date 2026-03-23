@@ -122,9 +122,6 @@ func (m model) CredentialView() string {
 	service := credServiceStyle.Render(" " + cred.Service + " ")
 	user := credTextStyle.Render(cred.Username)
 	pass := "*****"
-	if cred.Password == "" {
-		pass = "Loading..."
-	}
 	if m.showPass {
 		pass = cred.Password
 	}
@@ -145,6 +142,9 @@ func (m model) ConfirmView() string {
 
 func (m model) ServiceListView() string {
 	services := m.exec.GetServicesWithPrefix(m.cmd.Service)
+	if len(services) == 0 {
+		return header() + addFooter(fmt.Sprintf("No services matching %s.", m.cmd.Service), defaultFooterStr)
+	}
 	displayed_services := services[m.page*m.pageSize : min((m.page+1)*m.pageSize, len(services))]
 
 	var rows [][]string
@@ -168,10 +168,14 @@ func (m model) UsernameListView() string {
 	if m.cmd.Service == "" {
 		return "Error: service name should not be empty in UsernameListView"
 	}
-	usernames, err := m.exec.GetUsersForService(m.cmd.Service)
+	usernames, err := m.exec.GetUsersForServiceWithPrefix(m.cmd.Service, m.cmd.Username)
 	if err != nil {
 		return fmt.Sprintf("Error retrieving users for service %s: %v", m.cmd.Service, err)
 	}
+	if len(usernames) == 0 {
+		return header() + addFooter(fmt.Sprintf("No usernames for service %s.", m.cmd.Service), defaultFooterStr)
+	}
+
 	displayed_usernames := usernames[m.page*m.pageSize : min((m.page+1)*m.pageSize, len(usernames))]
 	var rows [][]string
 	for idx, userName := range displayed_usernames {

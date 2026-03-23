@@ -2,6 +2,7 @@ package engine
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/nbailey20/hacc/cli"
 	"github.com/nbailey20/hacc/helpers"
@@ -71,6 +72,21 @@ func (e *Executor) GetNumUsers(service string) int {
 
 func (e *Executor) GetUsersForService(service string) ([]string, error) {
 	return e.vault.GetUsersForService(service)
+}
+
+func (e *Executor) GetUsersForServiceWithPrefix(service, prefix string) ([]string, error) {
+	allUsers, err := e.vault.GetUsersForService(service)
+	if err != nil {
+		return nil, err
+	}
+
+	var filtered []string
+	for _, user := range allUsers {
+		if strings.HasPrefix(user, prefix) {
+			filtered = append(filtered, user)
+		}
+	}
+	return filtered, nil
 }
 
 func (e *Executor) GetNumServices() int {
