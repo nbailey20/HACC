@@ -6,7 +6,7 @@ HACC is an open-source credential manager command-line tool that uses your perso
 * Credentials stored in AWS Parameter Store
 * Encrypted with AWS KMS (AWS-managed or CMEK) Key
 * Can store up to 40MB of encrypted data per credential
-* Includes HACC App for querying credentials via web-browser
+* Includes sample Terraform-based HACC webapp for securely querying credentials via web-browser, mobile friendly
 
 ## Features
 
