@@ -352,8 +352,6 @@ resource "aws_iam_policy" "lambda_execution_policy" {
         "Sid" : "HaccSsmPerms",
         "Effect" : "Allow",
         "Action" : [
-          "ssm:PutParameter",
-          "ssm:DeleteParameter",
           "ssm:GetParametersByPath",
           "ssm:GetParameter"
         ],
