@@ -384,6 +384,7 @@ resource "aws_lambda_function" "hacc_api_lambda" {
   function_name    = var.lambda_function_name
   runtime          = var.lambda_runtime
   handler          = var.lambda_handler
+  timeout          = 30
   role             = aws_iam_role.lambda_execution_role.arn
   filename         = "src/build/hacc_lambda.zip"
   source_code_hash = filebase64sha256("src/build/hacc_lambda.zip")
