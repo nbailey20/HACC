@@ -14,4 +14,3 @@ cognito_first_auth_factors        = ["PASSWORD"]
 lambda_function_name              = "hacc-lambda"
 lambda_handler                    = "hacc_lambda.lambda_handler"
 lambda_runtime                    = "python3.14"
-
