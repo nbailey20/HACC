@@ -1,6 +1,6 @@
 output "website_url" {
-  description = "URL of the CloudFront distribution for the website"
-  value       = aws_cloudfront_distribution.website_distribution.domain_name
+  description = "Subdomain pointing to the CloudFront distribution for the website"
+  value       = "${var.r53_subdomain_name}/${var.cloudfront_url_obfuscation_string}/"
 }
 
 output "username" {

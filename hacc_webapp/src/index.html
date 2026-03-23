@@ -2,91 +2,252 @@
 <html>
 
 <head>
-  <title>API Gateway + Cognito Demo</title>
+  <title>HACC App</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <style>
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #0f172a;
+      color: #e2e8f0;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 500px;
+      padding: 0 10px;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+      color: #38bdf8;
+    }
+
+    .search-box {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    input {
+      flex: 1;
+      padding: 12px;
+      border-radius: 10px;
+      border: none;
+      outline: none;
+      background: #1e293b;
+      color: white;
+      font-size: 16px;
+    }
+
+    .input-row {
+      display: flex;
+      gap: 10px;
+    }
+
+    @media (max-width: 600px) {
+      .input-row {
+        flex-direction: column;
+      }
+    }
+
+    button {
+      padding: 12px 16px;
+      border-radius: 10px;
+      border: none;
+      background: #38bdf8;
+      color: black;
+      font-weight: bold;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    button:hover {
+      background: #0ea5e9;
+    }
+
+    .card {
+      background: #1e293b;
+      padding: 16px;
+      border-radius: 12px;
+      margin-top: 10px;
+      border: 1px solid #334155;
+    }
+
+    .error {
+      border: 1px solid #ef4444;
+      color: #fecaca;
+    }
+
+    .success {
+      border: 1px solid #22c55e;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    td {
+      padding: 12px;
+      border-bottom: 1px solid #334155;
+      cursor: pointer;
+    }
+
+    td:hover {
+      background: #334155;
+    }
+
+    .copied {
+      margin-top: 8px;
+      font-size: 12px;
+      color: #22c55e;
+    }
+  </style>
 </head>
 
 <body>
-  <h1>API Gateway + Cognito + Lambda Demo</h1>
-  <input type="text" id="searchInput" placeholder="Enter search term">
-  <button id="callApi">Call Lambda</button>
-  <pre id="output"></pre>
+  <div class="container">
+    <h1>🔐 HACC</h1>
+
+    <div class="search-box" style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; max-width: 600px;">
+      <!-- Row 1: two inputs side by side -->
+      <div class="input-row">
+        <input id="serviceInput" placeholder="Service" style="flex: 1;"
+            autocapitalize="off" autocorrect="off" spellcheck="false" />
+        <input id="usernameInput" placeholder="Username (optional)" style="flex: 1;"
+            autocapitalize="off" autocorrect="off" spellcheck="false" />
+      </div>
+
+      <!-- Row 2: search button full width -->
+      <button id="callApi" style="width: 100%;">Search</button>
+    </div>
+
+    <div id="output"></div>
+  </div>
 
   <script>
-    // ===== CONFIGURATION =====
-    const SEARCH_URL = '${API_URL}/search';
-    const AUTH_CHECK_URL = '${API_URL}/auth-check';
-    const COGNITO_DOMAIN = '${COGNITO_DOMAIN}';
-    const REDIRECT_URL = '${API_URL}/callback';
-    const CLIENT_ID = '${CLIENT_ID}';
+    const SEARCH_URL = '/${OBFUSCATE_STRING}/api/search';
+    const AUTH_CHECK_URL = '/${OBFUSCATE_STRING}/api/auth-check';
+    const REDIRECT_URL = 'https://${FRONTEND_DOMAIN}/${OBFUSCATE_STRING}/api/callback';
     const SCOPE = 'email+openid';
-    const LOGIN_URL = `https://$${COGNITO_DOMAIN}/login?client_id=$${CLIENT_ID}&response_type=code&scope=$${SCOPE}&redirect_uri=$${encodeURIComponent(REDIRECT_URL)}`;
+
+    const LOGIN_URL = `https://${COGNITO_DOMAIN}/login?client_id=${CLIENT_ID}&response_type=code&scope=$${SCOPE}&redirect_uri=$${encodeURIComponent(REDIRECT_URL)}`;
 
     // ===== AUTH CHECK =====
     async function checkAuth() {
       try {
-        const response = await fetch(AUTH_CHECK_URL, {
-          method: 'GET',
-          credentials: 'include'
-        });
-
-        // Only 2xx responses (authenticated)
-        if (response.ok) {
-          return true;
-        }
-
-        // Redirect to login for 401 Unauthorized
-        if (response.status === 401) {
-          window.location.href = LOGIN_URL;
-          return false;
-        }
-
-        // Any other error (404, 500, etc.) is treated as unauthenticated
+        const res = await fetch(AUTH_CHECK_URL, { credentials: 'include' });
+        if (res.ok) return true;
+        if (res.status === 401) window.location.href = LOGIN_URL;
         return false;
-      } catch (err) {
-        console.error('Auth check exception:', err);
+      } catch {
         return false;
       }
     }
 
+    async function copyPassword(text) {
+      try {
+        await navigator.clipboard.writeText(text);
+        document.getElementById('copyStatus').textContent = "Copied!";
+      } catch (err) {
+        document.getElementById('copyStatus').textContent = "Copy failed";
+      }
+    }
+
+    // ===== RENDER =====
+    function renderError(msg) {
+      document.getElementById('output').innerHTML = `
+        <div class="card error">$${msg}</div>
+      `;
+    }
+
+    function renderCredential(data) {
+      document.getElementById('output').innerHTML = `
+        <div class="card success" onclick="copyPassword('$${data.password || ""}')">
+          <div><strong>Service:</strong> $${data.service || ""}</div>
+          <div><strong>Username:</strong> $${data.username || ""}</div>
+          <div><strong>Password:</strong> ********</div>
+          <button onclick="copyPassword('$${data.password || ""}')">Copy Password</button>
+          <div id="copyStatus" class="copied"></div>
+          <div class="copied">Tap anywhere to copy password</div>
+        </div>
+      `;
+    }
+
+    function renderTable(list, attribute = "service") {
+      const rows = list.map(item => `
+        <tr onclick="refineSearch('$${item['service']}', '$${item['username'] || ""}')">
+          <td>$${item[attribute]}</td>
+        </tr>
+      `).join('');
+
+      document.getElementById('output').innerHTML = `
+        <div class="card">
+          <table>$${rows}</table>
+        </div>
+      `;
+    }
+
     // ===== API CALL =====
-    async function callApi() {
-      const searchTerm = document.getElementById('searchInput').value;
+    async function callApi(serviceOverride = null, userOverride = null) {
+      const service = (serviceOverride || document.getElementById('serviceInput').value)
+        .trim()
+        .toLowerCase();
+
+      const username = (userOverride || document.getElementById('usernameInput').value)
+        .trim()
+        .toLowerCase();
 
       try {
-        const response = await fetch(SEARCH_URL, {
+        const res = await fetch(SEARCH_URL, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ query: searchTerm }),
-          credentials: 'include'
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            service,
+            username
+          })
         });
 
-        if (response.status === 401) {
+        if (res.status === 401) {
           window.location.href = LOGIN_URL;
           return;
         }
 
-        const data = await response.json();
-        document.getElementById('output').textContent =
-          JSON.stringify(data, null, 2);
+        const hacc_response = await res.json();
 
+        // Backend response determines rendering
+        if (hacc_response.error) {
+          renderError(hacc_response.error);
+        } else if (hacc_response.data.length === 1) {
+            renderCredential(hacc_response.data[0]);
+        } else {
+            attr_type = hacc_response.data[0].username ? "username" : "service";
+            renderTable(hacc_response.data, attr_type);
+        }
       } catch (err) {
-        document.getElementById('output').textContent =
-          JSON.stringify({ error: err.message }, null, 2);
+        renderError(err.message);
       }
     }
 
-    // ===== INIT =====
-    document.getElementById('callApi').addEventListener('click', callApi);
+    function refineSearch(service, username) {
+      callApi(service, username);
+    }
+
+    document.getElementById('callApi').addEventListener('click', () => callApi());
 
     document.addEventListener('DOMContentLoaded', async () => {
-      const isAuthenticated = await checkAuth();
-
-      // Disable UI until authenticated
-      if (!isAuthenticated) {
-        document.getElementById('callApi').disabled = true;
-      }
+      const ok = await checkAuth();
+      if (!ok) document.getElementById('callApi').disabled = true;
     });
   </script>
 </body>

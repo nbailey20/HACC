@@ -28,7 +28,7 @@ def parse_cookies(cookie_header):
     return cookies
 
 def set_cookie_header(name, value, max_age=600):
-    return f"{name}={value}; HttpOnly; Secure; Path=/; Max-Age={max_age}; SameSite=None"
+    return f"{name}={value}; HttpOnly; Secure; Path=/; Max-Age={max_age}; SameSite=Strict"
 
 
 # ========= TOKEN HELPERS ==========
@@ -152,19 +152,22 @@ def serve_search_path(headers, body):
         params = json.loads(body)
     except json.JSONDecodeError:
         return {"statusCode": 400, "body": json.dumps({"error": "Invalid JSON"})}
-    query = params.get("query", "")
-    if not query:
+    service = params.get("service", "")
+    username = params.get("username", "")
+    if not service:
         return {"statusCode": 200, "body": json.dumps({})}
 
     # Execute credential client
-    print(f"Executing search for query: {query}")
+    print(f"Executing search for query: {service}:{username}")
+    cmd = [
+        "./hacc-linux-amd64",
+        "search", service,
+        "--json-output"
+    ]
+    if username:
+        cmd.extend(["--username", username])
     result = subprocess.run(
-        [
-            "./hacc-linux-amd64",
-            "search",
-            query,
-            "--json-output"
-        ],
+        cmd,
         capture_output=True,
         text=True,
         check=True,

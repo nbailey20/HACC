@@ -1,11 +1,12 @@
 // Deploys a basic (but secure) website using:
-//   S3/CloudFront hosting a static website with search functionality
-//   API Gateway/Lambda to call HACC
-//   Cognito authentication with MFA for both components
+//   S3/CloudFront with static frontend HTML/JS for HACC search functionality
+//   API Gateway/Lambda backend with minimal IAM to invoke HACC
+//   Route53 / ACM to put everything under same subdomain and enable HTTPS
+//   Cognito authentication with MFA, validation performed in Lambda
 
 data "aws_caller_identity" "current" {}
 
-// S3 resources for hosting the website
+// S3 resources / frontend hosting for website
 resource "aws_s3_bucket" "website_bucket" {
   bucket = var.s3_bucket_name
 }
@@ -19,25 +20,19 @@ resource "aws_s3_bucket_public_access_block" "website_bucket_public_access_block
   restrict_public_buckets = true
 }
 
-resource "aws_s3_bucket_website_configuration" "website_config" {
-  bucket = aws_s3_bucket.website_bucket.id
-
-  index_document {
-    suffix = "index.html"
-  }
-}
-
 resource "aws_s3_object" "index_html" {
   bucket = aws_s3_bucket.website_bucket.id
   key    = "index.html"
   content = templatefile("${path.module}/src/index.html", {
-    CLIENT_ID      = aws_cognito_user_pool_client.user_pool_client.id
-    COGNITO_DOMAIN = "${aws_cognito_user_pool_domain.domain.domain}.auth.${var.aws_region}.amazoncognito.com"
-    API_URL        = aws_apigatewayv2_api.hacc_api.api_endpoint
+    CLIENT_ID        = aws_cognito_user_pool_client.user_pool_client.id
+    COGNITO_DOMAIN   = "${aws_cognito_user_pool_domain.domain.domain}.auth.${var.aws_region}.amazoncognito.com"
+    FRONTEND_DOMAIN  = var.r53_subdomain_name
+    OBFUSCATE_STRING = var.cloudfront_url_obfuscation_string
   })
   content_type = "text/html"
 }
 
+## Use OAC to securely allow CloudFront to access S3 bucket without making it public
 resource "aws_s3_bucket_policy" "website_bucket_policy" {
   bucket = aws_s3_bucket.website_bucket.id
   policy = jsonencode({
@@ -63,12 +58,71 @@ resource "aws_s3_bucket_policy" "website_bucket_policy" {
 }
 
 
+// Route53 and ACM resources for custom domain and HTTPS
+data "aws_route53_zone" "existing" {
+  name = var.r53_zone_name
+}
+
+resource "aws_acm_certificate" "website_cert" {
+  domain_name       = var.r53_subdomain_name
+  validation_method = "DNS"
+
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
+## Adds CNAME record to R53 zone to prove domain ownership for ACM certificate validation
+resource "aws_route53_record" "cert_validation" {
+  for_each = {
+    for dvo in aws_acm_certificate.website_cert.domain_validation_options : dvo.domain_name => {
+      name   = dvo.resource_record_name
+      type   = dvo.resource_record_type
+      record = dvo.resource_record_value
+    }
+  }
+
+  zone_id = data.aws_route53_zone.existing.zone_id
+  name    = each.value.name
+  type    = each.value.type
+  records = [each.value.record]
+  ttl     = 60
+}
+
+resource "aws_route53_record" "website_alias" {
+  zone_id = data.aws_route53_zone.existing.zone_id
+  name    = var.r53_subdomain_name
+  type    = "A"
+
+  alias {
+    name                   = aws_cloudfront_distribution.website_distribution.domain_name
+    zone_id                = aws_cloudfront_distribution.website_distribution.hosted_zone_id
+    evaluate_target_health = false
+  }
+}
+
+
 // CloudFront distribution for the website
 resource "aws_cloudfront_distribution" "website_distribution" {
   origin {
     domain_name              = aws_s3_bucket.website_bucket.bucket_regional_domain_name
-    origin_id                = "S3-${aws_s3_bucket.website_bucket.id}"
+    origin_id                = "HACC-S3-frontend-origin"
     origin_access_control_id = aws_cloudfront_origin_access_control.oac.id
+    s3_origin_config {
+      origin_access_identity = "" # REQUIRED when using OAC
+    }
+  }
+
+  origin {
+    domain_name = replace(aws_apigatewayv2_api.hacc_api.api_endpoint, "https://", "")
+    origin_id   = "HACC-APIGW-backend-origin"
+    origin_path = ""
+    custom_origin_config {
+      http_port              = 80
+      https_port             = 443
+      origin_protocol_policy = "https-only"
+      origin_ssl_protocols   = ["TLSv1.2"]
+    }
   }
 
   enabled             = true
@@ -77,16 +131,37 @@ resource "aws_cloudfront_distribution" "website_distribution" {
   default_root_object = "index.html"
 
   default_cache_behavior {
-    target_origin_id       = "S3-${aws_s3_bucket.website_bucket.id}"
+    target_origin_id       = "HACC-S3-frontend-origin"
     viewer_protocol_policy = "redirect-to-https"
+    allowed_methods        = ["GET", "HEAD"]
+    cached_methods         = ["GET", "HEAD"]
+    cache_policy_id        = var.cloudfront_cache_policy_id
 
-    allowed_methods = ["GET", "HEAD"]
-    cached_methods  = ["GET", "HEAD"]
-    cache_policy_id = var.cloudfront_cache_policy_id
+    function_association {
+      event_type   = "viewer-request"
+      function_arn = aws_cloudfront_function.path_guard.arn
+    }
+  }
+
+  ordered_cache_behavior {
+    path_pattern             = "${var.cloudfront_url_obfuscation_string}/api/*"
+    target_origin_id         = "HACC-APIGW-backend-origin"
+    allowed_methods          = ["GET", "HEAD", "POST", "OPTIONS", "PUT", "PATCH", "DELETE"]
+    cached_methods           = ["GET", "HEAD", "OPTIONS"]
+    cache_policy_id          = var.cloudfront_cache_policy_id
+    viewer_protocol_policy   = "redirect-to-https"
+    origin_request_policy_id = var.cloudfront_origin_policy_id
+
+    function_association {
+      event_type   = "viewer-request"
+      function_arn = aws_cloudfront_function.strip_path_prefix.arn
+    }
   }
 
   viewer_certificate {
-    cloudfront_default_certificate = true
+    acm_certificate_arn      = aws_acm_certificate.website_cert.arn
+    ssl_support_method       = "sni-only"
+    minimum_protocol_version = "TLSv1.2_2021"
   }
 
   restrictions {
@@ -95,6 +170,8 @@ resource "aws_cloudfront_distribution" "website_distribution" {
       locations        = []
     }
   }
+
+  aliases = [var.r53_subdomain_name]
 }
 
 resource "aws_cloudfront_origin_access_control" "oac" {
@@ -103,6 +180,54 @@ resource "aws_cloudfront_origin_access_control" "oac" {
   origin_access_control_origin_type = "s3"
   signing_behavior                  = "always"
   signing_protocol                  = "sigv4"
+}
+
+resource "aws_cloudfront_function" "path_guard" {
+  name    = "hacc-app-path-guard"
+  runtime = "cloudfront-js-1.0"
+
+  code = <<EOF
+function handler(event) {
+  var request = event.request;
+  var uri = request.uri;
+
+  var prefix = '${var.cloudfront_url_obfuscation_string}';
+
+  // Block everything outside prefix
+  if (!uri.startsWith('/'+prefix+'/')) {
+    return {
+      statusCode: 404,
+      statusDescription: 'Not Found'
+    };
+  }
+
+  // Strip prefix before sending to origin
+  var newUri = uri.substring(prefix.length+1);
+
+  // Default to index.html
+  if (newUri === '' || newUri === '/') {
+    newUri = '/index.html';
+  }
+
+  request.uri = newUri;
+
+  return request;
+}
+EOF
+}
+
+resource "aws_cloudfront_function" "strip_path_prefix" {
+  name    = "hacc-app-strip-path-prefix"
+  runtime = "cloudfront-js-1.0"
+  code    = <<EOF
+function handler(event) {
+  var request = event.request;
+  if (request.uri.startsWith('/${var.cloudfront_url_obfuscation_string}/api/')) {
+    request.uri = request.uri.substring('/${var.cloudfront_url_obfuscation_string}'.length + 4);
+  }
+  return request;
+}
+EOF
 }
 
 
@@ -154,7 +279,7 @@ resource "aws_cognito_user_pool_domain" "domain" {
 resource "aws_cognito_user_pool_client" "user_pool_client" {
   name                                 = "hacc-website-user-pool-client"
   user_pool_id                         = aws_cognito_user_pool.user_pool.id
-  callback_urls                        = ["${aws_apigatewayv2_api.hacc_api.api_endpoint}/callback"]
+  callback_urls                        = ["https://${var.r53_subdomain_name}/${var.cloudfront_url_obfuscation_string}/api/callback"]
   allowed_oauth_flows_user_pool_client = true
   allowed_oauth_flows                  = ["code"]
   explicit_auth_flows                  = ["ALLOW_USER_AUTH"]
@@ -162,9 +287,9 @@ resource "aws_cognito_user_pool_client" "user_pool_client" {
   supported_identity_providers         = ["COGNITO"]
   generate_secret                      = false
 
-  access_token_validity  = "10"
-  id_token_validity      = "10"
-  refresh_token_validity = "60"
+  access_token_validity  = var.cognito_access_token_validity
+  id_token_validity      = var.cognito_id_token_validity
+  refresh_token_validity = var.cognito_refresh_token_validity
   token_validity_units {
     access_token  = "minutes"
     id_token      = "minutes"
@@ -245,7 +370,7 @@ resource "aws_iam_policy" "lambda_execution_policy" {
           "kms:Decrypt"
         ],
         "Resource" : [
-          "arn:aws:kms:${var.aws_region}:${data.aws_caller_identity.current.account_id}:key/*"
+          "arn:aws:kms:${var.aws_region}:${data.aws_caller_identity.current.account_id}:key/${var.hacc_param_kms_key_id}",
         ]
       }
     ]
@@ -267,11 +392,11 @@ resource "aws_lambda_function" "hacc_api_lambda" {
   environment {
     variables = {
       HACC_CONFIG          = "./config.yaml"
-      COGNITO_REDIRECT_URI = "${aws_apigatewayv2_api.hacc_api.api_endpoint}/callback"
+      COGNITO_REDIRECT_URI = "https://${var.r53_subdomain_name}/${var.cloudfront_url_obfuscation_string}/api/callback"
       COGNITO_CLIENT_ID    = aws_cognito_user_pool_client.user_pool_client.id
       COGNITO_USER_POOL_ID = aws_cognito_user_pool.user_pool.id
       COGNITO_TOKEN_URL    = "https://${aws_cognito_user_pool_domain.domain.domain}.auth.${var.aws_region}.amazoncognito.com/oauth2/token"
-      FRONTEND_URL         = "https://${aws_cloudfront_distribution.website_distribution.domain_name}"
+      FRONTEND_URL         = "https://${var.r53_subdomain_name}/${var.cloudfront_url_obfuscation_string}/"
     }
   }
 }
@@ -291,15 +416,6 @@ resource "aws_lambda_permission" "apigw_invoke" {
 resource "aws_apigatewayv2_api" "hacc_api" {
   name          = "hacc-website-api"
   protocol_type = "HTTP"
-
-  cors_configuration {
-    allow_headers = ["authorization", "content-type"]
-    allow_methods = ["GET", "POST", "OPTIONS"]
-    allow_origins = [
-      "https://${aws_cloudfront_distribution.website_distribution.domain_name}"
-    ]
-    allow_credentials = true
-  }
 }
 
 resource "aws_apigatewayv2_integration" "lambda_integration" {
@@ -347,4 +463,4 @@ resource "aws_apigatewayv2_authorizer" "cognito_authorizer" {
 }
 
 ## Enhancements to consider:
-## put api gateway in cloudfront dist for same origin
+## add obfuscation path to app under subdomain (e.g. https://hacc-app.nick-bailey.com/asfdasjhlkjdasfklj)
