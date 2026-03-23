@@ -1,13 +1,12 @@
-# Homemade Authentication Credential Client - HACC
+# Homemade Authentication Credential Client - HACC 2.0
 
 HACC is an open-source credential manager command-line tool that uses your personal AWS account to securely store your secrets, so you don't have to wonder who's secretly selling your data behind the scenes!
 
 * Built with Golang
 * Credentials stored in AWS Parameter Store
 * Encrypted with AWS KMS (AWS-managed or CMEK) Key
-* Can store up to 40MB of encrypted data
-
-Current Version: v2.0
+* Can store up to 40MB of encrypted data per credential
+* Includes HACC App for querying credentials via web-browser
 
 ## Features
 
