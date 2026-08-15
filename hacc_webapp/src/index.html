@@ -200,12 +200,10 @@
     // ===== API CALL =====
     async function callApi(serviceOverride = null, userOverride = null) {
       const service = (serviceOverride || document.getElementById('serviceInput').value)
-        .trim()
-        .toLowerCase();
+        .trim();
 
       const username = (userOverride || document.getElementById('usernameInput').value)
-        .trim()
-        .toLowerCase();
+        .trim();
 
       try {
         const res = await fetch(SEARCH_URL, {

@@ -38,6 +38,7 @@ HACC is an open-source credential manager command-line tool that uses your perso
   * kms:Decrypt
   * (default profile used, well, by default)
 * Optional - KMS CMEK key ID (aws/ssm managed key used if not specified)
+* Optional - Terraform with AWS provider for Terraform-based HACC webapp
 
 ## Setting up Config File
 
@@ -48,13 +49,17 @@ HACC is an open-source credential manager command-line tool that uses your perso
 
 ## Downloading and Running Executable
 
-* Download appropriate executable from the latest releases folder and rename as `hacc`
+* Download appropriate executable from the `releases` folder and rename as `hacc`
 * Add executable location to PATH and test by running `hacc` or `hacc -h`.
 
 ### Optionally BYO (Build-Your-Own) Executable from GitHub source
 
 * Clone repo locally on machine where it should be executed
 * Run `go build`
+
+## Installing Terraform-based HACC Webapp
+* Within hacc_webapp folder, update hacc.auto.tfvars as necessary
+* Terraform apply
 
 
 
