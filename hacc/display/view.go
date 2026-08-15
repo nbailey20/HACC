@@ -25,6 +25,8 @@ func (m model) View() string {
 		return m.CredentialView()
 	case *ConfirmState:
 		return m.ConfirmView()
+	case *PendingState:
+		return header() + addFooter("Loading...", defaultFooterStr)
 	case *EndState:
 		return m.EndView()
 	case *EmptyState:

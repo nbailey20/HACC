@@ -62,9 +62,13 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m.state.Update(m, RuneEvent{Rune: rune(key)})
 		}
 	case resultMsg:
-		m.result = msg.result
+		// Forward result messages to the active state so it can decide
+		// how and when to transition (avoids premature view flips).
+		return m.state.Update(m, msg)
 	case PasswordGeneratedMsg:
-		m.cmd.Password = msg.Password
+		// Delegate generated-password handling to the current state so
+		// states (like ConfirmState) can decide how to react.
+		return m.state.Update(m, msg)
 	}
 	return m, nil
 }
@@ -97,6 +101,32 @@ func updateListState(m model, e Event, numItems int, onEnter EnterFunc) (model, 
 		return m.state.(Backable).Back(m)
 	case NumberEvent:
 		return CursorNumber(m, e.Number), nil
+	default:
+		return m, nil
+	}
+}
+
+// PendingState represents a transient state while an async command is in
+// flight. It waits for a resultMsg (or other message) and then transitions
+// to the configured next state once the result is applied.
+type PendingState struct{
+	Next State
+}
+
+func (s PendingState) Update(m model, e Event) (model, tea.Cmd) {
+	switch e := e.(type) {
+	case resultMsg:
+		m.result = e.result
+		if s.Next != nil {
+			m.state = s.Next
+		}
+		return m, nil
+	case PasswordGeneratedMsg:
+		// Pass-through to underlying next state if it cares.
+		if s.Next != nil {
+			return s.Next.Update(m, e)
+		}
+		return m, nil
 	default:
 		return m, nil
 	}
@@ -269,11 +299,14 @@ type ConfirmState struct{}
 func (s ConfirmState) Update(m model, e Event) (model, tea.Cmd) {
 	switch e := e.(type) {
 	case EnterEvent:
-		m.state = &EndState{}
+		// Start the exec and enter a pending state until the result arrives.
+		m.cmd.Generate = false
+		m.state = &PendingState{Next: &EndState{}}
 		return m, execCmd(m.cmd, m.exec)
 	case RuneEvent:
 		if e.Rune == 'y' {
-			m.state = &EndState{}
+			m.cmd.Generate = false
+			m.state = &PendingState{Next: &EndState{}}
 			return m, execCmd(m.cmd, m.exec)
 		}
 		if e.Rune == 'n' {
@@ -282,6 +315,9 @@ func (s ConfirmState) Update(m model, e Event) (model, tea.Cmd) {
 		return m, nil
 	case PasswordGeneratedMsg:
 		m.cmd.Password = e.Password
+		// Generated password has been applied; clear the Generate flag
+		// so subsequent execCmd will perform an add.
+		m.cmd.Generate = false
 		return m, nil
 	default:
 		return m, nil
@@ -337,7 +373,8 @@ func (s UsernameListState) Update(m model, e Event) (model, tea.Cmd) {
 			}
 			selectedUser := users[m.page*m.pageSize+m.cursor]
 			m.cmd.Username = selectedUser
-			m.state = &CredentialState{}
+			// Enter pending state while credential is fetched
+			m.state = &PendingState{Next: &CredentialState{}}
 			return m, execCmd(m.cmd, m.exec)
 		},
 	)

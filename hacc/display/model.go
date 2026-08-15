@@ -87,11 +87,23 @@ func initialCmd(cmd cli.CLICommand, exec *engine.Executor) tea.Cmd {
 }
 
 func NewModel(cmd cli.CLICommand, executor *engine.Executor) *model {
+	st := initialState(cmd, executor)
+	ic := initialCmd(cmd, executor)
+	// If there's an initial command that will produce a result, enter a
+	// pending state so the UI waits for the result rather than showing an
+	// error/empty view immediately. Generate-only commands are local and
+	// synchronous, so they should skip the loading state and render
+	// immediately.
+	if ic != nil {
+		if _, ok := cmd.Action.(cli.AddAction); !ok || !cmd.Generate {
+			st = &PendingState{Next: st}
+		}
+	}
 	return &model{
 		exec:       executor,
 		cmd:        cmd,
-		state:      initialState(cmd, executor),
-		initialCmd: initialCmd(cmd, executor),
+		state:      st,
+		initialCmd: ic,
 		showPass:   false,
 		page:       0,
 		pageSize:   pageSize,
